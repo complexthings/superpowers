@@ -56,6 +56,12 @@ Check that commands appear:
 
 Tell Codex to fetch https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.codex/INSTALL.md and follow the instructions.
 
+### Agents (Experimental)
+
+**Note:** Agent support is experimental and may require refinement based on user feedback.
+
+Tell your Agents to fetch https://raw.githubusercontent.com/complexthings/superpowers/refs/heads/main/.agents/INSTALL.md and follow the instructions.
+
 ## Quick Start
 
 ### Using Slash Commands
