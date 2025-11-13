@@ -1,33 +1,53 @@
-# Superpowers Bootstrap for Codex
+# Superpowers Bootstrap for Agents
 
 <EXTREMELY_IMPORTANT>
-You have superpowers.
+You have superpowers. Superpowers teach you new skills and capabilities.
 
 **Tool for running skills:**
-- `~/.codex/superpowers/.codex/superpowers-codex use-skill <skill-name>`
+- `./.agents/superpowers-agent use-skill <skill-name>`
 
-**Tool Mapping for Codex:**
+**Tool Mapping for GitHub Copilot:**
 When skills reference tools you don't have, substitute your equivalent tools:
-- `TodoWrite` → `update_plan` (your planning/task tracking tool)
-- `Task` tool with subagents → Tell the user that subagents aren't available in Codex yet and you'll do the work the subagent would do
-- `Skill` tool → `~/.codex/superpowers/.codex/superpowers-codex use-skill` command (already available)
-- `Read`, `Write`, `Edit`, `Bash` → Use your native tools with similar functions
+- `TodoWrite` → `manage_todo_list` (your planning/task tracking tool)
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `./.agents/superpowers-agent use-skill` command (already available)
+- `Read`, `Write`, `Edit`, `Bash` → Use your native file and terminal tools
+
+**Tool Mapping for Cursor:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `manage_todo_list` or manual tracking (your planning/task tracking tool)
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `./.agents/superpowers-agent use-skill` command (already available)
+- `Read`, `Write`, `Edit`, `Bash` → Use your native file and terminal tools
+
+**Tool Mapping for Claude Desktop/API:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `manage_todo_list` or manual tracking
+- `Task` tool with subagents → Execute the work yourself
+- `Skill` tool → `./.agents/superpowers-agent use-skill` command (already available)
+- `Read`, `Write`, `Edit`, `Bash` → Use your native file and terminal tools
 
 **Skills naming:**
-- Superpowers skills: `superpowers:skill-name` (from ~/.codex/superpowers/skills/)
-- Personal skills: `skill-name` (from ~/.codex/skills/)
-- Personal skills override superpowers skills when names match
+- Project skills: `skill-name` (from .agents/skills/ - highest priority)
+- Claude skills: `claude:skill-name` (from .claude/skills/)
+- Personal skills: `skill-name` (from ~/.agents/skills/)
+- Superpowers skills: `superpowers:skill-name` (from ~/.agents/superpowers/skills/)
+
+**Skills priority:**
+Project skills override Claude skills, which override personal skills, which override superpowers skills when names match.
 
 **Critical Rules:**
-- Before ANY task, review the skills list (shown below)
-- If a relevant skill exists, you MUST use `~/.codex/superpowers/.codex/superpowers-codex use-skill` to load it
+- Before ANY task, review the skills list (shown at bootstrap)
+- If a relevant skill exists, you MUST use `./.agents/superpowers-agent use-skill` to load it
 - Announce: "I've read the [Skill Name] skill and I'm using it to [purpose]"
-- Skills with checklists require `update_plan` todos for each item
+- Skills with checklists require `manage_todo_list` todos for each item (or manual tracking if unavailable)
 - NEVER skip mandatory workflows (brainstorming before coding, TDD, systematic debugging)
 
 **Skills location:**
-- Superpowers skills: ~/.codex/superpowers/skills/
-- Personal skills: ~/.codex/skills/ (override superpowers when names match)
+- Project skills: .agents/skills/ (project-specific, highest priority)
+- Claude skills: .claude/skills/ (project's existing skill system)
+- Personal skills: ~/.agents/skills/ (your personal cross-project skills)
+- Superpowers skills: ~/.agents/superpowers/skills/ (shared community skills)
 
 IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
 </EXTREMELY_IMPORTANT>
