@@ -46,7 +46,7 @@ Test the installation:
 You should see:
 - GitHub Copilot integration confirmation
 - Skill listings and bootstrap instructions
-- Prompts installed to `~/.github/prompts/`
+- Prompts installed to VS Code User profile
 - Universal instructions installed to `~/.github/copilot-instructions.md`
 
 The system is now ready for use.
@@ -68,9 +68,21 @@ After bootstrap, GitHub Copilot gets:
 
 **Files installed**:
 ```
-~/.github/
-  copilot-instructions.md                       # Universal instructions
-  prompts/
-    superpowers-brainstorming.prompt.md         # /brainstorm-with-superpowers
-    superpowers-writing-skills.prompt.md        # /write-a-skill
+# macOS
+~/Library/Application Support/Code/User/prompts/
+  superpowers-brainstorming.prompt.md         # /brainstorm-with-superpowers
+  superpowers-writing-skills.prompt.md        # /write-a-skill
+
+# Linux
+~/.config/Code/User/prompts/
+  superpowers-brainstorming.prompt.md         # /brainstorm-with-superpowers
+  superpowers-writing-skills.prompt.md        # /write-a-skill
+
+# Windows
+%USERPROFILE%/AppData/Roaming/Code/User/prompts/
+  superpowers-brainstorming.prompt.md         # /brainstorm-with-superpowers
+  superpowers-writing-skills.prompt.md        # /write-a-skill
+
+# All platforms
+~/.github/copilot-instructions.md             # Universal instructions
 ```

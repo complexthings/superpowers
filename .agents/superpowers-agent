@@ -2,12 +2,30 @@
 
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, parse, dirname, relative } from 'path';
-import { homedir } from 'os';
+import { homedir, platform } from 'os';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Get VS Code User profile directory based on platform
+const getVSCodeUserDir = () => {
+    const home = homedir();
+    const plat = platform();
+    
+    switch (plat) {
+        case 'darwin': // macOS
+            return join(home, 'Library', 'Application Support', 'Code', 'User');
+        case 'win32': // Windows
+            return join(home, 'AppData', 'Roaming', 'Code', 'User');
+        case 'linux': // Linux
+            return join(home, '.config', 'Code', 'User');
+        default:
+            // Fallback to Linux path for unknown platforms
+            return join(home, '.config', 'Code', 'User');
+    }
+};
 
 // Detect project root (where .agents directory exists)
 const findProjectRoot = () => {
@@ -27,6 +45,7 @@ const findProjectRoot = () => {
 // Paths configuration
 const paths = {
     home: homedir(),
+    vscodeUserDir: getVSCodeUserDir(),
     projectRoot: findProjectRoot(),
     get projectClaudeSkills() { return join(this.projectRoot, '.claude', 'skills'); },
     get projectAgentsSkills() { return join(this.projectRoot, '.agents', 'skills'); },
@@ -193,7 +212,7 @@ const runFindSkills = () => {
 
 const installCopilotPrompts = () => {
     const promptsSourceDir = join(paths.superpowersRepo, '.github', 'prompts');
-    const promptsDestDir = join(paths.home, '.github', 'prompts');
+    const promptsDestDir = join(paths.vscodeUserDir, 'prompts');
     
     if (!existsSync(promptsSourceDir)) {
         console.log('⚠️  No Copilot prompts to install (source directory not found).');
