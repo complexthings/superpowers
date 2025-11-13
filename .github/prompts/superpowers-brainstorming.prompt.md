@@ -1,6 +1,8 @@
 ---
-name: brainstorm-with-superpowers
-description: Refine ideas into designs through collaborative questioning
+agent: 'agent'
+name: 'brainstorm-with-superpowers'
+description: 'Refine ideas into designs through collaborative questioning'
+
 ---
 
 I'm using the brainstorming skill to help develop your idea.

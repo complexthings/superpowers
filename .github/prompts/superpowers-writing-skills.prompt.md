@@ -1,6 +1,7 @@
 ---
-name: write-a-skill
-description: Create new skills following TDD methodology with subagent testing
+agent: 'agent'
+name: 'write-a-skill'
+description: 'Create new skills following TDD methodology with subagent testing'
 ---
 
 I'm using the writing-skills skill to help create a new skill.
