@@ -49,7 +49,6 @@ const paths = {
     projectRoot: findProjectRoot(),
     get projectClaudeSkills() { return join(this.projectRoot, '.claude', 'skills'); },
     get projectAgentsSkills() { return join(this.projectRoot, '.agents', 'skills'); },
-    get homeSuperpowersSkills() { return join(this.home, '.agents', 'superpowers', 'skills'); },
     get homePersonalSkills() { return join(this.home, '.agents', 'skills'); },
     get bootstrap() { return join(this.projectRoot, '.agents', 'superpowers-bootstrap.md'); },
     get superpowersRepo() { 
@@ -60,7 +59,8 @@ const paths = {
             return join(__dirname, '..');
         }
         return join(this.home, '.agents', 'superpowers');
-    }
+    },
+    get homeSuperpowersSkills() { return join(this.superpowersRepo, 'skills'); }
 };
 
 // Utility functions
@@ -261,8 +261,10 @@ const installCopilotPrompts = () => {
     if (installed > 0) {
         console.log(`\n✓ Installed ${installed} prompt(s) to ${promptsDestDir}`);
         console.log('  Use slash commands in GitHub Copilot:');
-        console.log('    /brainstorm-with-superpowers');
-        console.log('    /write-a-skill');
+        console.log('    /brainstorm-with-superpowers - Refine ideas into designs');
+        console.log('    /write-a-skill - Create new skills with TDD');
+        console.log('    /skills - Discover available skills');
+        console.log('    /use-skill - Load and apply a specific skill');
     }
 };
 

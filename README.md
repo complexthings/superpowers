@@ -2,6 +2,8 @@
 
 A comprehensive skills library of proven techniques, patterns, and workflows for AI coding assistants.
 
+**This is a fork and extension of Jesse Vincent's incredible [Superpowers for Claude Code](https://github.com/obra/superpowers).** Jesse's groundbreaking work and [his amazing blog post](https://blog.fsck.com/2025/10/09/superpowers/) introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Cursor, and other AI coding assistants.
+
 ## What You Get
 
 - **Testing Skills** - TDD, async testing, anti-patterns
@@ -9,76 +11,98 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 - **Collaboration Skills** - Brainstorming, planning, code review, parallel agents
 - **Development Skills** - Git worktrees, finishing branches, subagent workflows
 - **Meta Skills** - Creating, testing, and sharing skills
+- **Utility Commands** - `/skills` to discover available skills, `/use-skill` to load them
 
 Plus:
-- **Slash Commands** - `/superpowers:brainstorm`, `/superpowers:write-plan`, `/superpowers:execute-plan`
+- **Universal Prompts** - Work across GitHub Copilot, Cursor, and other AI assistants
 - **Automatic Integration** - Skills activate automatically when relevant
 - **Consistent Workflows** - Systematic approaches to common engineering tasks
 
-## Learn More
-
-Read the introduction: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
-
 ## Installation
 
-### Claude Code (via Plugin Marketplace)
+### Agent-Agnostic Workflow Support (Recommended)
 
-In Claude Code, register the marketplace first:
+This installation method works with **GitHub Copilot, Cursor, Windsurf, and other AI coding assistants** that support the Model Context Protocol or custom prompts.
+
+**Quick Install:**
+```bash
+mkdir -p ~/.agents/superpowers
+cd ~/.agents/superpowers
+git clone https://github.com/complexthings/superpowers.git .
+~/.agents/superpowers/.agents/superpowers-agent bootstrap
+```
+
+The bootstrap process will:
+1. Install GitHub Copilot slash commands to your VS Code User profile
+2. Install universal instructions for all workspaces
+3. List all available skills
+4. Auto-load the `using-superpowers` skill
+
+**Installed slash commands** (GitHub Copilot):
+- `/brainstorm-with-superpowers` - Interactive design refinement
+- `/write-a-skill` - Create new skills with TDD
+- `/skills` - Discover available skills
+- `/use-skill` - Load and apply a specific skill
+
+See [.agents/INSTALL.md](.agents/INSTALL.md) for detailed installation instructions.
+
+### Alternative: Claude Code Plugin
+
+For Claude Code users, Jesse Vincent's original implementation is available via plugin:
 
 ```bash
 /plugin marketplace add obra/superpowers-marketplace
-```
-
-Then install the plugin from this marketplace:
-
-```bash
 /plugin install superpowers@superpowers-marketplace
 ```
 
-### Verify Installation
+Claude Code commands:
+- `/superpowers:brainstorm` - Interactive design refinement
+- `/superpowers:write-plan` - Create implementation plan
+- `/superpowers:execute-plan` - Execute plan in batches
 
-Check that commands appear:
-
-```bash
-/help
-```
-
-```
-# Should see:
-# /superpowers:brainstorm - Interactive design refinement
-# /superpowers:write-plan - Create implementation plan
-# /superpowers:execute-plan - Execute plan in batches
-```
-
-### Codex (Experimental)
-
-**Note:** Codex support is experimental and may require refinement based on user feedback.
-
-Tell Codex to fetch https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.codex/INSTALL.md and follow the instructions.
-
-### Agents (Experimental)
-
-**Note:** Agent support is experimental and may require refinement based on user feedback.
-
-Tell your Agents to fetch https://raw.githubusercontent.com/complexthings/superpowers/refs/heads/main/.agents/INSTALL.md and follow the instructions.
+**Learn more:** [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/) by Jesse Vincent
 
 ## Quick Start
 
-### Using Slash Commands
+### Discovering Skills
+
+**List all available skills:**
+```
+/skills
+```
+
+Or run directly:
+```bash
+~/.agents/superpowers/.agents/superpowers-agent find-skills
+```
+
+**Search for specific skills:**
+```bash
+~/.agents/superpowers/.agents/superpowers-agent find-skills | grep -i <topic>
+```
+
+### Using Skills
+
+**Load a specific skill:**
+```
+/use-skill superpowers:brainstorming
+```
+
+Or run directly:
+```bash
+~/.agents/superpowers/.agents/superpowers-agent use-skill superpowers:brainstorming
+```
+
+### Common Workflows
 
 **Brainstorm a design:**
 ```
-/superpowers:brainstorm
+/brainstorm-with-superpowers
 ```
 
-**Create an implementation plan:**
+**Create a new skill:**
 ```
-/superpowers:write-plan
-```
-
-**Execute the plan:**
-```
-/superpowers:execute-plan
+/write-a-skill
 ```
 
 ### Automatic Skill Activation
@@ -119,17 +143,28 @@ Skills activate automatically when relevant. For example:
 - **sharing-skills** - Contribute skills back via branch and PR
 - **testing-skills-with-subagents** - Validate skill quality
 - **using-superpowers** - Introduction to the skills system
+- **finding-skills** - Discover and search available skills
+- **using-a-skill** - Load and apply specific skills
 
 ### Commands
 
-All commands are thin wrappers that activate the corresponding skill:
+Commands are thin wrappers that activate the corresponding skill:
 
 - **brainstorm.md** - Activates the `brainstorming` skill
 - **write-plan.md** - Activates the `writing-plans` skill
 - **execute-plan.md** - Activates the `executing-plans` skill
+- **finding-skills.md** - Activates the `finding-skills` utility
+- **using-a-skill.md** - Activates the `using-a-skill` utility
 
 ## How It Works
 
+**For Agent-Agnostic Installation:**
+1. **Bootstrap Process** - Installs prompts and instructions globally
+2. **Skill Discovery** - Finds skills across system, personal, and project locations
+3. **Priority Resolution** - Project skills override personal skills override system skills
+4. **Universal Integration** - Works with GitHub Copilot, Cursor, and other AI assistants
+
+**For Claude Code Plugin:**
 1. **SessionStart Hook** - Loads the `using-superpowers` skill at session start
 2. **Skills System** - Uses Claude Code's first-party skills system
 3. **Automatic Discovery** - Claude finds and uses relevant skills for your task
@@ -153,15 +188,27 @@ Skills live directly in this repository. To contribute:
 4. Use the `testing-skills-with-subagents` skill to validate quality
 5. Submit a PR
 
-See `skills/meta/writing-skills/SKILL.md` for the complete guide.
+See `skills/writing-skills/SKILL.md` for the complete guide.
 
 ## Updating
 
-Skills update automatically when you update the plugin:
+**Agent-Agnostic Installation:**
+```bash
+cd ~/.agents/superpowers
+git pull
+~/.agents/superpowers/.agents/superpowers-agent bootstrap
+```
 
+**Claude Code Plugin:**
 ```bash
 /plugin update superpowers
 ```
+
+## Credits
+
+This project builds on [Jesse Vincent's Superpowers for Claude Code](https://github.com/obra/superpowers). Jesse's pioneering work introduced the concept of systematic, reusable skills for AI agents. Read his excellent blog post: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
+
+This fork extends that vision to support agent-agnostic workflows across multiple AI coding assistants.
 
 ## License
 
@@ -169,5 +216,6 @@ MIT License - see LICENSE file for details
 
 ## Support
 
-- **Issues**: https://github.com/obra/superpowers/issues
-- **Marketplace**: https://github.com/obra/superpowers-marketplace
+- **Issues**: https://github.com/complexthings/superpowers/issues
+- **Original Project**: https://github.com/obra/superpowers
+- **Marketplace** (Claude Code): https://github.com/obra/superpowers-marketplace
