@@ -18,7 +18,17 @@ Plus:
 - **Automatic Integration** - Skills activate automatically when relevant
 - **Consistent Workflows** - Systematic approaches to common engineering tasks
 
-## Installation
+# Installation
+
+## Easy Mode
+
+As your Agent to run the following
+
+```bash
+Run following https://raw.githubusercontent.com/complexthings/superpowers/refs/heads/main/.agents/INSTALL.md and follow all instructions.
+```
+
+## Step by Step
 
 ### Agent-Agnostic Workflow Support (Recommended)
 
