@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterAgentResponse": [
+      {
+        "command": "./hooks/detect-new-conversation.sh"
+      }
+    ],
+    "stop": [
+      {
+        "command": "./hooks/inject-bootstrap.sh"
+      }
+    ]
+  }
+}
+

@@ -357,6 +357,309 @@ const installCursorCommands = () => {
     }
 };
 
+const installCursorHooks = () => {
+    const hooksSourceDir = join(paths.superpowersRepo, 'hooks', 'cursor');
+    const hooksDestDir = join(paths.home, '.cursor', 'hooks');
+    const hooksJsonSource = join(hooksSourceDir, 'hooks.json');
+    const hooksJsonDest = join(paths.home, '.cursor', 'hooks.json');
+
+    if (!existsSync(hooksSourceDir)) {
+        console.log('⚠️  No Cursor hooks to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(hooksDestDir)) {
+            execSync(`mkdir -p "${hooksDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Cursor hooks directory: ${error.message}`);
+        return;
+    }
+
+    // Copy hooks.json
+    try {
+        execSync(`cp "${hooksJsonSource}" "${hooksJsonDest}"`, { stdio: 'pipe' });
+        console.log('  ✓ Installed hooks.json');
+    } catch (error) {
+        console.log(`  ✗ Failed to install hooks.json: ${error.message}`);
+        return;
+    }
+
+    // Copy hook scripts
+    let hookFiles;
+    try {
+        hookFiles = readdirSync(hooksSourceDir)
+            .filter(f => f.endsWith('.sh'));
+    } catch (error) {
+        console.log(`Error reading hooks directory: ${error.message}`);
+        return;
+    }
+
+    if (hookFiles.length === 0) {
+        console.log('⚠️  No hook scripts found to install.');
+        return;
+    }
+
+    console.log('Installing Cursor hooks...');
+    let installed = 0;
+    for (const file of hookFiles) {
+        try {
+            const source = join(hooksSourceDir, file);
+            const dest = join(hooksDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            execSync(`chmod +x "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} hook(s) to ${hooksDestDir}`);
+        console.log('  Cursor will now auto-bootstrap skills at conversation start');
+        console.log('  Restart Cursor for hooks to take effect');
+    }
+};
+
+const installCodexPrompts = () => {
+    const promptsSourceDir = join(paths.superpowersRepo, '.codex', 'prompts');
+    const promptsDestDir = join(paths.home, '.codex', 'prompts');
+
+    if (!existsSync(promptsSourceDir)) {
+        console.log('⚠️  No Codex prompts to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(promptsDestDir)) {
+            execSync(`mkdir -p "${promptsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Codex prompts directory: ${error.message}`);
+        return;
+    }
+
+    // Copy all .md files
+    let promptFiles;
+    try {
+        promptFiles = readdirSync(promptsSourceDir)
+            .filter(f => f.endsWith('.md'));
+    } catch (error) {
+        console.log(`Error reading Codex prompts directory: ${error.message}`);
+        return;
+    }
+
+    if (promptFiles.length === 0) {
+        console.log('⚠️  No prompt files found to install.');
+        return;
+    }
+
+    console.log('Installing OpenAI Codex prompts...');
+    let installed = 0;
+    for (const file of promptFiles) {
+        try {
+            const source = join(promptsSourceDir, file);
+            const dest = join(promptsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} prompt(s) to ${promptsDestDir}`);
+        console.log('  Use slash commands in OpenAI Codex:');
+        console.log('    /prompts:brainstorm - Refine ideas into designs');
+        console.log('    /prompts:write-skill - Create new skills with TDD');
+        console.log('    /prompts:skills - Discover available skills');
+        console.log('    /prompts:use-skill - Load and apply a specific skill');
+        console.log('  Note: Restart Codex or open a new session to reload prompts');
+    }
+};
+
+const installGeminiCommands = () => {
+    const commandsSourceDir = join(paths.superpowersRepo, '.gemini', 'commands');
+    const commandsDestDir = join(paths.home, '.gemini', 'commands');
+
+    if (!existsSync(commandsSourceDir)) {
+        console.log('⚠️  No Gemini commands to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(commandsDestDir)) {
+            execSync(`mkdir -p "${commandsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Gemini commands directory: ${error.message}`);
+        return;
+    }
+
+    // Copy all .toml files
+    let commandFiles;
+    try {
+        commandFiles = readdirSync(commandsSourceDir)
+            .filter(f => f.endsWith('.toml'));
+    } catch (error) {
+        console.log(`Error reading Gemini commands directory: ${error.message}`);
+        return;
+    }
+
+    if (commandFiles.length === 0) {
+        console.log('⚠️  No command files found to install.');
+        return;
+    }
+
+    console.log('Installing Gemini commands...');
+    let installed = 0;
+    for (const file of commandFiles) {
+        try {
+            const source = join(commandsSourceDir, file);
+            const dest = join(commandsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}`);
+        console.log('  Use slash commands in Gemini:');
+        console.log('    /brainstorm-with-superpowers - Refine ideas into designs');
+        console.log('    /write-a-skill - Create new skills with TDD');
+        console.log('    /skills - Discover available skills');
+        console.log('    /use-skill - Load and apply a specific skill');
+    }
+};
+
+const installClaudeCommands = () => {
+    const commandsSourceDir = join(paths.superpowersRepo, 'commands');
+    const commandsDestDir = join(paths.home, '.claude', 'commands');
+
+    if (!existsSync(commandsSourceDir)) {
+        console.log('⚠️  No Claude commands to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(commandsDestDir)) {
+            execSync(`mkdir -p "${commandsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Claude commands directory: ${error.message}`);
+        return;
+    }
+
+    // Copy all .md files
+    let commandFiles;
+    try {
+        commandFiles = readdirSync(commandsSourceDir)
+            .filter(f => f.endsWith('.md'));
+    } catch (error) {
+        console.log(`Error reading Claude commands directory: ${error.message}`);
+        return;
+    }
+
+    if (commandFiles.length === 0) {
+        console.log('⚠️  No command files found to install.');
+        return;
+    }
+
+    console.log('Installing Claude Code commands...');
+    let installed = 0;
+    for (const file of commandFiles) {
+        try {
+            const source = join(commandsSourceDir, file);
+            const dest = join(commandsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}`);
+        console.log('  Use slash commands in Claude Code:');
+        console.log('    /brainstorm - Refine ideas into designs');
+        console.log('    /execute-plan - Execute plans in batches');
+        console.log('    /write-plan - Create implementation plans');
+        console.log('    /skills - Discover available skills');
+        console.log('    /use-skill - Load and apply a specific skill');
+    }
+};
+
+const installOpencodeCommands = () => {
+    const commandsSourceDir = join(paths.superpowersRepo, '.opencode', 'command');
+    const commandsDestDir = join(paths.home, '.config', 'opencode', 'command');
+
+    if (!existsSync(commandsSourceDir)) {
+        console.log('⚠️  No opencode commands to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(commandsDestDir)) {
+            execSync(`mkdir -p "${commandsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating opencode commands directory: ${error.message}`);
+        return;
+    }
+
+    // Copy all .md files
+    let commandFiles;
+    try {
+        commandFiles = readdirSync(commandsSourceDir)
+            .filter(f => f.endsWith('.md'));
+    } catch (error) {
+        console.log(`Error reading opencode commands directory: ${error.message}`);
+        return;
+    }
+
+    if (commandFiles.length === 0) {
+        console.log('⚠️  No command files found to install.');
+        return;
+    }
+
+    console.log('Installing opencode commands...');
+    let installed = 0;
+    for (const file of commandFiles) {
+        try {
+            const source = join(commandsSourceDir, file);
+            const dest = join(commandsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}`);
+        console.log('  Use slash commands in opencode:');
+        console.log('    /brainstorm - Refine ideas into designs');
+        console.log('    /execute-plan - Execute plans in batches');
+        console.log('    /write-plan - Create implementation plans');
+        console.log('    /write-skill - Create new skills with TDD');
+        console.log('    /skills - Discover available skills');
+        console.log('    /use-skill - Load and apply a specific skill');
+    }
+};
+
 const runBootstrap = () => {
     console.log('# Superpowers Bootstrap for Agents');
     console.log('# ==================================');
@@ -371,11 +674,45 @@ const runBootstrap = () => {
     console.log('');
     console.log('---');
     console.log('');
-    
-    // Install Cursor commands
+
+    // Install Cursor integration
     console.log('## Cursor Integration');
     console.log('');
     installCursorCommands();
+    console.log('');
+    installCursorHooks();
+    console.log('');
+    console.log('---');
+    console.log('');
+
+    // Install OpenAI Codex integration
+    console.log('## OpenAI Codex Integration');
+    console.log('');
+    installCodexPrompts();
+    console.log('');
+    console.log('---');
+    console.log('');
+
+    // Install Gemini integration
+    console.log('## Gemini Integration');
+    console.log('');
+    installGeminiCommands();
+    console.log('');
+    console.log('---');
+    console.log('');
+
+    // Install Claude Code integration
+    console.log('## Claude Code Integration');
+    console.log('');
+    installClaudeCommands();
+    console.log('');
+    console.log('---');
+    console.log('');
+
+    // Install opencode integration
+    console.log('## opencode Integration');
+    console.log('');
+    installOpencodeCommands();
     console.log('');
     console.log('---');
     console.log('');
@@ -563,6 +900,11 @@ const commands = {
     'install-copilot-prompts': installCopilotPrompts,
     'install-copilot-instructions': installCopilotInstructions,
     'install-cursor-commands': installCursorCommands,
+    'install-cursor-hooks': installCursorHooks,
+    'install-codex-prompts': installCodexPrompts,
+    'install-gemini-commands': installGeminiCommands,
+    'install-claude-commands': installClaudeCommands,
+    'install-opencode-commands': installOpencodeCommands,
     default: () => {
         console.log('Superpowers for Agents');
         console.log('Usage:');
@@ -572,6 +914,11 @@ const commands = {
         console.log('  .agents/superpowers-agent install-copilot-prompts        # Install GitHub Copilot prompts only');
         console.log('  .agents/superpowers-agent install-copilot-instructions   # Install universal instructions only');
         console.log('  .agents/superpowers-agent install-cursor-commands        # Install Cursor commands only');
+        console.log('  .agents/superpowers-agent install-cursor-hooks           # Install Cursor hooks only');
+        console.log('  .agents/superpowers-agent install-codex-prompts          # Install OpenAI Codex prompts only');
+        console.log('  .agents/superpowers-agent install-gemini-commands        # Install Gemini commands only');
+        console.log('  .agents/superpowers-agent install-claude-commands        # Install Claude Code commands only');
+        console.log('  .agents/superpowers-agent install-opencode-commands      # Install opencode commands only');
         console.log('');
         console.log('Examples:');
         console.log('  .agents/superpowers-agent bootstrap');
