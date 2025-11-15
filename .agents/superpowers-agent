@@ -299,6 +299,64 @@ const installCopilotInstructions = () => {
     }
 };
 
+const installCursorCommands = () => {
+    const commandsSourceDir = join(paths.superpowersRepo, '.cursor', 'commands');
+    const commandsDestDir = join(paths.home, '.cursor', 'commands');
+    
+    if (!existsSync(commandsSourceDir)) {
+        console.log('⚠️  No Cursor commands to install (source directory not found).');
+        return;
+    }
+    
+    // Create destination directory
+    try {
+        if (!existsSync(commandsDestDir)) {
+            execSync(`mkdir -p "${commandsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Cursor commands directory: ${error.message}`);
+        return;
+    }
+    
+    // Copy all .md files
+    let commandFiles;
+    try {
+        commandFiles = readdirSync(commandsSourceDir)
+            .filter(f => f.endsWith('.md'));
+    } catch (error) {
+        console.log(`Error reading Cursor commands directory: ${error.message}`);
+        return;
+    }
+    
+    if (commandFiles.length === 0) {
+        console.log('⚠️  No command files found to install.');
+        return;
+    }
+    
+    console.log('Installing Cursor commands...');
+    let installed = 0;
+    for (const file of commandFiles) {
+        try {
+            const source = join(commandsSourceDir, file);
+            const dest = join(commandsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+    
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}`);
+        console.log('  Use slash commands in Cursor:');
+        console.log('    /brainstorm-with-superpowers - Refine ideas into designs');
+        console.log('    /write-a-skill - Create new skills with TDD');
+        console.log('    /skills - Discover available skills');
+        console.log('    /use-skill - Load and apply a specific skill');
+    }
+};
+
 const runBootstrap = () => {
     console.log('# Superpowers Bootstrap for Agents');
     console.log('# ==================================');
@@ -310,6 +368,14 @@ const runBootstrap = () => {
     installCopilotPrompts();
     console.log('');
     installCopilotInstructions();
+    console.log('');
+    console.log('---');
+    console.log('');
+    
+    // Install Cursor commands
+    console.log('## Cursor Integration');
+    console.log('');
+    installCursorCommands();
     console.log('');
     console.log('---');
     console.log('');
@@ -496,6 +562,7 @@ const commands = {
     'find-skills': runFindSkills,
     'install-copilot-prompts': installCopilotPrompts,
     'install-copilot-instructions': installCopilotInstructions,
+    'install-cursor-commands': installCursorCommands,
     default: () => {
         console.log('Superpowers for Agents');
         console.log('Usage:');
@@ -504,6 +571,7 @@ const commands = {
         console.log('  .agents/superpowers-agent find-skills                    # List all available skills');
         console.log('  .agents/superpowers-agent install-copilot-prompts        # Install GitHub Copilot prompts only');
         console.log('  .agents/superpowers-agent install-copilot-instructions   # Install universal instructions only');
+        console.log('  .agents/superpowers-agent install-cursor-commands        # Install Cursor commands only');
         console.log('');
         console.log('Examples:');
         console.log('  .agents/superpowers-agent bootstrap');
