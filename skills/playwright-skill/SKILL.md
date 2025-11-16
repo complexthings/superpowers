@@ -123,6 +123,25 @@ const browser = await chromium.launch({
 
 Remove `slowMo` and set `headless: true` only when automation is proven stable.
 
+## Red Flags - STOP
+
+If you find yourself thinking:
+- "Selectors are too hard, copy manually" → API_REFERENCE.md has advanced selectors
+- "Authentication is too complex" → API_REFERENCE.md has auth patterns
+- "No time to load reference docs" → 30 seconds to load saves 20 minutes of guessing
+- "Trial and error is faster" → Systematic approach with docs is always faster
+
+**All of these mean: Load API_REFERENCE.md and follow proven patterns.**
+
+## When You're Stuck
+
+| Problem | Wrong Response | Right Response |
+|---------|----------------|----------------|
+| Selector not working | Guess random selectors | Load API_REFERENCE.md, use text/XPath |
+| Auth required | Try to bypass | Load API_REFERENCE.md, implement login flow |
+| Dynamic content | Give up on automation | Use `waitForSelector` with proper timeout |
+| Script fails headless | Assume it's impossible | Debug with `headless: false` first |
+
 ## When NOT to Use
 
 - **Simple HTTP requests** - Use fetch/axios instead
