@@ -22,7 +22,7 @@ const library = process.argv[2];
 
 if (!library) {
   console.error('Usage: node get-docs.js <library> [--topic=<topic>] [--tokens=<limit>]');
-  console.error('Example: node get-docs.js vercel/next.js --topic=ssr --tokens=5000');
+  console.error('Example: node get-docs.js /vercel/next.js --topic=ssr --tokens=5000');
   process.exit(1);
 }
 
@@ -45,9 +45,7 @@ let url = `https://context7.com/api/v1${library}?type=txt`;
 if (topic) {
   url += `&topic=${encodeURIComponent(topic)}`;
 }
-if (tokens) {
-  url += `&tokens=${tokens}`;
-}
+url += `&tokens=${tokens}`;
 
 async function getDocs() {
   try {
