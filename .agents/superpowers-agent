@@ -81,6 +81,61 @@ const checkForUpdates = () => {
     }
 };
 
+const detectTool = (command) => {
+    try {
+        execSync(`which ${command}`, { 
+            stdio: 'pipe',
+            timeout: 2000 
+        });
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+const toolDetection = {
+    opencode: { 
+        check: () => detectTool('opencode'), 
+        cli: true,
+        name: 'OpenCode',
+        installUrl: 'https://opencode.ai/docs/installation',
+        bootstrapCommand: 'install-opencode-commands'
+    },
+    claude: { 
+        check: () => detectTool('claude'), 
+        cli: true,
+        name: 'Claude Code',
+        installUrl: 'https://code.claude.com/docs/en/installation',
+        bootstrapCommand: 'install-claude-commands'
+    },
+    gemini: { 
+        check: () => detectTool('gemini'), 
+        cli: true,
+        name: 'Gemini',
+        installUrl: 'https://cloud.google.com/gemini/docs/cli/install',
+        bootstrapCommand: 'install-gemini-commands'
+    },
+    codex: { 
+        check: () => detectTool('codex'), 
+        cli: true,
+        name: 'Codex',
+        installUrl: 'https://developers.openai.com/codex/docs/installation',
+        bootstrapCommand: 'install-codex-prompts'
+    },
+    cursor: { 
+        check: () => true, 
+        cli: false,
+        name: 'Cursor',
+        bootstrapCommand: 'install-cursor-commands'
+    },
+    copilot: { 
+        check: () => true, 
+        cli: false,
+        name: 'GitHub Copilot',
+        bootstrapCommand: 'install-copilot-prompts'
+    }
+};
+
 const extractFrontmatter = (filePath) => {
     try {
         const content = readFileSync(filePath, 'utf8');
