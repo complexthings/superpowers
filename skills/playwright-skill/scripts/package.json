@@ -1,0 +1,15 @@
+{
+  "name": "playwright-skill-scripts",
+  "version": "1.0.0",
+  "description": "Playwright browser automation scripts",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "scripts": {
+    "setup": "npx playwright install"
+  }
+}
