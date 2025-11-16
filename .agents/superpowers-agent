@@ -720,7 +720,7 @@ const runBootstrap = () => {
     console.log('# ==================================');
     console.log('');
 
-    // Install GitHub Copilot integration
+    // Install GitHub Copilot integration (always, it's IDE-based)
     console.log('## GitHub Copilot Integration');
     console.log('');
     installCopilotPrompts();
@@ -730,7 +730,7 @@ const runBootstrap = () => {
     console.log('---');
     console.log('');
 
-    // Install Cursor integration
+    // Install Cursor integration (always, it's IDE-based)
     console.log('## Cursor Integration');
     console.log('');
     installCursorCommands();
@@ -743,7 +743,15 @@ const runBootstrap = () => {
     // Install OpenAI Codex integration
     console.log('## OpenAI Codex Integration');
     console.log('');
-    installCodexPrompts();
+    const codexDetected = toolDetection.codex.check();
+    if (codexDetected) {
+        installCodexPrompts();
+    } else {
+        console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)`);
+        console.log('💡 To enable Codex integration:');
+        console.log(`   1. Install Codex: ${toolDetection.codex.installUrl}`);
+        console.log(`   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
+    }
     console.log('');
     console.log('---');
     console.log('');
@@ -751,7 +759,15 @@ const runBootstrap = () => {
     // Install Gemini integration
     console.log('## Gemini Integration');
     console.log('');
-    installGeminiCommands();
+    const geminiDetected = toolDetection.gemini.check();
+    if (geminiDetected) {
+        installGeminiCommands();
+    } else {
+        console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)`);
+        console.log('💡 To enable Gemini integration:');
+        console.log(`   1. Install Gemini: ${toolDetection.gemini.installUrl}`);
+        console.log(`   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
+    }
     console.log('');
     console.log('---');
     console.log('');
@@ -759,7 +775,15 @@ const runBootstrap = () => {
     // Install Claude Code integration
     console.log('## Claude Code Integration');
     console.log('');
-    installClaudeCommands();
+    const claudeDetected = toolDetection.claude.check();
+    if (claudeDetected) {
+        installClaudeCommands();
+    } else {
+        console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)`);
+        console.log('💡 To enable Claude Code integration:');
+        console.log(`   1. Install Claude Code: ${toolDetection.claude.installUrl}`);
+        console.log(`   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
+    }
     console.log('');
     console.log('---');
     console.log('');
@@ -767,7 +791,15 @@ const runBootstrap = () => {
     // Install opencode integration
     console.log('## opencode Integration');
     console.log('');
-    installOpencodeCommands();
+    const opencodeDetected = toolDetection.opencode.check();
+    if (opencodeDetected) {
+        installOpencodeCommands();
+    } else {
+        console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)`);
+        console.log('💡 To enable OpenCode integration:');
+        console.log(`   1. Install OpenCode: ${toolDetection.opencode.installUrl}`);
+        console.log(`   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
+    }
     console.log('');
     console.log('---');
     console.log('');
