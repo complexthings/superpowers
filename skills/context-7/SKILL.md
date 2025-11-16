@@ -76,3 +76,22 @@ node skills/context-7/scripts/get-docs.js /react-hook-form/documentation --topic
 - **General web search** - Use browser or web search instead
 - **Non-library documentation** - Use official docs directly
 - **Custom/private code** - No documentation available via Context-7
+
+## Red Flags - STOP
+
+If you find yourself thinking:
+- "API key setup will take too long" → Setup takes 30 seconds, worth it
+- "Skip docs and guess to save time" → Guessing wastes more time on wrong solution
+- "Rate limit means I can't use this" → Wait 60 seconds, tool is designed for this
+- "This is an emergency, skip the tool" → Emergencies need CORRECT fixes, not fast wrong fixes
+
+**All of these mean: Follow the tool workflow anyway.**
+
+## Error Recovery
+
+| Error | Wrong Response | Right Response |
+|-------|----------------|----------------|
+| Missing API key | Skip tool | Ask user, 30 second setup |
+| Rate limit | Give up | Wait 60s, retry with backoff |
+| Library not found | Assume docs don't exist | Try different search query |
+| Network error | Assume API is down | Retry with exponential backoff |
