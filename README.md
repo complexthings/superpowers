@@ -293,14 +293,68 @@ See `skills/writing-skills/SKILL.md` for the complete guide.
 
 ## Updating
 
-**Agent-Agnostic Installation:**
+### Automatic Updates (Default)
+
+Superpowers automatically checks for and applies updates during bootstrap by default:
+
 ```bash
-cd ~/.agents/superpowers
-git pull
 ~/.agents/superpowers/.agents/superpowers-agent bootstrap
 ```
 
-**Claude Code Plugin:**
+**Auto-update behavior:**
+- ✓ Fetches latest changes from GitHub main branch
+- ✓ Only updates if repository is clean (no local modifications)
+- ✓ Intelligently reinstalls only changed integrations (cursor, copilot, etc.)
+- ✓ Skips update if not on main branch or network unavailable
+
+**Skip auto-update for a single run:**
+```bash
+~/.agents/superpowers/.agents/superpowers-agent bootstrap --no-update
+```
+
+### Manual Updates
+
+Update anytime with the dedicated update command:
+
+```bash
+~/.agents/superpowers/.agents/superpowers-agent update
+```
+
+This command:
+- Pulls latest changes from GitHub
+- Detects which integration files changed
+- Reinstalls only affected integrations
+- Shows summary of what was updated
+
+**Update without reinstalling integrations:**
+```bash
+~/.agents/superpowers/.agents/superpowers-agent update --no-reinstall
+```
+
+### Configuration
+
+**Disable auto-update permanently:**
+```bash
+~/.agents/superpowers/.agents/superpowers-agent config-set auto_update false
+```
+
+When disabled, bootstrap will show an "Update Available" message instead of auto-updating.
+
+**Re-enable auto-update:**
+```bash
+~/.agents/superpowers/.agents/superpowers-agent config-set auto_update true
+```
+
+**View current configuration:**
+```bash
+~/.agents/superpowers/.agents/superpowers-agent config-get
+```
+
+Configuration is stored in `~/.agents/superpowers/.config.json` and persists across updates.
+
+### Claude Code Plugin
+
+For Claude Code plugin users:
 ```bash
 /plugin update superpowers
 ```

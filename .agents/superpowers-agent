@@ -392,9 +392,7 @@ const findSkillsInDir = (dir, sourceType, maxDepth = 1) => {
 
 // Commands
 const runFindSkills = () => {
-    console.log('Available skills:');
-    console.log('==================');
-    console.log('');
+    console.log('Available skills:\n==================\n');
 
     const foundSkills = new Set();
     
@@ -417,17 +415,154 @@ const runFindSkills = () => {
         }
     }
 
-    console.log('Usage:');
-    console.log('  .agents/superpowers-agent use-skill <skill-name>   # Load a specific skill');
-    console.log('');
-    console.log('Skill naming:');
-    console.log('  Project skills: skill-name (from .agents/skills/ - highest priority)');
-    console.log('  Claude skills: claude:skill-name (from .claude/skills/)');
-    console.log('  Personal skills: skill-name (from ~/.agents/skills/)');
-    console.log('  Superpowers skills: superpowers:skill-name (from ~/.agents/superpowers/skills/)');
-    console.log('');
-    console.log('Priority: .agents/skills > .claude/skills > ~/.agents/skills > ~/.agents/superpowers/skills');
-    console.log('Note: All skills are disclosed at session start via bootstrap.');
+    console.log(`Usage:
+  .agents/superpowers-agent use-skill <skill-name>   # Load a specific skill
+
+Skill naming:
+  Project skills: skill-name (from .agents/skills/ - highest priority)
+  Claude skills: claude:skill-name (from .claude/skills/)
+  Personal skills: skill-name (from ~/.agents/skills/)
+  Superpowers skills: superpowers:skill-name (from ~/.agents/superpowers/skills/)
+
+Priority: .agents/skills > .claude/skills > ~/.agents/skills > ~/.agents/superpowers/skills
+Note: All skills are disclosed at session start via bootstrap.`);
+};
+
+const findSectionEnd = (content, sectionStart) => {
+    // Find the heading level of the section
+    const headingMatch = content.substring(sectionStart).match(/^(#+)/m);
+    if (!headingMatch) return content.length;
+    
+    const headingLevel = headingMatch[1];
+    
+    // Find next same-level or higher heading, or ---
+    const afterSection = content.substring(sectionStart + headingMatch[0].length);
+    const nextHeadingRegex = new RegExp(`^${headingLevel}+ `, 'm');
+    const hrRegex = /^---+$/m;
+    
+    const nextHeading = afterSection.match(nextHeadingRegex);
+    const nextHr = afterSection.match(hrRegex);
+    
+    if (nextHeading && nextHr) {
+        const endIndex = Math.min(nextHeading.index, nextHr.index);
+        return sectionStart + headingMatch[0].length + endIndex;
+    } else if (nextHeading) {
+        return sectionStart + headingMatch[0].length + nextHeading.index;
+    } else if (nextHr) {
+        return sectionStart + headingMatch[0].length + nextHr.index;
+    }
+    
+    return content.length;
+};
+
+const findSkillsSection = (content) => {
+    // 1. Try markers first
+    const markerRegex = /<!-- SUPERPOWERS_SKILLS_START -->([\s\S]*?)<!-- SUPERPOWERS_SKILLS_END -->/;
+    const markerMatch = content.match(markerRegex);
+    if (markerMatch) {
+        return { 
+            type: 'markers', 
+            start: markerMatch.index, 
+            end: markerMatch.index + markerMatch[0].length 
+        };
+    }
+    
+    // 2. Try pattern detection
+    const patterns = [
+        /^##\s*🎯\s*CRITICAL:\s*SKILLS.*$/im,
+        /^###\s*HOW SKILLS WORK.*$/im,
+        /^##\s*CRITICAL.*SKILLS.*$/im
+    ];
+    
+    for (const pattern of patterns) {
+        const match = content.match(pattern);
+        if (match) {
+            const sectionEnd = findSectionEnd(content, match.index);
+            return { type: 'pattern', start: match.index, end: sectionEnd };
+        }
+    }
+    
+    // 3. Fall back to after first heading
+    const firstHeadingMatch = content.match(/^#+ .+$/m);
+    if (firstHeadingMatch) {
+        const insertPoint = firstHeadingMatch.index + firstHeadingMatch[0].length;
+        return { type: 'after-intro', start: insertPoint, end: insertPoint };
+    }
+    
+    return null;
+};
+
+const extractSkillsSection = (templateContent) => {
+    // If template already has markers, extract content between them
+    const markerRegex = /<!-- SUPERPOWERS_SKILLS_START -->([\s\S]*?)<!-- SUPERPOWERS_SKILLS_END -->/;
+    const match = templateContent.match(markerRegex);
+    if (match) {
+        return match[1].trim();
+    }
+    
+    // Otherwise return the full template (it will get markers added during update)
+    return templateContent.trim();
+};
+
+const updateAgentFile = (filePath, templateContent) => {
+    // 1. Check if file exists
+    if (!existsSync(filePath)) {
+        return { skipped: true, reason: 'File does not exist' };
+    }
+    
+    // 2. Backup existing file
+    const timestamp = new Date().toISOString().split('T')[0];
+    const backupPath = `${filePath}.backup-${timestamp}`;
+    try {
+        execSync(`cp "${filePath}" "${backupPath}"`, { stdio: 'pipe' });
+    } catch (error) {
+        console.log(`⚠️  Could not create backup: ${error.message}\n  Skipping update to preserve existing content`);
+        return { error: true };
+    }
+    
+    // 3. Read current content
+    let currentContent;
+    try {
+        currentContent = readFileSync(filePath, 'utf8');
+    } catch (error) {
+        console.log(`✗ Failed to read ${parse(filePath).base}: ${error.message}`);
+        return { error: true };
+    }
+    
+    // 4. Find skills section
+    const section = findSkillsSection(currentContent);
+    
+    if (!section) {
+        console.log(`⚠️  Could not detect skills section in ${parse(filePath).base}\n  Skipping update to preserve file structure`);
+        return { error: true };
+    }
+    
+    // 5. Prepare template with markers
+    const markedTemplate = `<!-- SUPERPOWERS_SKILLS_START -->\n${templateContent}\n<!-- SUPERPOWERS_SKILLS_END -->`;
+    
+    // 6. Build new content based on detection type
+    let newContent;
+    if (section.type === 'markers' || section.type === 'pattern') {
+        // Replace detected section
+        newContent = currentContent.substring(0, section.start) + 
+                     markedTemplate + 
+                     currentContent.substring(section.end);
+    } else if (section.type === 'after-intro') {
+        // Insert after first heading
+        newContent = currentContent.substring(0, section.start) +
+                     '\n\n' + markedTemplate + '\n\n' +
+                     currentContent.substring(section.start);
+    }
+    
+    // 7. Write updated content
+    try {
+        writeFileSync(filePath, newContent, 'utf8');
+    } catch (error) {
+        console.log(`✗ Failed to write ${parse(filePath).base}: ${error.message}`);
+        return { error: true };
+    }
+    
+    return { updated: true, type: section.type, backup: parse(backupPath).base };
 };
 
 const installCopilotPrompts = () => {
@@ -479,12 +614,7 @@ const installCopilotPrompts = () => {
     }
     
     if (installed > 0) {
-        console.log(`\n✓ Installed ${installed} prompt(s) to ${promptsDestDir}`);
-        console.log('  Use slash commands in GitHub Copilot:');
-        console.log('    /brainstorm-with-superpowers - Refine ideas into designs');
-        console.log('    /write-a-skill - Create new skills with TDD');
-        console.log('    /skills - Discover available skills');
-        console.log('    /use-skill - Load and apply a specific skill');
+        console.log(`\n✓ Installed ${installed} prompt(s) to ${promptsDestDir}\n  Use slash commands in GitHub Copilot:\n    /brainstorm-with-superpowers - Refine ideas into designs\n    /write-a-skill - Create new skills with TDD\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
     }
 };
 
@@ -511,9 +641,7 @@ const installCopilotInstructions = () => {
     // Copy instructions
     try {
         execSync(`cp "${instructionsSource}" "${instructionsDest}"`, { stdio: 'pipe' });
-        console.log('✓ Installed GitHub Copilot universal instructions');
-        console.log(`  Location: ${instructionsDest}`);
-        console.log('  GitHub Copilot will now use Superpowers skills universally in all workspaces');
+        console.log(`✓ Installed GitHub Copilot universal instructions\n  Location: ${instructionsDest}\n  GitHub Copilot will now use Superpowers skills universally in all workspaces`);
     } catch (error) {
         console.log(`✗ Failed to install instructions: ${error.message}`);
     }
@@ -568,12 +696,7 @@ const installCursorCommands = () => {
     }
     
     if (installed > 0) {
-        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}`);
-        console.log('  Use slash commands in Cursor:');
-        console.log('    /brainstorm-with-superpowers - Refine ideas into designs');
-        console.log('    /write-a-skill - Create new skills with TDD');
-        console.log('    /skills - Discover available skills');
-        console.log('    /use-skill - Load and apply a specific skill');
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}\n  Use slash commands in Cursor:\n    /brainstorm-with-superpowers - Refine ideas into designs\n    /write-a-skill - Create new skills with TDD\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
     }
 };
 
@@ -638,9 +761,7 @@ const installCursorHooks = () => {
     }
 
     if (installed > 0) {
-        console.log(`\n✓ Installed ${installed} hook(s) to ${hooksDestDir}`);
-        console.log('  Cursor will now auto-bootstrap skills at conversation start');
-        console.log('  Restart Cursor for hooks to take effect');
+        console.log(`\n✓ Installed ${installed} hook(s) to ${hooksDestDir}\n  Cursor will now auto-bootstrap skills at conversation start\n  Restart Cursor for hooks to take effect`);
     }
 };
 
@@ -693,13 +814,7 @@ const installCodexPrompts = () => {
     }
 
     if (installed > 0) {
-        console.log(`\n✓ Installed ${installed} prompt(s) to ${promptsDestDir}`);
-        console.log('  Use slash commands in OpenAI Codex:');
-        console.log('    /prompts:brainstorm - Refine ideas into designs');
-        console.log('    /prompts:write-skill - Create new skills with TDD');
-        console.log('    /prompts:skills - Discover available skills');
-        console.log('    /prompts:use-skill - Load and apply a specific skill');
-        console.log('  Note: Restart Codex or open a new session to reload prompts');
+        console.log(`\n✓ Installed ${installed} prompt(s) to ${promptsDestDir}\n  Use slash commands in OpenAI Codex:\n    /prompts:brainstorm - Refine ideas into designs\n    /prompts:write-skill - Create new skills with TDD\n    /prompts:skills - Discover available skills\n    /prompts:use-skill - Load and apply a specific skill\n  Note: Restart Codex or open a new session to reload prompts`);
     }
 };
 
@@ -752,12 +867,7 @@ const installGeminiCommands = () => {
     }
 
     if (installed > 0) {
-        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}`);
-        console.log('  Use slash commands in Gemini:');
-        console.log('    /brainstorm-with-superpowers - Refine ideas into designs');
-        console.log('    /write-a-skill - Create new skills with TDD');
-        console.log('    /skills - Discover available skills');
-        console.log('    /use-skill - Load and apply a specific skill');
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}\n  Use slash commands in Gemini:\n    /brainstorm-with-superpowers - Refine ideas into designs\n    /write-a-skill - Create new skills with TDD\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
     }
 };
 
@@ -810,13 +920,7 @@ const installClaudeCommands = () => {
     }
 
     if (installed > 0) {
-        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}`);
-        console.log('  Use slash commands in Claude Code:');
-        console.log('    /brainstorm - Refine ideas into designs');
-        console.log('    /execute-plan - Execute plans in batches');
-        console.log('    /write-plan - Create implementation plans');
-        console.log('    /skills - Discover available skills');
-        console.log('    /use-skill - Load and apply a specific skill');
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}\n  Use slash commands in Claude Code:\n    /brainstorm - Refine ideas into designs\n    /execute-plan - Execute plans in batches\n    /write-plan - Create implementation plans\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
     }
 };
 
@@ -869,20 +973,12 @@ const installOpencodeCommands = () => {
     }
 
     if (installed > 0) {
-        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}`);
-        console.log('  Use slash commands in opencode:');
-        console.log('    /brainstorm - Refine ideas into designs');
-        console.log('    /execute-plan - Execute plans in batches');
-        console.log('    /write-plan - Create implementation plans');
-        console.log('    /write-skill - Create new skills with TDD');
-        console.log('    /skills - Discover available skills');
-        console.log('    /use-skill - Load and apply a specific skill');
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}\n  Use slash commands in opencode:\n    /brainstorm - Refine ideas into designs\n    /execute-plan - Execute plans in batches\n    /write-plan - Create implementation plans\n    /write-skill - Create new skills with TDD\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
     }
 };
 
 const runSetupSkills = () => {
-    console.log('# Setting up Superpowers skills for this project');
-    console.log('');
+    console.log('# Setting up Superpowers skills for this project\n');
 
     const projectRoot = paths.projectRoot;
     const agentsDir = join(projectRoot, '.agents');
@@ -892,9 +988,7 @@ const runSetupSkills = () => {
 
     // Check if template exists
     if (!existsSync(templatePath)) {
-        console.log('✗ Error: AGENTS.md template not found');
-        console.log(`  Expected: ${templatePath}`);
-        console.log('  Please update your Superpowers installation');
+        console.log(`✗ Error: AGENTS.md template not found\n  Expected at: ${templatePath}\n  Please update your Superpowers installation`);
         return;
     }
 
@@ -977,25 +1071,63 @@ const runSetupSkills = () => {
         return;
     }
 
-    console.log('');
-    console.log('# Setup complete!');
-    console.log('');
-    console.log('Your project now has:');
-    console.log('  - .agents/ directory structure');
-    console.log('  - AGENTS.md with universal skills instructions');
-    console.log('  - .agents/skills/ ready for project-specific skills');
-    console.log('');
-    if (existsSync(`${agentsMdPath}.backup-${new Date().toISOString().split('T')[0]}`)) {
-        console.log('💡 Review the backup and new AGENTS.md to merge any custom content');
-        console.log('');
+    // Extract just the skills section for updating other agent files
+    const skillsSectionContent = extractSkillsSection(content);
+
+    // Update CLAUDE.md if it exists
+    const claudeMdPath = join(agentsDir, 'CLAUDE.md');
+    const claudeResult = updateAgentFile(claudeMdPath, skillsSectionContent);
+    if (claudeResult.updated) {
+        console.log(`✓ Updated CLAUDE.md (${claudeResult.type} detection)`);
+        if (claudeResult.backup) {
+            console.log(`  Backed up to ${claudeResult.backup}`);
+        }
+    } else if (claudeResult.skipped) {
+        console.log('ℹ️  Skipped CLAUDE.md (does not exist)');
+    } else if (claudeResult.error) {
+        console.log('⚠️  Failed to update CLAUDE.md');
     }
+
+    // Update GEMINI.md if it exists
+    const geminiMdPath = join(agentsDir, 'GEMINI.md');
+    const geminiResult = updateAgentFile(geminiMdPath, skillsSectionContent);
+    if (geminiResult.updated) {
+        console.log(`✓ Updated GEMINI.md (${geminiResult.type} detection)`);
+        if (geminiResult.backup) {
+            console.log(`  Backed up to ${geminiResult.backup}`);
+        }
+    } else if (geminiResult.skipped) {
+        console.log('ℹ️  Skipped GEMINI.md (does not exist)');
+    } else if (geminiResult.error) {
+        console.log('⚠️  Failed to update GEMINI.md');
+    }
+
+    let setupMessage = `\n# Setup complete!\n\nYour project now has:
+  - .agents/ directory structure
+  - AGENTS.md with universal skills instructions`;
+    if (claudeResult.updated) {
+        setupMessage += '\n  - CLAUDE.md updated with latest skills content';
+    }
+    if (geminiResult.updated) {
+        setupMessage += '\n  - GEMINI.md updated with latest skills content';
+    }
+    setupMessage += '\n  - .agents/skills/ ready for project-specific skills\n';
+    if (existsSync(`${agentsMdPath}.backup-${new Date().toISOString().split('T')[0]}`)) {
+        setupMessage += '\n💡 Review the backup and new AGENTS.md to merge any custom content';
+    }
+    if (claudeResult.backup || geminiResult.backup) {
+        setupMessage += '\n💡 Review backups to verify no custom content was lost';
+    }
+    if (existsSync(`${agentsMdPath}.backup-${new Date().toISOString().split('T')[0]}`) || claudeResult.backup || geminiResult.backup) {
+        setupMessage += '\n';
+    }
+    console.log(setupMessage);
 };
 
 const runUpdate = (options = {}) => {
     const skipReinstall = options.skipReinstall || false;
     
-    console.log('# Checking for Superpowers updates...');
-    console.log('');
+    console.log('# Checking for Superpowers updates...\n');
     
     // 1. Check current state
     const updateInfo = checkForUpdates();
@@ -1012,23 +1144,19 @@ const runUpdate = (options = {}) => {
     
     // 2. Safety check - is repo clean?
     if (updateInfo.hasLocalChanges) {
-        console.log('⚠️  Cannot auto-update: local changes detected');
-        console.log('   Commit or stash your changes first, then run update again');
-        console.log(`   Or manually update: cd ${paths.superpowersRepo} && git pull`);
+        console.log(`⚠️  Cannot auto-update: local changes detected\n   Commit or stash your changes first, then run update again\n   Or manually update: cd ${paths.superpowersRepo} && git pull`);
         return;
     }
     
     // 3. Check if on main branch
     if (!isOnMainBranch()) {
-        console.log('⚠️  Not on main branch, skipping auto-update');
-        console.log(`   Switch to main branch first: cd ${paths.superpowersRepo} && git checkout main`);
+        console.log(`⚠️  Not on main branch, skipping auto-update\n   Switch to main branch first: cd ${paths.superpowersRepo} && git checkout main`);
         return;
     }
     
     // 4. Perform git pull
-    console.log(`📦 Updating from ${updateInfo.currentCommit.substring(0,7)} to ${updateInfo.latestCommit.substring(0,7)}`);
-    console.log(`   (${updateInfo.commitsBehind} new commit${updateInfo.commitsBehind > 1 ? 's' : ''})`);
-    console.log('');
+    console.log(`📦 Updating from ${updateInfo.currentCommit.substring(0,7)} to ${updateInfo.latestCommit.substring(0,7)}
+   (${updateInfo.commitsBehind} new commit${updateInfo.commitsBehind > 1 ? 's' : ''})\n`);
     
     try {
         execSync('git pull origin main', { 
@@ -1038,8 +1166,7 @@ const runUpdate = (options = {}) => {
         });
         console.log('✓ Updated superpowers repository');
     } catch (error) {
-        console.log('✗ Git pull failed:', error.message);
-        console.log('   Please resolve manually and try again');
+        console.log(`✗ Git pull failed: ${error.message}\n   Please resolve manually and try again`);
         return;
     }
     
@@ -1053,24 +1180,19 @@ const runUpdate = (options = {}) => {
     
     // 6. Determine what needs reinstalling
     if (skipReinstall) {
-        console.log('ℹ️  Skipping integration reinstall (--no-reinstall flag)');
-        console.log('');
-        console.log('✓ Update complete!');
+        console.log('ℹ️  Skipping integration reinstall (--no-reinstall flag)\n\n✓ Update complete!');
         return;
     }
     
     const integrationsToReinstall = determineReinstalls(updateInfo.changedFiles);
     
     if (integrationsToReinstall.length === 0) {
-        console.log('ℹ️  No integration files changed, skipping reinstalls');
-        console.log('');
-        console.log('✓ Update complete!');
+        console.log('ℹ️  No integration files changed, skipping reinstalls\n\n✓ Update complete!');
         return;
     }
     
     // 7. Reinstall affected integrations
-    console.log('🔄 Reinstalling updated integrations:');
-    console.log('');
+    console.log('🔄 Reinstalling updated integrations:\n');
     
     const results = [];
     for (const integration of integrationsToReinstall) {
@@ -1100,9 +1222,7 @@ const runUpdate = (options = {}) => {
 };
 
 const runBootstrap = () => {
-    console.log('# Superpowers Bootstrap for Agents');
-    console.log('# ==================================');
-    console.log('');
+    console.log('# Superpowers Bootstrap for Agents\n# ==================================\n');
 
     // Check for --no-update flag
     const noUpdate = process.argv.includes('--no-update');
@@ -1113,165 +1233,107 @@ const runBootstrap = () => {
         const updateInfo = checkForUpdates();
         
         if (updateInfo.error) {
-            console.log('## Update Check');
-            console.log('');
-            console.log('⚠️  Could not check for updates (network issue)');
-            console.log('');
-            console.log('---');
-            console.log('');
+            console.log('## Update Check\n\n⚠️  Could not check for updates (network issue)\n\n---\n');
         } else if (updateInfo.hasUpdates) {
             if (config.auto_update && !updateInfo.hasLocalChanges && isOnMainBranch()) {
-                console.log('## Auto-Update');
-                console.log('');
+                console.log('## Auto-Update\n');
                 runUpdate();
-                console.log('');
-                console.log('---');
-                console.log('');
+                console.log('\n---\n');
             } else {
                 console.log('## Update Available');
                 console.log('');
                 if (updateInfo.hasLocalChanges) {
-                    console.log('⚠️  Your superpowers installation is behind the latest version.');
-                    console.log('    Cannot auto-update: local changes detected');
-                    console.log(`    To update, commit/stash changes then run: \`~/.agents/superpowers/.agents/superpowers-agent update\``);
+                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: local changes detected\n    To update, commit/stash changes then run: `~/.agents/superpowers/.agents/superpowers-agent update`');
                 } else if (!isOnMainBranch()) {
-                    console.log('⚠️  Your superpowers installation is behind the latest version.');
-                    console.log('    Cannot auto-update: not on main branch');
-                    console.log(`    To update, switch to main then run: \`~/.agents/superpowers/.agents/superpowers-agent update\``);
+                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: not on main branch\n    To update, switch to main then run: `~/.agents/superpowers/.agents/superpowers-agent update`');
                 } else {
-                    console.log('⚠️  Your superpowers installation is behind the latest version.');
-                    console.log(`    To update, run: \`~/.agents/superpowers/.agents/superpowers-agent update\``);
-                    console.log('    Or enable auto-update: `~/.agents/superpowers/.agents/superpowers-agent config-set auto_update true`');
+                    console.log(`⚠️  Your superpowers installation is behind the latest version.\n    To update, run: \`~/.agents/superpowers/.agents/superpowers-agent update\`\n    Or enable auto-update: \`~/.agents/superpowers/.agents/superpowers-agent config-set auto_update true\``);
                 }
-                console.log('');
-                console.log('---');
-                console.log('');
+                console.log('\n---\n');
             }
         }
     }
 
     // Install GitHub Copilot integration (always, it's IDE-based)
-    console.log('## GitHub Copilot Integration');
-    console.log('');
+    console.log('## GitHub Copilot Integration\n');
     installCopilotPrompts();
     console.log('');
     installCopilotInstructions();
-    console.log('');
-    console.log('---');
-    console.log('');
+    console.log('\n---\n');
 
     // Install Cursor integration (always, it's IDE-based)
-    console.log('## Cursor Integration');
-    console.log('');
+    console.log('## Cursor Integration\n');
     installCursorCommands();
     console.log('');
     installCursorHooks();
-    console.log('');
-    console.log('---');
-    console.log('');
+    console.log('\n---\n');
 
     // Install OpenAI Codex integration
-    console.log('## OpenAI Codex Integration');
-    console.log('');
+    console.log('## OpenAI Codex Integration\n');
     const codexDetected = toolDetection.codex.check();
     if (codexDetected) {
         installCodexPrompts();
     } else {
-        console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)`);
-        console.log('💡 To enable Codex integration:');
-        console.log(`   1. Install Codex: ${toolDetection.codex.installUrl}`);
-        console.log(`   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
+        console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)\n💡 To enable Codex integration:\n   1. Install Codex: ${toolDetection.codex.installUrl}\n   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
     }
-    console.log('');
-    console.log('---');
-    console.log('');
+    console.log('\n---\n');
 
     // Install Gemini integration
-    console.log('## Gemini Integration');
-    console.log('');
+    console.log('## Gemini Integration\n');
     const geminiDetected = toolDetection.gemini.check();
     if (geminiDetected) {
         installGeminiCommands();
     } else {
-        console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)`);
-        console.log('💡 To enable Gemini integration:');
-        console.log(`   1. Install Gemini: ${toolDetection.gemini.installUrl}`);
-        console.log(`   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
+        console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)\n💡 To enable Gemini integration:\n   1. Install Gemini: ${toolDetection.gemini.installUrl}\n   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
     }
-    console.log('');
-    console.log('---');
-    console.log('');
+    console.log('\n---\n');
 
     // Install Claude Code integration
-    console.log('## Claude Code Integration');
-    console.log('');
+    console.log('## Claude Code Integration\n');
     const claudeDetected = toolDetection.claude.check();
     if (claudeDetected) {
         installClaudeCommands();
     } else {
-        console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)`);
-        console.log('💡 To enable Claude Code integration:');
-        console.log(`   1. Install Claude Code: ${toolDetection.claude.installUrl}`);
-        console.log(`   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
+        console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
     }
-    console.log('');
-    console.log('---');
-    console.log('');
+    console.log('\n---\n');
 
     // Install opencode integration
-    console.log('## opencode Integration');
-    console.log('');
+    console.log('## opencode Integration\n');
     const opencodeDetected = toolDetection.opencode.check();
     if (opencodeDetected) {
         installOpencodeCommands();
     } else {
-        console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)`);
-        console.log('💡 To enable OpenCode integration:');
-        console.log(`   1. Install OpenCode: ${toolDetection.opencode.installUrl}`);
-        console.log(`   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
+        console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
     }
-    console.log('');
-    console.log('---');
-    console.log('');
+    console.log('\n---\n');
 
     // Show bootstrap instructions
     if (existsSync(paths.bootstrap)) {
-        console.log('## Bootstrap Instructions:');
-        console.log('');
+        console.log('## Bootstrap Instructions:\n');
         try {
             const content = readFileSync(paths.bootstrap, 'utf8');
             console.log(content);
         } catch (error) {
             console.log(`Error reading bootstrap file: ${error.message}`);
         }
-        console.log('');
-        console.log('---');
-        console.log('');
+        console.log('\n---\n');
     }
 
     // Show available skills
-    console.log('## Available Skills:');
-    console.log('');
+    console.log('## Available Skills:\n');
     runFindSkills();
-    console.log('');
-    console.log('---');
-    console.log('');
+    console.log('\n---\n');
 
     // Auto-load using-superpowers skill if it exists
     const usingSuperpowersPath = join(paths.homeSuperpowersSkills, 'using-superpowers', 'SKILL.md');
     if (existsSync(usingSuperpowersPath)) {
-        console.log('## Auto-loading superpowers:using-superpowers skill:');
-        console.log('');
+        console.log('## Auto-loading superpowers:using-superpowers skill:\n');
         runUseSkill('superpowers:using-superpowers');
-        console.log('');
-        console.log('---');
-        console.log('');
+        console.log('\n---\n');
     }
 
-    console.log('# Bootstrap Complete!');
-    console.log('# You now have access to all skills.');
-    console.log('# Use ".agents/superpowers-agent use-skill <skill>" to load and apply skills.');
-    console.log('# Remember: If a skill applies to your task, you MUST use it!');
+    console.log('# Bootstrap Complete!\n# You now have access to all skills.\n# Use ".agents/superpowers-agent use-skill <skill>" to load and apply skills.\n# Remember: If a skill applies to your task, you MUST use it!');
 };
 
 const parseSkillName = (skillName) => {
@@ -1359,21 +1421,14 @@ const extractSkillContent = (skillFile) => {
 
 const runUseSkill = (skillName) => {
     if (!skillName) {
-        console.log('Usage: .agents/superpowers-agent use-skill <skill-name>');
-        console.log('Examples:');
-        console.log('  .agents/superpowers-agent use-skill superpowers:brainstorming  # Load superpowers skill');
-        console.log('  .agents/superpowers-agent use-skill claude:persistent-planning # Load claude skill');
-        console.log('  .agents/superpowers-agent use-skill brainstorming              # Load project/personal skill');
-        console.log('  .agents/superpowers-agent use-skill my-custom-skill            # Load project skill');
+        console.log(`Usage: .agents/superpowers-agent use-skill <skill-name>\nExamples:\n  .agents/superpowers-agent use-skill superpowers:brainstorming  # Load superpowers skill\n  .agents/superpowers-agent use-skill claude:persistent-planning # Load claude skill\n  .agents/superpowers-agent use-skill brainstorming              # Load project/personal skill\n  .agents/superpowers-agent use-skill my-custom-skill            # Load project skill`);
         return;
     }
 
     const location = locateSkill(skillName);
     
     if (!location) {
-        console.log(`Error: Skill not found: ${skillName}`);
-        console.log('');
-        console.log('Available skills:');
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
         runFindSkills();
         return;
     }
@@ -1386,16 +1441,139 @@ const runUseSkill = (skillName) => {
         const skillDirectory = dirname(skillFile);
 
         // Display skill header
-        console.log(`# ${frontmatter.name || displayName}`);
-        if (frontmatter.description) console.log(`# ${frontmatter.description}`);
-        if (frontmatter.whenToUse) console.log(`# When to use: ${frontmatter.whenToUse}`);
-        console.log(`# Supporting tools and docs are in ${skillDirectory}`);
-        console.log('# ============================================');
-        console.log('');
-        console.log(content);
+        let header = `# ${frontmatter.name || displayName}`;
+        if (frontmatter.description) header += `\n# ${frontmatter.description}`;
+        if (frontmatter.whenToUse) header += `\n# When to use: ${frontmatter.whenToUse}`;
+        header += `\n# Supporting tools and docs are in ${skillDirectory}\n# ============================================\n\n${content}`;
+        console.log(header);
     } catch (error) {
         console.log(error.message);
     }
+};
+
+const updateReadmeWithAutoUpdateDocs = () => {
+    const readmePath = join(paths.superpowersRepo, 'README.md');
+    
+    if (!existsSync(readmePath)) {
+        console.log('⚠️  README.md not found');
+        return;
+    }
+    
+    const content = readFileSync(readmePath, 'utf8');
+    
+    // Find the "## Updating" section
+    const updatingMatch = content.match(/^## Updating$/m);
+    
+    if (!updatingMatch) {
+        console.log('⚠️  Could not find "## Updating" section in README.md');
+        return;
+    }
+    
+    // Find section boundaries
+    const sectionStart = updatingMatch.index + updatingMatch[0].length;
+    const afterSection = content.substring(sectionStart);
+    const nextSectionMatch = afterSection.match(/^## /m);
+    const sectionEnd = nextSectionMatch 
+        ? sectionStart + nextSectionMatch.index 
+        : content.length;
+    
+    // Build new section content
+    const newSectionContent = `
+
+### Automatic Updates (Default)
+
+Superpowers automatically checks for and applies updates during bootstrap by default:
+
+\`\`\`bash
+~/.agents/superpowers/.agents/superpowers-agent bootstrap
+\`\`\`
+
+**Auto-update behavior:**
+- ✓ Fetches latest changes from GitHub main branch
+- ✓ Only updates if repository is clean (no local modifications)
+- ✓ Intelligently reinstalls only changed integrations (cursor, copilot, etc.)
+- ✓ Skips update if not on main branch or network unavailable
+
+**Skip auto-update for a single run:**
+\`\`\`bash
+~/.agents/superpowers/.agents/superpowers-agent bootstrap --no-update
+\`\`\`
+
+### Manual Updates
+
+Update anytime with the dedicated update command:
+
+\`\`\`bash
+~/.agents/superpowers/.agents/superpowers-agent update
+\`\`\`
+
+This command:
+- Pulls latest changes from GitHub
+- Detects which integration files changed
+- Reinstalls only affected integrations
+- Shows summary of what was updated
+
+**Update without reinstalling integrations:**
+\`\`\`bash
+~/.agents/superpowers/.agents/superpowers-agent update --no-reinstall
+\`\`\`
+
+### Configuration
+
+**Disable auto-update permanently:**
+\`\`\`bash
+~/.agents/superpowers/.agents/superpowers-agent config-set auto_update false
+\`\`\`
+
+When disabled, bootstrap will show an "Update Available" message instead of auto-updating.
+
+**Re-enable auto-update:**
+\`\`\`bash
+~/.agents/superpowers/.agents/superpowers-agent config-set auto_update true
+\`\`\`
+
+**View current configuration:**
+\`\`\`bash
+~/.agents/superpowers/.agents/superpowers-agent config-get
+\`\`\`
+
+Configuration is stored in \`~/.agents/superpowers/.config.json\` and persists across updates.
+
+### Claude Code Plugin
+
+For Claude Code plugin users:
+\`\`\`bash
+/plugin update superpowers
+\`\`\`
+
+`;
+    
+    // Replace section
+    const newContent = content.substring(0, sectionStart) + 
+                       newSectionContent + 
+                       content.substring(sectionEnd);
+    
+    // Backup
+    const timestamp = new Date().toISOString().split('T')[0];
+    const backupPath = `${readmePath}.backup-${timestamp}`;
+    try {
+        execSync(`cp "${readmePath}" "${backupPath}"`, { stdio: 'pipe' });
+    } catch (error) {
+        console.log(`⚠️  Could not create backup: ${error.message}`);
+        return;
+    }
+    
+    // Write
+    try {
+        writeFileSync(readmePath, newContent, 'utf8');
+    } catch (error) {
+        console.log(`✗ Failed to write README.md: ${error.message}`);
+        return;
+    }
+    
+    console.log('✓ Updated README.md with auto-update documentation');
+    console.log(`  Backed up to ${parse(backupPath).base}`);
+    console.log('  See "## Updating" section for new auto-update details');
 };
 
 const runConfigGet = () => {
@@ -1409,14 +1587,14 @@ const runConfigSet = () => {
     const value = process.argv[4];
     
     if (!key || value === undefined) {
-        console.log('Usage: .agents/superpowers-agent config-set <key> <value>');
-        console.log('');
-        console.log('Available keys:');
-        console.log('  auto_update (true/false) - Enable/disable automatic updates during bootstrap');
-        console.log('');
-        console.log('Examples:');
-        console.log('  .agents/superpowers-agent config-set auto_update false');
-        console.log('  .agents/superpowers-agent config-set auto_update true');
+        console.log(`Usage: .agents/superpowers-agent config-set <key> <value>
+
+Available keys:
+  auto_update (true/false) - Enable/disable automatic updates during bootstrap
+
+Examples:
+  .agents/superpowers-agent config-set auto_update false
+  .agents/superpowers-agent config-set auto_update true`);
         return;
     }
     
@@ -1453,32 +1631,32 @@ const commands = {
     'install-claude-commands': installClaudeCommands,
     'install-opencode-commands': installOpencodeCommands,
     default: () => {
-        console.log('Superpowers for Agents');
-        console.log('Usage:');
-        console.log('  .agents/superpowers-agent bootstrap [--no-update]        # Run complete bootstrap with all skills');
-        console.log('  .agents/superpowers-agent update [--no-reinstall]        # Update to latest version from GitHub');
-        console.log('  .agents/superpowers-agent config-get                     # Show current configuration');
-        console.log('  .agents/superpowers-agent config-set <key> <value>       # Update configuration');
-        console.log('  .agents/superpowers-agent setup-skills                   # Initialize project with skills documentation');
-        console.log('  .agents/superpowers-agent use-skill <skill-name>         # Load a specific skill');
-        console.log('  .agents/superpowers-agent find-skills                    # List all available skills');
-        console.log('  .agents/superpowers-agent install-copilot-prompts        # Install GitHub Copilot prompts only');
-        console.log('  .agents/superpowers-agent install-copilot-instructions   # Install universal instructions only');
-        console.log('  .agents/superpowers-agent install-cursor-commands        # Install Cursor commands only');
-        console.log('  .agents/superpowers-agent install-cursor-hooks           # Install Cursor hooks only');
-        console.log('  .agents/superpowers-agent install-codex-prompts          # Install OpenAI Codex prompts only');
-        console.log('  .agents/superpowers-agent install-gemini-commands        # Install Gemini commands only');
-        console.log('  .agents/superpowers-agent install-claude-commands        # Install Claude Code commands only');
-        console.log('  .agents/superpowers-agent install-opencode-commands      # Install opencode commands only');
-        console.log('');
-        console.log('Examples:');
-        console.log('  .agents/superpowers-agent bootstrap                      # Auto-update then bootstrap');
-        console.log('  .agents/superpowers-agent bootstrap --no-update          # Skip update, just bootstrap');
-        console.log('  .agents/superpowers-agent update                         # Update and reinstall changed integrations');
-        console.log('  .agents/superpowers-agent config-set auto_update false   # Disable auto-update');
-        console.log('  .agents/superpowers-agent use-skill superpowers:brainstorming');
-        console.log('  .agents/superpowers-agent use-skill claude:persistent-planning');
-        console.log('  .agents/superpowers-agent use-skill my-custom-skill');
+        console.log(`Superpowers for Agents
+Usage:
+  .agents/superpowers-agent bootstrap [--no-update]        # Run complete bootstrap with all skills
+  .agents/superpowers-agent update [--no-reinstall]        # Update to latest version from GitHub
+  .agents/superpowers-agent config-get                     # Show current configuration
+  .agents/superpowers-agent config-set <key> <value>       # Update configuration
+  .agents/superpowers-agent setup-skills                   # Initialize project with skills documentation
+  .agents/superpowers-agent use-skill <skill-name>         # Load a specific skill
+  .agents/superpowers-agent find-skills                    # List all available skills
+  .agents/superpowers-agent install-copilot-prompts        # Install GitHub Copilot prompts only
+  .agents/superpowers-agent install-copilot-instructions   # Install universal instructions only
+  .agents/superpowers-agent install-cursor-commands        # Install Cursor commands only
+  .agents/superpowers-agent install-cursor-hooks           # Install Cursor hooks only
+  .agents/superpowers-agent install-codex-prompts          # Install OpenAI Codex prompts only
+  .agents/superpowers-agent install-gemini-commands        # Install Gemini commands only
+  .agents/superpowers-agent install-claude-commands        # Install Claude Code commands only
+  .agents/superpowers-agent install-opencode-commands      # Install opencode commands only
+
+Examples:
+  .agents/superpowers-agent bootstrap                      # Auto-update then bootstrap
+  .agents/superpowers-agent bootstrap --no-update          # Skip update, just bootstrap
+  .agents/superpowers-agent update                         # Update and reinstall changed integrations
+  .agents/superpowers-agent config-set auto_update false   # Disable auto-update
+  .agents/superpowers-agent use-skill superpowers:brainstorming
+  .agents/superpowers-agent use-skill claude:persistent-planning
+  .agents/superpowers-agent use-skill my-custom-skill`);
     }
 };
 
