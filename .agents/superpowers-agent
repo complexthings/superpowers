@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
 import { join, parse, dirname, relative } from 'path';
 import { homedir, platform } from 'os';
 import { execSync } from 'child_process';
@@ -715,6 +715,117 @@ const installOpencodeCommands = () => {
     }
 };
 
+const runSetupSkills = () => {
+    console.log('# Setting up Superpowers skills for this project');
+    console.log('');
+
+    const projectRoot = paths.projectRoot;
+    const agentsDir = join(projectRoot, '.agents');
+    const skillsDir = join(agentsDir, 'skills');
+    const agentsMdPath = join(agentsDir, 'AGENTS.md');
+    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'AGENTS.md.template');
+
+    // Check if template exists
+    if (!existsSync(templatePath)) {
+        console.log('✗ Error: AGENTS.md template not found');
+        console.log(`  Expected: ${templatePath}`);
+        console.log('  Please update your Superpowers installation');
+        return;
+    }
+
+    // Create .agents directory
+    if (!existsSync(agentsDir)) {
+        try {
+            execSync(`mkdir -p "${agentsDir}"`, { stdio: 'pipe' });
+            console.log('✓ Created .agents/ directory');
+        } catch (error) {
+            console.log(`✗ Failed to create .agents/ directory: ${error.message}`);
+            return;
+        }
+    } else {
+        console.log('✓ .agents/ directory exists');
+    }
+
+    // Create skills directory
+    if (!existsSync(skillsDir)) {
+        try {
+            execSync(`mkdir -p "${skillsDir}"`, { stdio: 'pipe' });
+            execSync(`touch "${join(skillsDir, '.gitkeep')}"`, { stdio: 'pipe' });
+            console.log('✓ Created .agents/skills/ directory');
+        } catch (error) {
+            console.log(`✗ Failed to create skills directory: ${error.message}`);
+            return;
+        }
+    } else {
+        console.log('✓ .agents/skills/ directory exists');
+    }
+
+    // Handle existing AGENTS.md
+    if (existsSync(agentsMdPath)) {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const backupPath = `${agentsMdPath}.backup-${timestamp}`;
+        try {
+            execSync(`cp "${agentsMdPath}" "${backupPath}"`, { stdio: 'pipe' });
+            console.log(`✓ Backed up existing AGENTS.md to ${parse(backupPath).base}`);
+        } catch (error) {
+            console.log(`✗ Failed to backup AGENTS.md: ${error.message}`);
+            return;
+        }
+    }
+
+    // Read template
+    let template;
+    try {
+        template = readFileSync(templatePath, 'utf8');
+    } catch (error) {
+        console.log(`✗ Failed to read template: ${error.message}`);
+        return;
+    }
+
+    // Replace placeholders
+    const currentDate = new Date().toISOString().split('T')[0];
+    const superpowersPath = paths.superpowersRepo;
+    
+    // Get available skills list
+    let skillsList = '';
+    try {
+        const output = execSync(`"${join(__dirname, 'superpowers-agent')}" find-skills`, {
+            encoding: 'utf8',
+            stdio: 'pipe'
+        });
+        skillsList = '\n```\n' + output + '```\n';
+    } catch {
+        skillsList = '\nRun `~/.agents/superpowers/.agents/superpowers-agent find-skills` to see available skills.\n';
+    }
+
+    let content = template;
+    content = content.replace(/\{\{DATE\}\}/g, currentDate);
+    content = content.replace(/\{\{SUPERPOWERS_PATH\}\}/g, superpowersPath);
+    content = content.replace(/\{\{AVAILABLE_SKILLS_LIST\}\}/g, skillsList);
+
+    // Write AGENTS.md
+    try {
+        writeFileSync(agentsMdPath, content, 'utf8');
+        console.log('✓ Created AGENTS.md from template');
+    } catch (error) {
+        console.log(`✗ Failed to write AGENTS.md: ${error.message}`);
+        return;
+    }
+
+    console.log('');
+    console.log('# Setup complete!');
+    console.log('');
+    console.log('Your project now has:');
+    console.log('  - .agents/ directory structure');
+    console.log('  - AGENTS.md with universal skills instructions');
+    console.log('  - .agents/skills/ ready for project-specific skills');
+    console.log('');
+    if (existsSync(`${agentsMdPath}.backup-${new Date().toISOString().split('T')[0]}`)) {
+        console.log('💡 Review the backup and new AGENTS.md to merge any custom content');
+        console.log('');
+    }
+};
+
 const runBootstrap = () => {
     console.log('# Superpowers Bootstrap for Agents');
     console.log('# ==================================');
@@ -982,6 +1093,7 @@ const runUseSkill = (skillName) => {
 // Command dispatcher
 const commands = {
     bootstrap: runBootstrap,
+    'setup-skills': runSetupSkills,
     'use-skill': () => runUseSkill(process.argv[3]),
     'find-skills': runFindSkills,
     'install-copilot-prompts': installCopilotPrompts,
@@ -996,6 +1108,7 @@ const commands = {
         console.log('Superpowers for Agents');
         console.log('Usage:');
         console.log('  .agents/superpowers-agent bootstrap                      # Run complete bootstrap with all skills');
+        console.log('  .agents/superpowers-agent setup-skills                   # Initialize project with skills documentation');
         console.log('  .agents/superpowers-agent use-skill <skill-name>         # Load a specific skill');
         console.log('  .agents/superpowers-agent find-skills                    # List all available skills');
         console.log('  .agents/superpowers-agent install-copilot-prompts        # Install GitHub Copilot prompts only');
