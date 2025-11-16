@@ -146,6 +146,7 @@ When any slash command runs—no matter which agent it originates from—it invo
 | `/write-skill` | Create new skills following TDD methodology | `.opencode/command/write-skill.md` |
 | `/skills` | Discover and search available skills | `.opencode/command/skills.md` |
 | `/use-skill` | Load a specific skill by name | `.opencode/command/use-skill.md` |
+| `/setup-skills` | Initialize project with skills documentation | `.opencode/command/setup-skills.md` |
 
 Docs: [OpenCode custom commands](https://opencode.ai/docs/commands/)
 
@@ -158,6 +159,7 @@ Docs: [OpenCode custom commands](https://opencode.ai/docs/commands/)
 | `/execute-plan` | Execute implementation plans in batches | `commands/execute-plan.md` |
 | `/finding-skills` | List and search available skills | `commands/finding-skills.md` |
 | `/using-a-skill` | Load a specific skill by name | `commands/using-a-skill.md` |
+| `/setup-skills` | Initialize project with skills documentation | `commands/setup-skills.md` |
 
 Docs: [Claude Code custom slash commands](https://code.claude.com/docs/en/slash-commands#custom-slash-commands)
 
@@ -169,6 +171,7 @@ Docs: [Claude Code custom slash commands](https://code.claude.com/docs/en/slash-
 | `/write-a-skill` | Follow the writing-skills workflow to create a new skill | `.github/prompts/superpowers-writing-skills.prompt.md` |
 | `/skills` | Discover and search all skills | `.github/prompts/superpowers-skills.prompt.md` |
 | `/use-skill` | Load a specific skill by name | `.github/prompts/superpowers-use-skill.prompt.md` |
+| `/setup-skills` | Initialize project with skills documentation | `.github/prompts/superpowers-setup-skills.prompt.md` |
 
 Docs: [VS Code Copilot prompt files](https://code.visualstudio.com/docs/copilot/customization/prompt-files#_create-a-prompt-file)
 
@@ -180,6 +183,7 @@ Docs: [VS Code Copilot prompt files](https://code.visualstudio.com/docs/copilot/
 | `/write-a-skill` | Apply the writing-skills TDD workflow | `.cursor/commands/write-a-skill.md` |
 | `/skills` | Show all skills with search tips | `.cursor/commands/skills.md` |
 | `/use-skill` | Load any skill via the CLI | `.cursor/commands/use-skill.md` |
+| `/setup-skills` | Initialize project with skills documentation | `.cursor/commands/setup-skills.md` |
 
 Docs: [Cursor custom commands](https://cursor.com/docs/agent/chat/commands#creating-commands)
 
@@ -187,10 +191,11 @@ Docs: [Cursor custom commands](https://cursor.com/docs/agent/chat/commands#creat
 
 | Command | Description | Source file |
 | --- | --- | --- |
-| `/brainstorm-with-superpowers` | Refine ideas into designs with the brainstorming skill | `.gemini/prompts/brainstorm-with-superpowers.toml` |
-| `/write-a-skill` | Follow the writing-skills workflow to create a new skill | `.gemini/prompts/write-a-skill.toml` |
-| `/skills` | Discover and search all skills | `.gemini/prompts/skills.toml` |
-| `/use-skill` | Load a specific skill by name | `.gemini/prompts/use-skill.toml` |
+| `/brainstorm-with-superpowers` | Refine ideas into designs with the brainstorming skill | `.gemini/commands/brainstorm-with-superpowers.toml` |
+| `/write-a-skill` | Follow the writing-skills workflow to create a new skill | `.gemini/commands/write-a-skill.toml` |
+| `/skills` | Discover and search all skills | `.gemini/commands/skills.toml` |
+| `/use-skill` | Load a specific skill by name | `.gemini/commands/use-skill.toml` |
+| `/setup-skills` | Initialize project with skills documentation | `.gemini/commands/setup-skills.toml` |
 
 Docs: [Gemini CLI custom slash commands](https://cloud.google.com/blog/topics/developers-practitioners/gemini-cli-custom-slash-commands)
 
@@ -202,6 +207,7 @@ Docs: [Gemini CLI custom slash commands](https://cloud.google.com/blog/topics/de
 | `/write-a-skill` | Create a new skill using writing-skills | `.codex/prompts/write-skill.md` |
 | `/skills` | List and search available skills | `.codex/prompts/skills.md` |
 | `/use-skill` | Load a specific skill by name | `.codex/prompts/use-skill.md` |
+| `/setup-skills` | Initialize project with skills documentation | `.codex/prompts/setup-skills.md` |
 
 Docs: [OpenAI Codex custom slash commands](https://developers.openai.com/codex/guides/slash-commands#create-your-own-slash-commands-with-custom-prompts)
 
