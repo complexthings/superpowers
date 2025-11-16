@@ -64,21 +64,186 @@ const paths = {
 };
 
 // Utility functions
+const getDefaultConfig = () => ({
+    auto_update: true,
+    last_update_check: null,
+    last_updated_commit: null
+});
+
+const readConfig = () => {
+    const configPath = join(paths.superpowersRepo, '.config.json');
+    try {
+        if (!existsSync(configPath)) {
+            return getDefaultConfig();
+        }
+        const content = readFileSync(configPath, 'utf8');
+        return { ...getDefaultConfig(), ...JSON.parse(content) };
+    } catch {
+        return getDefaultConfig();
+    }
+};
+
+const writeConfig = (updates) => {
+    const configPath = join(paths.superpowersRepo, '.config.json');
+    const current = readConfig();
+    const updated = { ...current, ...updates };
+    try {
+        writeFileSync(configPath, JSON.stringify(updated, null, 2));
+    } catch (error) {
+        console.log(`Warning: couldn't save config: ${error.message}`);
+    }
+};
+
+const isRepoClean = () => {
+    try {
+        const output = execSync('git status --porcelain', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe',
+            timeout: 3000
+        });
+        return output.trim().length === 0;
+    } catch {
+        return false;
+    }
+};
+
+const isOnMainBranch = () => {
+    try {
+        const branch = execSync('git rev-parse --abbrev-ref HEAD', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe',
+            timeout: 3000
+        });
+        return branch.trim() === 'main';
+    } catch {
+        return false;
+    }
+};
+
 const checkForUpdates = () => {
     try {
-        const output = execSync('git fetch origin && git status --porcelain=v1 --branch', {
+        // Fetch latest from origin
+        execSync('git fetch origin', {
             cwd: paths.superpowersRepo,
-            timeout: 3000,
+            timeout: 5000,
+            stdio: 'pipe'
+        });
+
+        // Check if repo is clean
+        const hasLocalChanges = !isRepoClean();
+
+        // Get current and latest commits
+        const currentCommit = execSync('git rev-parse HEAD', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe'
+        }).trim();
+
+        const latestCommit = execSync('git rev-parse origin/main', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe'
+        }).trim();
+
+        const hasUpdates = currentCommit !== latestCommit;
+
+        if (!hasUpdates) {
+            return {
+                hasUpdates: false,
+                hasLocalChanges,
+                currentCommit,
+                latestCommit,
+                commitsBehind: 0,
+                changedFiles: []
+            };
+        }
+
+        // Count commits behind
+        const commitsBehind = parseInt(execSync('git rev-list --count HEAD..origin/main', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe'
+        }).trim(), 10);
+
+        // Get changed files
+        const changedFilesOutput = execSync('git diff --name-only HEAD origin/main', {
+            cwd: paths.superpowersRepo,
             encoding: 'utf8',
             stdio: 'pipe'
         });
 
-        return output.split('\n').some(line => 
-            line.startsWith('## ') && line.includes('[behind ')
-        );
+        const changedFiles = changedFilesOutput.trim().split('\n').filter(f => f.length > 0);
+
+        return {
+            hasUpdates: true,
+            hasLocalChanges,
+            currentCommit,
+            latestCommit,
+            commitsBehind,
+            changedFiles
+        };
     } catch {
-        return false;
+        return {
+            hasUpdates: false,
+            hasLocalChanges: false,
+            currentCommit: '',
+            latestCommit: '',
+            commitsBehind: 0,
+            changedFiles: [],
+            error: true
+        };
     }
+};
+
+const determineReinstalls = (changedFiles) => {
+    const integrationMap = {
+        '.github/prompts/': 'copilot-prompts',
+        '.github/copilot-instructions.md': 'copilot-instructions',
+        '.cursor/commands/': 'cursor-commands',
+        'hooks/cursor/': 'cursor-hooks',
+        '.codex/prompts/': 'codex-prompts',
+        '.gemini/commands/': 'gemini-commands',
+        'commands/': 'claude-commands',
+        '.opencode/command/': 'opencode-commands'
+    };
+    
+    const toReinstall = new Set();
+    
+    for (const file of changedFiles) {
+        for (const [pathPrefix, integration] of Object.entries(integrationMap)) {
+            if (file.startsWith(pathPrefix)) {
+                toReinstall.add(integration);
+            }
+        }
+    }
+    
+    return Array.from(toReinstall);
+};
+
+const reinstallIntegration = (integration) => {
+    const installFunctions = {
+        'copilot-prompts': installCopilotPrompts,
+        'copilot-instructions': installCopilotInstructions,
+        'cursor-commands': installCursorCommands,
+        'cursor-hooks': installCursorHooks,
+        'codex-prompts': installCodexPrompts,
+        'gemini-commands': installGeminiCommands,
+        'claude-commands': installClaudeCommands,
+        'opencode-commands': installOpencodeCommands
+    };
+    
+    const installFn = installFunctions[integration];
+    if (installFn) {
+        try {
+            installFn();
+            return { success: true, integration };
+        } catch (error) {
+            return { success: false, integration, error: error.message };
+        }
+    }
+    return { success: false, integration, error: 'Unknown integration' };
 };
 
 const detectTool = (command) => {
@@ -826,10 +991,164 @@ const runSetupSkills = () => {
     }
 };
 
+const runUpdate = (options = {}) => {
+    const skipReinstall = options.skipReinstall || false;
+    
+    console.log('# Checking for Superpowers updates...');
+    console.log('');
+    
+    // 1. Check current state
+    const updateInfo = checkForUpdates();
+    
+    if (updateInfo.error) {
+        console.log('⚠️  Could not check for updates (network issue)');
+        return;
+    }
+    
+    if (!updateInfo.hasUpdates) {
+        console.log('✓ Already up to date');
+        return;
+    }
+    
+    // 2. Safety check - is repo clean?
+    if (updateInfo.hasLocalChanges) {
+        console.log('⚠️  Cannot auto-update: local changes detected');
+        console.log('   Commit or stash your changes first, then run update again');
+        console.log(`   Or manually update: cd ${paths.superpowersRepo} && git pull`);
+        return;
+    }
+    
+    // 3. Check if on main branch
+    if (!isOnMainBranch()) {
+        console.log('⚠️  Not on main branch, skipping auto-update');
+        console.log(`   Switch to main branch first: cd ${paths.superpowersRepo} && git checkout main`);
+        return;
+    }
+    
+    // 4. Perform git pull
+    console.log(`📦 Updating from ${updateInfo.currentCommit.substring(0,7)} to ${updateInfo.latestCommit.substring(0,7)}`);
+    console.log(`   (${updateInfo.commitsBehind} new commit${updateInfo.commitsBehind > 1 ? 's' : ''})`);
+    console.log('');
+    
+    try {
+        execSync('git pull origin main', { 
+            cwd: paths.superpowersRepo, 
+            stdio: 'pipe',
+            timeout: 10000
+        });
+        console.log('✓ Updated superpowers repository');
+    } catch (error) {
+        console.log('✗ Git pull failed:', error.message);
+        console.log('   Please resolve manually and try again');
+        return;
+    }
+    
+    console.log('');
+    
+    // 5. Update config
+    writeConfig({ 
+        last_updated_commit: updateInfo.latestCommit,
+        last_update_check: new Date().toISOString()
+    });
+    
+    // 6. Determine what needs reinstalling
+    if (skipReinstall) {
+        console.log('ℹ️  Skipping integration reinstall (--no-reinstall flag)');
+        console.log('');
+        console.log('✓ Update complete!');
+        return;
+    }
+    
+    const integrationsToReinstall = determineReinstalls(updateInfo.changedFiles);
+    
+    if (integrationsToReinstall.length === 0) {
+        console.log('ℹ️  No integration files changed, skipping reinstalls');
+        console.log('');
+        console.log('✓ Update complete!');
+        return;
+    }
+    
+    // 7. Reinstall affected integrations
+    console.log('🔄 Reinstalling updated integrations:');
+    console.log('');
+    
+    const results = [];
+    for (const integration of integrationsToReinstall) {
+        const result = reinstallIntegration(integration);
+        results.push(result);
+        if (result.success) {
+            console.log(`  ✓ ${integration}`);
+        } else {
+            console.log(`  ✗ ${integration} (${result.error})`);
+        }
+    }
+    
+    console.log('');
+    
+    // 8. Show summary
+    const failures = results.filter(r => !r.success);
+    if (failures.length > 0) {
+        console.log('⚠️  Update completed with errors:');
+        for (const failure of failures) {
+            console.log(`  - ${failure.integration} failed to install`);
+            const commandName = `install-${failure.integration}`;
+            console.log(`    Run manually: ~/.agents/superpowers/.agents/superpowers-agent ${commandName}`);
+        }
+    } else {
+        console.log('✓ Update complete!');
+    }
+};
+
 const runBootstrap = () => {
     console.log('# Superpowers Bootstrap for Agents');
     console.log('# ==================================');
     console.log('');
+
+    // Check for --no-update flag
+    const noUpdate = process.argv.includes('--no-update');
+
+    // Auto-update check
+    if (!noUpdate) {
+        const config = readConfig();
+        const updateInfo = checkForUpdates();
+        
+        if (updateInfo.error) {
+            console.log('## Update Check');
+            console.log('');
+            console.log('⚠️  Could not check for updates (network issue)');
+            console.log('');
+            console.log('---');
+            console.log('');
+        } else if (updateInfo.hasUpdates) {
+            if (config.auto_update && !updateInfo.hasLocalChanges && isOnMainBranch()) {
+                console.log('## Auto-Update');
+                console.log('');
+                runUpdate();
+                console.log('');
+                console.log('---');
+                console.log('');
+            } else {
+                console.log('## Update Available');
+                console.log('');
+                if (updateInfo.hasLocalChanges) {
+                    console.log('⚠️  Your superpowers installation is behind the latest version.');
+                    console.log('    Cannot auto-update: local changes detected');
+                    console.log(`    To update, commit/stash changes then run: \`~/.agents/superpowers/.agents/superpowers-agent update\``);
+                } else if (!isOnMainBranch()) {
+                    console.log('⚠️  Your superpowers installation is behind the latest version.');
+                    console.log('    Cannot auto-update: not on main branch');
+                    console.log(`    To update, switch to main then run: \`~/.agents/superpowers/.agents/superpowers-agent update\``);
+                } else {
+                    console.log('⚠️  Your superpowers installation is behind the latest version.');
+                    console.log(`    To update, run: \`~/.agents/superpowers/.agents/superpowers-agent update\``);
+                    console.log('    Or enable auto-update: `~/.agents/superpowers/.agents/superpowers-agent config-set auto_update true`');
+                }
+                console.log('');
+                console.log('---');
+                console.log('');
+            }
+        }
+    }
 
     // Install GitHub Copilot integration (always, it's IDE-based)
     console.log('## GitHub Copilot Integration');
@@ -914,17 +1233,6 @@ const runBootstrap = () => {
     console.log('');
     console.log('---');
     console.log('');
-
-    // Check for updates
-    if (checkForUpdates()) {
-        console.log('## Update Available');
-        console.log('');
-        console.log('⚠️  Your superpowers installation is behind the latest version.');
-        console.log(`To update, run: \`cd ${paths.superpowersRepo} && git pull\``);
-        console.log('');
-        console.log('---');
-        console.log('');
-    }
 
     // Show bootstrap instructions
     if (existsSync(paths.bootstrap)) {
@@ -1090,9 +1398,49 @@ const runUseSkill = (skillName) => {
     }
 };
 
+const runConfigGet = () => {
+    const config = readConfig();
+    console.log('Current configuration:');
+    console.log(JSON.stringify(config, null, 2));
+};
+
+const runConfigSet = () => {
+    const key = process.argv[3];
+    const value = process.argv[4];
+    
+    if (!key || value === undefined) {
+        console.log('Usage: .agents/superpowers-agent config-set <key> <value>');
+        console.log('');
+        console.log('Available keys:');
+        console.log('  auto_update (true/false) - Enable/disable automatic updates during bootstrap');
+        console.log('');
+        console.log('Examples:');
+        console.log('  .agents/superpowers-agent config-set auto_update false');
+        console.log('  .agents/superpowers-agent config-set auto_update true');
+        return;
+    }
+    
+    // Parse boolean strings
+    let parsedValue = value;
+    if (value === 'true') parsedValue = true;
+    else if (value === 'false') parsedValue = false;
+    
+    const updates = {};
+    updates[key] = parsedValue;
+    writeConfig(updates);
+    
+    console.log(`✓ Set ${key} = ${parsedValue}`);
+};
+
 // Command dispatcher
 const commands = {
     bootstrap: runBootstrap,
+    update: () => {
+        const skipReinstall = process.argv.includes('--no-reinstall');
+        runUpdate({ skipReinstall });
+    },
+    'config-get': runConfigGet,
+    'config-set': runConfigSet,
     'setup-skills': runSetupSkills,
     'use-skill': () => runUseSkill(process.argv[3]),
     'find-skills': runFindSkills,
@@ -1107,7 +1455,10 @@ const commands = {
     default: () => {
         console.log('Superpowers for Agents');
         console.log('Usage:');
-        console.log('  .agents/superpowers-agent bootstrap                      # Run complete bootstrap with all skills');
+        console.log('  .agents/superpowers-agent bootstrap [--no-update]        # Run complete bootstrap with all skills');
+        console.log('  .agents/superpowers-agent update [--no-reinstall]        # Update to latest version from GitHub');
+        console.log('  .agents/superpowers-agent config-get                     # Show current configuration');
+        console.log('  .agents/superpowers-agent config-set <key> <value>       # Update configuration');
         console.log('  .agents/superpowers-agent setup-skills                   # Initialize project with skills documentation');
         console.log('  .agents/superpowers-agent use-skill <skill-name>         # Load a specific skill');
         console.log('  .agents/superpowers-agent find-skills                    # List all available skills');
@@ -1121,7 +1472,10 @@ const commands = {
         console.log('  .agents/superpowers-agent install-opencode-commands      # Install opencode commands only');
         console.log('');
         console.log('Examples:');
-        console.log('  .agents/superpowers-agent bootstrap');
+        console.log('  .agents/superpowers-agent bootstrap                      # Auto-update then bootstrap');
+        console.log('  .agents/superpowers-agent bootstrap --no-update          # Skip update, just bootstrap');
+        console.log('  .agents/superpowers-agent update                         # Update and reinstall changed integrations');
+        console.log('  .agents/superpowers-agent config-set auto_update false   # Disable auto-update');
         console.log('  .agents/superpowers-agent use-skill superpowers:brainstorming');
         console.log('  .agents/superpowers-agent use-skill claude:persistent-planning');
         console.log('  .agents/superpowers-agent use-skill my-custom-skill');
