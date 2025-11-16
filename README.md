@@ -247,6 +247,42 @@ Every table points to files that simply shell out to `superpowers-agent use-skil
 - **finding-skills** - Discover and search available skills
 - **using-a-skill** - Load and apply specific skills
 
+### MCP Replacement Skills
+
+**Context Efficiency** - These skills replace MCP integrations with local code execution, reducing context usage by ~98% per [Anthropic's code-execution-with-mcp guidance](https://www.anthropic.com/engineering/code-execution-with-mcp).
+
+**Context-7** (`skills/context-7/`)
+- **context-7** - Library documentation search via Context-7 API
+  - Search for libraries and fetch documentation
+  - Text-format responses for efficient parsing
+  - Node.js scripts for cross-platform compatibility
+  - Environment variable for API key management
+  - **Setup**: `export CONTEXT7_API_KEY="your-key"` or create `.env` file
+  - **Usage**: `node skills/context-7/scripts/search.js "query"`
+  - **Docs**: `node skills/context-7/scripts/get-docs.js /library/path --topic=feature`
+
+**Playwright** (`skills/playwright-skill/`)
+- **playwright-skill** - Browser automation without MCP overhead
+  - Write custom Playwright scripts for specific tasks
+  - run.js executor handles module resolution
+  - Progressive disclosure (full API reference loads on-demand)
+  - Visible automation by default for debugging
+  - **Setup**: `cd skills/playwright-skill/scripts && npm install && npx playwright install`
+  - **Usage**: `node skills/playwright-skill/scripts/run.js ./your-script.js`
+  - **Reference**: Load `references/API_REFERENCE.md` for advanced features
+
+**Why Skills Instead of MCPs:**
+- **Context reduction**: 150k tokens → 2k tokens (~98.7% savings)
+- **Progressive disclosure**: Load tools on-demand vs upfront
+- **In-environment filtering**: Process data before hitting model context
+- **State persistence**: Reusable scripts, intermediate results
+- **Cross-platform**: Node.js runs on Linux, Mac, Windows
+
+**Dependencies:**
+- Node.js 18+ (for native fetch support)
+- Context-7: API key from https://context7.com
+- Playwright: `npm install` in scripts/ directory
+
 ### Commands
 
 Commands are thin wrappers that activate the corresponding skill:
