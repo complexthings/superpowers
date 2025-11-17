@@ -20,35 +20,35 @@ Plus:
 
 # Installation
 
-## Easy Mode
+## Quick Install (Recommended)
 
-As your Agent to run the following
+Install Superpowers globally with one command:
 
 ```bash
-Run following https://raw.githubusercontent.com/complexthings/superpowers/refs/heads/main/.agents/INSTALL.md and follow all instructions.
+curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
 ```
 
-## Step by Step
-
-### Agent-Agnostic Workflow Support (Recommended)
-
-This installation method works with **OpenCode, GitHub Copilot, Cursor, Windsurf, Gemini, and other AI coding assistants** that support the Model Context Protocol or custom prompts.
-
-**Quick Install:**
+**Security Note:** Always review scripts before running:
 ```bash
-mkdir -p ~/.agents/superpowers
-cd ~/.agents/superpowers
-git clone https://github.com/complexthings/superpowers.git .
-superpowers-agent bootstrap
+curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh -o install.sh
+cat install.sh
+bash install.sh
 ```
 
-The bootstrap process will:
-1. Install GitHub Copilot slash commands to your VS Code User profile
-2. Install universal instructions for all workspaces
-3. List all available skills
-4. Auto-load the `using-superpowers` skill
+The installer will:
+1. Install to `~/.agents/superpowers` (global, works everywhere)
+2. Set up universal aliases: `superpowers` and `superpowers-agent`
+3. Install slash commands for GitHub Copilot, Cursor, Windsurf
+4. Optionally update project files (AGENTS.md, CLAUDE.md, GEMINI.md)
 
-**Installed slash commands**:
+**After installation, you can use Superpowers from anywhere:**
+```bash
+superpowers --help
+superpowers find-skills
+superpowers use-skill systematic-debugging
+```
+
+**Installed slash commands:**
 - `/brainstorm` (or `/brainstorm-with-superpowers`) - Interactive design refinement
 - `/write-skill` (or `/write-a-skill`) - Create new skills with TDD
 - `/skills` - Discover available skills
@@ -56,7 +56,9 @@ The bootstrap process will:
 - `/write-plan` - Create implementation plans
 - `/execute-plan` - Execute plans in batches
 
-See [.agents/INSTALL.md](.agents/INSTALL.md) for detailed installation instructions.
+## Manual Installation
+
+If you prefer manual installation or need project-specific setup, see [.agents/INSTALL.md](.agents/INSTALL.md).
 
 ### Alternative: Claude Code Plugin
 
