@@ -983,7 +983,10 @@ const runSetupSkills = () => {
     const projectRoot = paths.projectRoot;
     const agentsDir = join(projectRoot, '.agents');
     const skillsDir = join(agentsDir, 'skills');
-    const agentsMdPath = join(agentsDir, 'AGENTS.md');
+    const rootAgentsMdPath = join(projectRoot, 'AGENTS.md');
+    const dotAgentsAgentsMdPath = join(agentsDir, 'AGENTS.md');
+    // Prefer root AGENTS.md if it exists, otherwise use .agents/AGENTS.md
+    const agentsMdPath = existsSync(rootAgentsMdPath) ? rootAgentsMdPath : dotAgentsAgentsMdPath;
     const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'AGENTS.md.template');
 
     // Check if template exists
@@ -1065,7 +1068,8 @@ const runSetupSkills = () => {
     // Write AGENTS.md
     try {
         writeFileSync(agentsMdPath, content, 'utf8');
-        console.log('✓ Created AGENTS.md from template');
+        const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
+        console.log(`✓ Created AGENTS.md from template (${agentsMdLocation})`);
     } catch (error) {
         console.log(`✗ Failed to write AGENTS.md: ${error.message}`);
         return;
@@ -1104,7 +1108,7 @@ const runSetupSkills = () => {
 
     let setupMessage = `\n# Setup complete!\n\nYour project now has:
   - .agents/ directory structure
-  - AGENTS.md with universal skills instructions`;
+  - AGENTS.md with universal skills instructions (${agentsMdPath === rootAgentsMdPath ? 'in project root' : 'in .agents/'})`;
     if (claudeResult.updated) {
         setupMessage += '\n  - CLAUDE.md updated with latest skills content';
     }
