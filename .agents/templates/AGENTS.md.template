@@ -11,7 +11,7 @@
 **If the superpowers-agent is not available on the user's system**, run the following to install:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/refs/heads/main/.agents/INSTALL.md | less
+curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
 ```
 
 Read and follow all instructions in the installation guide to set up the superpowers-agent and universal agent-agnostic skills system.
