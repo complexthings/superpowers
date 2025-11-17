@@ -3,7 +3,7 @@
 Initialize this project with Superpowers skills documentation.
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent setup-skills
+superpowers-agent setup-skills
 ```
 
 This creates:

@@ -3,7 +3,7 @@ prompt = """
 I'll load the skill you specified.
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent use-skill {{args}}
+superpowers-agent use-skill {{args}}
 ```
 
 **Skill naming:**

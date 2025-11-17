@@ -21,19 +21,19 @@ Use this skill when you:
 
 **Basic usage:**
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent use-skill <skill-name>
+superpowers-agent use-skill <skill-name>
 ```
 
 **Examples:**
 ```bash
 # Load a system skill
-~/.agents/superpowers/.agents/superpowers-agent use-skill superpowers:brainstorming
+superpowers-agent use-skill superpowers:brainstorming
 
 # Load a Claude skill
-~/.agents/superpowers/.agents/superpowers-agent use-skill claude:persistent-planning
+superpowers-agent use-skill claude:persistent-planning
 
 # Load a project or personal skill (no prefix)
-~/.agents/superpowers/.agents/superpowers-agent use-skill my-custom-skill
+superpowers-agent use-skill my-custom-skill
 ```
 
 ## Skill Naming and Prefixes

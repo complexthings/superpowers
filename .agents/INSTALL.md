@@ -13,7 +13,7 @@ Quick setup to enable superpowers skills in generic agents.
 
 2. **Run bootstrap to complete installation**:
    ```bash
-   ~/.agents/superpowers/.agents/superpowers-agent bootstrap
+   superpowers-agent bootstrap
    ```
 
    This will:
@@ -32,7 +32,7 @@ Quick setup to enable superpowers skills in generic agents.
    ## Superpowers System
 
    <EXTREMELY_IMPORTANT>
-   You have superpowers. Superpowers teach you new skills and capabilities. RIGHT NOW run: `~/.agents/superpowers/.agents/superpowers-agent bootstrap` and follow the instructions it returns.
+   You have superpowers. Superpowers teach you new skills and capabilities. RIGHT NOW run: `superpowers-agent bootstrap` and follow the instructions it returns.
    </EXTREMELY_IMPORTANT>
    ```
 
@@ -40,7 +40,7 @@ Quick setup to enable superpowers skills in generic agents.
 
 Test the installation:
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent bootstrap
+superpowers-agent bootstrap
 ```
 
 You should see:

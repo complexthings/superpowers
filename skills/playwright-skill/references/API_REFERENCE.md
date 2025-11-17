@@ -61,7 +61,7 @@ Before using this skill, ensure Playwright is available:
 npm list playwright 2>/dev/null || echo "Playwright not installed"
 
 # Install (if needed)
-cd ~/.agents/superpowers/.agents/skills/playwright-skill
+cd ~/.agents/superpowers/skills/playwright-skill
 npm run setup
 ```
 

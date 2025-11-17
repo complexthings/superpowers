@@ -7,13 +7,13 @@ This directory contains custom commands for [opencode](https://opencode.ai), ena
 The opencode commands are automatically installed when you run the bootstrap:
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent bootstrap
+superpowers-agent bootstrap
 ```
 
 Or install only the opencode commands:
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent install-opencode-commands
+superpowers-agent install-opencode-commands
 ```
 
 Commands are installed to: `~/.config/opencode/command/`
@@ -96,7 +96,7 @@ $ARGUMENTS
 
 These commands integrate seamlessly with the Superpowers skills system by:
 
-1. Loading the appropriate skill using `~/.agents/superpowers/.agents/superpowers-agent use-skill`
+1. Loading the appropriate skill using `superpowers-agent use-skill`
 2. Following skill-specific workflows and methodologies
 3. Maintaining consistency with other AI environments (Cursor, GitHub Copilot, Claude Code, etc.)
 
@@ -127,7 +127,7 @@ description: My custom command
 # Custom Command
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent use-skill my-skill
+superpowers-agent use-skill my-skill
 ```
 
 $ARGUMENTS

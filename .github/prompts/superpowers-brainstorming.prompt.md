@@ -10,7 +10,7 @@ I'm using the brainstorming skill to help develop your idea.
 First, let me load the skill:
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent use-skill superpowers:brainstorming
+superpowers-agent use-skill superpowers:brainstorming
 ```
 
 Now I'll follow the skill guidance to:

@@ -7,7 +7,7 @@ description: Initialize project with Superpowers skills documentation
 I'll initialize this project with Superpowers skills documentation.
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent setup-skills
+superpowers-agent setup-skills
 ```
 
 This creates:

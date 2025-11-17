@@ -62,7 +62,7 @@ You have superpowers. Superpowers teach you new skills and capabilities.
 - \`/use-skill <skill-name>\` - Load and apply a specific skill
 
 **Command-line tool:**
-\`~/.agents/superpowers/.agents/superpowers-agent <command>\`
+\`superpowers-agent <command>\`
 
 **Common commands:**
 - \`find-skills\` - List all available skills

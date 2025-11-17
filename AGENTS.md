@@ -34,12 +34,12 @@ The SKILL.md file contains detailed instructions that you must follow exactly as
 **BEFORE STARTING ANY TASK, YOU MUST:**
 
 
-0. **Install Superpowers**: If you don't have superpowers installed, run: `~/.agents/superpowers/.agents/superpowers-agent bootstrap`. This will install superpowers and all the skills you need to get started.
-1. **Discovery of Skills**: When a new conversation starts, discover available skills by running: `~/.agents/superpowers/.agents/superpowers-agent find-skills`. This will show you all available skills with their names, paths, and descriptions without loading everything into context.
+0. **Install Superpowers**: If you don't have superpowers installed, run: `superpowers-agent bootstrap`. This will install superpowers and all the skills you need to get started.
+1. **Discovery of Skills**: When a new conversation starts, discover available skills by running: `superpowers-agent find-skills`. This will show you all available skills with their names, paths, and descriptions without loading everything into context.
 2. **Check for relevant Skills**: If a relevant skill exists for your tasks, even if there are more than one, you must read it using your available tools with the full path shown in the results. 
 3. **Selection of Skills**: Use each skill based on its name and description when it feels appropriate to do so.  Think carefully about all the skills available to you and choose the best ones to use.  Note that some skills may reference other skills, so you may need to apply more than one skill to get things done. Some tasks or instructions may also reference skills and require you to use them. 
 4. **Execute the Skill**: When you need to use a skill:
-  - Use `~/.agents/superpowers/.agents/superpowers-agent use-skill {Skill Name}` 
+  - Use `superpowers-agent use-skill {Skill Name}` 
   - Announce you are using the skill by stating: "Using Skill: {Skill Name} to {Purpose}"
   - Follow the fkill's instructions exactly as written.
   - Read any referenced resources or scripts as needed, execute scripts and tools as needed.
