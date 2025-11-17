@@ -1023,7 +1023,9 @@ const runSetupSkills = () => {
     }
 
     // Handle existing AGENTS.md
-    if (existsSync(agentsMdPath)) {
+    const agentsMdExists = existsSync(agentsMdPath);
+    
+    if (agentsMdExists) {
         const timestamp = new Date().toISOString().split('T')[0];
         const backupPath = `${agentsMdPath}.backup-${timestamp}`;
         try {
@@ -1065,18 +1067,32 @@ const runSetupSkills = () => {
     content = content.replace(/\{\{SUPERPOWERS_PATH\}\}/g, superpowersPath);
     content = content.replace(/\{\{AVAILABLE_SKILLS_LIST\}\}/g, skillsList);
 
-    // Write AGENTS.md
-    try {
-        writeFileSync(agentsMdPath, content, 'utf8');
-        const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
-        console.log(`✓ Created AGENTS.md from template (${agentsMdLocation})`);
-    } catch (error) {
-        console.log(`✗ Failed to write AGENTS.md: ${error.message}`);
-        return;
-    }
-
-    // Extract just the skills section for updating other agent files
+    // Extract just the skills section for updating existing files
     const skillsSectionContent = extractSkillsSection(content);
+
+    // Handle AGENTS.md based on whether it exists
+    let agentsMdResult;
+    if (agentsMdExists) {
+        // Update existing AGENTS.md by inserting/updating skills section
+        agentsMdResult = updateAgentFile(agentsMdPath, skillsSectionContent);
+        if (agentsMdResult.updated) {
+            const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
+            console.log(`✓ Updated AGENTS.md with skills section (${agentsMdLocation})`);
+        } else if (agentsMdResult.error) {
+            console.log('⚠️  Failed to update AGENTS.md');
+            return;
+        }
+    } else {
+        // Create new AGENTS.md from full template
+        try {
+            writeFileSync(agentsMdPath, content, 'utf8');
+            const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
+            console.log(`✓ Created AGENTS.md from template (${agentsMdLocation})`);
+        } catch (error) {
+            console.log(`✗ Failed to write AGENTS.md: ${error.message}`);
+            return;
+        }
+    }
 
     // Update CLAUDE.md if it exists
     const claudeMdPath = join(agentsDir, 'CLAUDE.md');
