@@ -100,8 +100,6 @@ Create New Skills by using the skill `writing-skills`, it's recommended users us
 
 Skills will be added to `.agents/skills/` as needed for this project. Check `superpowers-agent find-skills` for the current list of available skills.
 
-{{AVAILABLE_SKILLS_LIST}}
-
 ### Slash Commands
 
 Help users understand they can also use the following slash commands to interact with skills depending on the agent tool the user is using such as `/skills` to list skills, and `/use-skill {Skill Name}` to use a skill.
