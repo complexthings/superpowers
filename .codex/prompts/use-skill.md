@@ -8,7 +8,7 @@ argument-hint: SKILL_NAME="<skill-name>"
 I'll load the skill you specified: $SKILL_NAME
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent use-skill $SKILL_NAME
+superpowers-agent use-skill $SKILL_NAME
 ```
 
 **Skill naming:**

@@ -1059,7 +1059,7 @@ const runSetupSkills = () => {
         });
         skillsList = '\n```\n' + output + '```\n';
     } catch {
-        skillsList = '\nRun `~/.agents/superpowers/.agents/superpowers-agent find-skills` to see available skills.\n';
+        skillsList = '\nRun `superpowers-agent find-skills` to see available skills.\n';
     }
 
     let content = template;
@@ -1227,14 +1227,18 @@ const runUpdate = (options = {}) => {
     
     console.log('');
     
-    // 8. Show summary
+    // 8. Reinstall aliases in case paths changed
+    console.log('\n---\n');
+    installAliases();
+    
+    // 9. Show summary
     const failures = results.filter(r => !r.success);
     if (failures.length > 0) {
         console.log('⚠️  Update completed with errors:');
         for (const failure of failures) {
             console.log(`  - ${failure.integration} failed to install`);
             const commandName = `install-${failure.integration}`;
-            console.log(`    Run manually: ~/.agents/superpowers/.agents/superpowers-agent ${commandName}`);
+            console.log(`    Run manually: superpowers-agent ${commandName}`);
         }
     } else {
         console.log('✓ Update complete!');
@@ -1263,16 +1267,20 @@ const runBootstrap = () => {
                 console.log('## Update Available');
                 console.log('');
                 if (updateInfo.hasLocalChanges) {
-                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: local changes detected\n    To update, commit/stash changes then run: `~/.agents/superpowers/.agents/superpowers-agent update`');
+                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: local changes detected\n    To update, commit/stash changes then run: `superpowers-agent update`');
                 } else if (!isOnMainBranch()) {
-                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: not on main branch\n    To update, switch to main then run: `~/.agents/superpowers/.agents/superpowers-agent update`');
+                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: not on main branch\n    To update, switch to main then run: `superpowers-agent update`');
                 } else {
-                    console.log(`⚠️  Your superpowers installation is behind the latest version.\n    To update, run: \`~/.agents/superpowers/.agents/superpowers-agent update\`\n    Or enable auto-update: \`~/.agents/superpowers/.agents/superpowers-agent config-set auto_update true\``);
+                    console.log(`⚠️  Your superpowers installation is behind the latest version.\n    To update, run: \`superpowers-agent update\`\n    Or enable auto-update: \`superpowers-agent config-set auto_update true\``);
                 }
                 console.log('\n---\n');
             }
         }
     }
+
+    // Install universal aliases
+    installAliases();
+    console.log('---\n');
 
     // Install GitHub Copilot integration (always, it's IDE-based)
     console.log('## GitHub Copilot Integration\n');
@@ -1294,7 +1302,7 @@ const runBootstrap = () => {
     if (codexDetected) {
         installCodexPrompts();
     } else {
-        console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)\n💡 To enable Codex integration:\n   1. Install Codex: ${toolDetection.codex.installUrl}\n   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
+        console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)\n💡 To enable Codex integration:\n   1. Install Codex: ${toolDetection.codex.installUrl}\n   2. Run: superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
     }
     console.log('\n---\n');
 
@@ -1304,7 +1312,7 @@ const runBootstrap = () => {
     if (geminiDetected) {
         installGeminiCommands();
     } else {
-        console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)\n💡 To enable Gemini integration:\n   1. Install Gemini: ${toolDetection.gemini.installUrl}\n   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
+        console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)\n💡 To enable Gemini integration:\n   1. Install Gemini: ${toolDetection.gemini.installUrl}\n   2. Run: superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
     }
     console.log('\n---\n');
 
@@ -1314,7 +1322,7 @@ const runBootstrap = () => {
     if (claudeDetected) {
         installClaudeCommands();
     } else {
-        console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
+        console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
     }
     console.log('\n---\n');
 
@@ -1324,7 +1332,7 @@ const runBootstrap = () => {
     if (opencodeDetected) {
         installOpencodeCommands();
     } else {
-        console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: ~/.agents/superpowers/.agents/superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
+        console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
     }
     console.log('\n---\n');
 
@@ -1505,7 +1513,7 @@ const updateReadmeWithAutoUpdateDocs = () => {
 Superpowers automatically checks for and applies updates during bootstrap by default:
 
 \`\`\`bash
-~/.agents/superpowers/.agents/superpowers-agent bootstrap
+superpowers-agent bootstrap
 \`\`\`
 
 **Auto-update behavior:**
@@ -1516,7 +1524,7 @@ Superpowers automatically checks for and applies updates during bootstrap by def
 
 **Skip auto-update for a single run:**
 \`\`\`bash
-~/.agents/superpowers/.agents/superpowers-agent bootstrap --no-update
+superpowers-agent bootstrap --no-update
 \`\`\`
 
 ### Manual Updates
@@ -1524,7 +1532,7 @@ Superpowers automatically checks for and applies updates during bootstrap by def
 Update anytime with the dedicated update command:
 
 \`\`\`bash
-~/.agents/superpowers/.agents/superpowers-agent update
+superpowers-agent update
 \`\`\`
 
 This command:
@@ -1535,26 +1543,26 @@ This command:
 
 **Update without reinstalling integrations:**
 \`\`\`bash
-~/.agents/superpowers/.agents/superpowers-agent update --no-reinstall
+superpowers-agent update --no-reinstall
 \`\`\`
 
 ### Configuration
 
 **Disable auto-update permanently:**
 \`\`\`bash
-~/.agents/superpowers/.agents/superpowers-agent config-set auto_update false
+superpowers-agent config-set auto_update false
 \`\`\`
 
 When disabled, bootstrap will show an "Update Available" message instead of auto-updating.
 
 **Re-enable auto-update:**
 \`\`\`bash
-~/.agents/superpowers/.agents/superpowers-agent config-set auto_update true
+superpowers-agent config-set auto_update true
 \`\`\`
 
 **View current configuration:**
 \`\`\`bash
-~/.agents/superpowers/.agents/superpowers-agent config-get
+superpowers-agent config-get
 \`\`\`
 
 Configuration is stored in \`~/.agents/superpowers/.config.json\` and persists across updates.
@@ -1595,6 +1603,245 @@ For Claude Code plugin users:
     console.log(`  Backed up to ${parse(backupPath).base}`);
     console.log('  See "## Updating" section for new auto-update details');
 };
+
+// ============================================================================
+// ALIAS INSTALLATION FUNCTIONS
+// ============================================================================
+
+const detectShellProfile = (shell, home) => {
+    // 1. Check for user override
+    if (process.env.PROFILE === '/dev/null') {
+        return null; // User opted out
+    }
+    
+    if (process.env.PROFILE && existsSync(process.env.PROFILE)) {
+        return process.env.PROFILE;
+    }
+    
+    // 2. Shell-specific detection
+    if (shell === 'bash') {
+        const bashrc = join(home, '.bashrc');
+        const bashProfile = join(home, '.bash_profile');
+        if (existsSync(bashrc)) return bashrc;
+        if (existsSync(bashProfile)) return bashProfile;
+    }
+    
+    if (shell === 'zsh') {
+        const zshrc = join(home, '.zshrc');
+        const zprofile = join(home, '.zprofile');
+        if (existsSync(zshrc)) return zshrc;
+        if (existsSync(zprofile)) return zprofile;
+    }
+    
+    if (shell === 'fish') {
+        const fishConfig = join(home, '.config', 'fish', 'config.fish');
+        if (existsSync(fishConfig)) return fishConfig;
+        // Return path anyway, we'll create it
+        return fishConfig;
+    }
+    
+    // 3. Fallback chain
+    const fallbacks = ['.profile', '.bashrc', '.bash_profile', '.zshrc'];
+    for (const file of fallbacks) {
+        const fullPath = join(home, file);
+        if (existsSync(fullPath)) return fullPath;
+    }
+    
+    // 4. Default to .profile (will be created)
+    return join(home, '.profile');
+};
+
+const installViaRCFile = (binDir = null) => {
+    const home = homedir();
+    const shell = (process.env.SHELL || '').split('/').pop();
+    
+    // Detect RC file
+    const profileFile = detectShellProfile(shell, home);
+    
+    if (!profileFile) {
+        console.log('⚠️  Could not detect shell configuration file.\n');
+        console.log('Please add manually to your shell RC file:\n');
+        if (binDir) {
+            console.log(`  export PATH="${binDir}:$PATH"\n`);
+        } else {
+            console.log(`  export PATH="$HOME/.agents/superpowers/.agents:$PATH"\n`);
+        }
+        return { success: false, method: 'manual' };
+    }
+    
+    // Check if already installed
+    try {
+        const content = readFileSync(profileFile, 'utf8');
+        if (content.includes('superpowers')) {
+            console.log(`✅ Aliases already configured in ${profileFile}\n`);
+            return { success: true, method: 'rc-existing' };
+        }
+    } catch (err) {
+        // File doesn't exist, will create
+    }
+    
+    // Determine content to append based on shell
+    const pathToAdd = binDir || '$HOME/.agents/superpowers/.agents';
+    let content;
+    
+    if (shell === 'fish') {
+        content = `\n# Added by Superpowers\nfish_add_path ${pathToAdd}\n`;
+    } else {
+        // bash, zsh, or generic
+        content = `\n# Added by Superpowers\nexport PATH="${pathToAdd}:$PATH"\n`;
+    }
+    
+    // Append to RC file
+    try {
+        const dir = dirname(profileFile);
+        if (!existsSync(dir)) {
+            execSync(`mkdir -p "${dir}"`, { stdio: 'pipe' });
+        }
+        
+        // Append content
+        const existingContent = existsSync(profileFile) ? readFileSync(profileFile, 'utf8') : '';
+        writeFileSync(profileFile, existingContent + content, 'utf8');
+        
+        console.log(`✅ Aliases configured in ${profileFile}\n`);
+        console.log('To use immediately, run:\n');
+        console.log(`  source ${profileFile}\n`);
+        console.log('Or restart your terminal.\n');
+        
+        return { success: true, method: 'rc-file', file: profileFile };
+    } catch (err) {
+        console.log(`⚠️  Could not write to ${profileFile}: ${err.message}\n`);
+        console.log('Please add manually:\n');
+        console.log(content);
+        return { success: false, method: 'manual' };
+    }
+};
+
+const installUnixAliases = () => {
+    const home = homedir();
+    const target = join(home, '.agents', 'superpowers', '.agents', 'superpowers-agent');
+    
+    // Verify target exists
+    if (!existsSync(target)) {
+        console.log('⚠️  Superpowers not installed. Run bootstrap first.\n');
+        return { success: false, method: 'not-installed' };
+    }
+    
+    // ATTEMPT 1: /usr/local/bin
+    try {
+        const binDir = '/usr/local/bin';
+        if (existsSync(binDir)) {
+            execSync(`ln -sf "${target}" "${binDir}/superpowers"`, { stdio: 'pipe' });
+            execSync(`ln -sf "${target}" "${binDir}/superpowers-agent"`, { stdio: 'pipe' });
+            console.log('✅ Aliases installed via symlink in /usr/local/bin\n');
+            console.log('Test with: superpowers find-skills\n');
+            return { success: true, method: 'symlink-system' };
+        }
+    } catch (err) {
+        // Permission denied or directory doesn't exist, try next method
+    }
+    
+    // ATTEMPT 2: ~/.local/bin
+    try {
+        const binDir = join(home, '.local', 'bin');
+        execSync(`mkdir -p "${binDir}"`, { stdio: 'pipe' });
+        execSync(`ln -sf "${target}" "${binDir}/superpowers"`, { stdio: 'pipe' });
+        execSync(`ln -sf "${target}" "${binDir}/superpowers-agent"`, { stdio: 'pipe' });
+        
+        // Check if ~/.local/bin is in PATH
+        const pathDirs = process.env.PATH.split(':');
+        if (pathDirs.includes(binDir)) {
+            console.log('✅ Aliases installed via symlink in ~/.local/bin\n');
+            console.log('Test with: superpowers find-skills\n');
+            return { success: true, method: 'symlink-user' };
+        } else {
+            // Need to add to PATH via RC file
+            console.log('✅ Symlinks created in ~/.local/bin\n');
+            console.log('Adding ~/.local/bin to PATH...\n');
+            return installViaRCFile(binDir);
+        }
+    } catch (err) {
+        // Symlink failed, fall back to RC file
+        console.log('⚠️  Could not create symlinks, using RC file method...\n');
+        return installViaRCFile(null);
+    }
+};
+
+const installWindowsAliases = () => {
+    const home = homedir();
+    const binDir = join(home, '.agents', 'bin');
+    const target = join(home, '.agents', 'superpowers', '.agents', 'superpowers-agent');
+    
+    // Verify target exists
+    if (!existsSync(target)) {
+        console.log('⚠️  Superpowers not installed. Run bootstrap first.\n');
+        return { success: false, method: 'not-installed' };
+    }
+    
+    // Create bin directory
+    try {
+        if (!existsSync(binDir)) {
+            execSync(`mkdir "${binDir}"`, { stdio: 'pipe' });
+        }
+    } catch (err) {
+        console.log(`⚠️  Could not create bin directory: ${err.message}\n`);
+        return { success: false, method: 'failed' };
+    }
+    
+    // Create batch file wrappers
+    const batchContent = `@echo off\nnode "${target}" %*\n`;
+    
+    try {
+        writeFileSync(join(binDir, 'superpowers.bat'), batchContent);
+        writeFileSync(join(binDir, 'superpowers-agent.bat'), batchContent);
+        console.log('✅ Batch file wrappers created\n');
+    } catch (err) {
+        console.log(`⚠️  Could not create batch files: ${err.message}\n`);
+        return { success: false, method: 'failed' };
+    }
+    
+    // Check if bin directory is in PATH
+    const pathDirs = process.env.PATH.split(';');
+    const binDirNormalized = binDir.toLowerCase();
+    const inPath = pathDirs.some(dir => dir.toLowerCase() === binDirNormalized);
+    
+    if (inPath) {
+        console.log('✅ Aliases ready (bin directory already in PATH)\n');
+        console.log('Test with: superpowers find-skills\n');
+        return { success: true, method: 'windows-existing-path' };
+    }
+    
+    // Add to PATH
+    try {
+        execSync(`setx PATH "%PATH%;${binDir}"`, { stdio: 'pipe' });
+        console.log('✅ Added to PATH\n');
+        console.log('Please restart your terminal to use the aliases.\n');
+        console.log('Test with: superpowers find-skills\n');
+        return { success: true, method: 'windows-path-added' };
+    } catch (err) {
+        console.log('⚠️  Could not automatically add to PATH.\n');
+        console.log('Please add manually:\n');
+        console.log(`  1. Open System Properties > Environment Variables\n`);
+        console.log(`  2. Edit user PATH variable\n`);
+        console.log(`  3. Add: ${binDir}\n`);
+        return { success: false, method: 'manual' };
+    }
+};
+
+const installAliases = () => {
+    const plat = platform();
+    
+    console.log('## Installing Universal Aliases\n');
+    
+    if (plat === 'win32') {
+        return installWindowsAliases();
+    } else {
+        return installUnixAliases();
+    }
+};
+
+// ============================================================================
+// CONFIG MANAGEMENT
+// ============================================================================
 
 const runConfigGet = () => {
     const config = readConfig();
@@ -1650,6 +1897,7 @@ const commands = {
     'install-gemini-commands': installGeminiCommands,
     'install-claude-commands': installClaudeCommands,
     'install-opencode-commands': installOpencodeCommands,
+    'install-aliases': installAliases,
     default: () => {
         console.log(`Superpowers for Agents
 Usage:
@@ -1668,6 +1916,7 @@ Usage:
   .agents/superpowers-agent install-gemini-commands        # Install Gemini commands only
   .agents/superpowers-agent install-claude-commands        # Install Claude Code commands only
   .agents/superpowers-agent install-opencode-commands      # Install opencode commands only
+  .agents/superpowers-agent install-aliases                # Install universal aliases (superpowers, superpowers-agent)
 
 Examples:
   .agents/superpowers-agent bootstrap                      # Auto-update then bootstrap

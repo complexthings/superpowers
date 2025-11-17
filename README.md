@@ -39,7 +39,7 @@ This installation method works with **OpenCode, GitHub Copilot, Cursor, Windsurf
 mkdir -p ~/.agents/superpowers
 cd ~/.agents/superpowers
 git clone https://github.com/complexthings/superpowers.git .
-~/.agents/superpowers/.agents/superpowers-agent bootstrap
+superpowers-agent bootstrap
 ```
 
 The bootstrap process will:
@@ -85,12 +85,12 @@ Claude Code commands:
 
 Or run directly:
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent find-skills
+superpowers find-skills
 ```
 
 **Search for specific skills:**
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent find-skills | grep -i <topic>
+superpowers find-skills | grep -i <topic>
 ```
 
 ### Using Skills
@@ -102,7 +102,7 @@ Or run directly:
 
 Or run directly:
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent use-skill superpowers:brainstorming
+superpowers use-skill superpowers:brainstorming
 ```
 
 ### Common Workflows
@@ -126,7 +126,7 @@ Skills activate automatically when relevant. For example:
 
 ## Slash Commands & Skill Priority
 
-Superpowers ships slash-command prompts for OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex so every agent can load the exact same skill definitions. Each command is a thin wrapper around `~/.agents/superpowers/.agents/superpowers-agent use-skill <name>`, so skill discovery always walks the same hierarchy before running anything. This section is the canonical reference for where those commands live in the repo and how the loader resolves conflicts.
+Superpowers ships slash-command prompts for OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex so every agent can load the exact same skill definitions. Each command is a thin wrapper around `superpowers use-skill <name>`, so skill discovery always walks the same hierarchy before running anything. This section is the canonical reference for where those commands live in the repo and how the loader resolves conflicts.
 
 **Skill priority pipeline (first match wins):**
 1. `./skills/` or `.agents/skills/` inside the workspace (project-specific overrides)
@@ -334,7 +334,7 @@ See `skills/writing-skills/SKILL.md` for the complete guide.
 Superpowers automatically checks for and applies updates during bootstrap by default:
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent bootstrap
+superpowers-agent bootstrap
 ```
 
 **Auto-update behavior:**
@@ -345,7 +345,7 @@ Superpowers automatically checks for and applies updates during bootstrap by def
 
 **Skip auto-update for a single run:**
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent bootstrap --no-update
+superpowers-agent bootstrap --no-update
 ```
 
 ### Manual Updates
@@ -353,7 +353,7 @@ Superpowers automatically checks for and applies updates during bootstrap by def
 Update anytime with the dedicated update command:
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent update
+superpowers-agent update
 ```
 
 This command:
@@ -364,26 +364,26 @@ This command:
 
 **Update without reinstalling integrations:**
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent update --no-reinstall
+superpowers update --no-reinstall
 ```
 
 ### Configuration
 
 **Disable auto-update permanently:**
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent config-set auto_update false
+superpowers-agent config-set auto_update false
 ```
 
 When disabled, bootstrap will show an "Update Available" message instead of auto-updating.
 
 **Re-enable auto-update:**
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent config-set auto_update true
+superpowers config-set auto_update true
 ```
 
 **View current configuration:**
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent config-get
+superpowers config-get
 ```
 
 Configuration is stored in `~/.agents/superpowers/.config.json` and persists across updates.

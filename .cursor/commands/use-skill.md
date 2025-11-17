@@ -6,7 +6,7 @@ Load and apply a specific skill by name
 I'll load the skill you specified.
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent use-skill {skill-name}
+superpowers-agent use-skill {skill-name}
 ```
 
 **Skill naming:**

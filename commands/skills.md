@@ -7,7 +7,7 @@ description: Discover and search available skills across all locations
 Let me show you all available skills.
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent find-skills
+superpowers-agent find-skills
 ```
 
 **Skill locations searched:**
@@ -17,7 +17,7 @@ Let me show you all available skills.
 
 **To filter or search**, you can pipe the output:
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent find-skills | grep -i <search-term>
+superpowers-agent find-skills | grep -i <search-term>
 ```
 
 **Examples:**

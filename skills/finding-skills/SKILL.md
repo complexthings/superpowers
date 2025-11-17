@@ -21,7 +21,7 @@ Use this skill when you need to:
 
 **List all skills:**
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent find-skills
+superpowers-agent find-skills
 ```
 
 **Search/filter skills:**
@@ -33,10 +33,10 @@ The CLI command supports filtering by providing search terms that match against:
 Example searches:
 ```bash
 # Find testing-related skills
-~/.agents/superpowers/.agents/superpowers-agent find-skills | grep -i test
+superpowers-agent find-skills | grep -i test
 
 # Find debugging skills
-~/.agents/superpowers/.agents/superpowers-agent find-skills | grep -i debug
+superpowers-agent find-skills | grep -i debug
 ```
 
 ## Skill Locations and Priority

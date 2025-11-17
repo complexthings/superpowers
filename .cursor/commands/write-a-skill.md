@@ -8,7 +8,7 @@ I'm using the writing-skills skill to help create a new skill.
 First, let me load the skill:
 
 ```bash
-~/.agents/superpowers/.agents/superpowers-agent use-skill superpowers:writing-skills
+superpowers-agent use-skill superpowers:writing-skills
 ```
 
 Now I'll follow the TDD cycle for skill creation:
