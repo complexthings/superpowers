@@ -416,7 +416,7 @@ const runFindSkills = () => {
     }
 
     console.log(`Usage:
-  .agents/superpowers-agent use-skill <skill-name>   # Load a specific skill
+  superpowers-agent use-skill <skill-name> # Load a specific skill
 
 Skill naming:
   Project skills: skill-name (from .agents/skills/ - highest priority)
