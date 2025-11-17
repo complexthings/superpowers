@@ -4,27 +4,27 @@
 You have superpowers. Superpowers teach you new skills and capabilities.
 
 **Tool for running skills:**
-- `./.agents/superpowers-agent use-skill <skill-name>`
+- `superpowers-agent use-skill <skill-name>`
 
 **Tool Mapping for GitHub Copilot:**
 When skills reference tools you don't have, substitute your equivalent tools:
 - `TodoWrite` → `manage_todo_list` (your planning/task tracking tool)
 - `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
-- `Skill` tool → `./.agents/superpowers-agent use-skill` command (already available)
+- `Skill` tool → `superpowers-agent use-skill` command (already available)
 - `Read`, `Write`, `Edit`, `Bash` → Use your native file and terminal tools
 
 **Tool Mapping for Cursor:**
 When skills reference tools you don't have, substitute your equivalent tools:
 - `TodoWrite` → `manage_todo_list` or manual tracking (your planning/task tracking tool)
 - `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
-- `Skill` tool → `./.agents/superpowers-agent use-skill` command (already available)
+- `Skill` tool → `superpowers-agent use-skill` command (already available)
 - `Read`, `Write`, `Edit`, `Bash` → Use your native file and terminal tools
 
 **Tool Mapping for Claude Desktop/API:**
 When skills reference tools you don't have, substitute your equivalent tools:
 - `TodoWrite` → `manage_todo_list` or manual tracking
 - `Task` tool with subagents → Execute the work yourself
-- `Skill` tool → `./.agents/superpowers-agent use-skill` command (already available)
+- `Skill` tool → `superpowers-agent use-skill` command (already available)
 - `Read`, `Write`, `Edit`, `Bash` → Use your native file and terminal tools
 
 **Skills naming:**
@@ -38,7 +38,7 @@ Project skills override Claude skills, which override personal skills, which ove
 
 **Critical Rules:**
 - Before ANY task, review the skills list (shown at bootstrap)
-- If a relevant skill exists, you MUST use `./.agents/superpowers-agent use-skill` to load it
+- If a relevant skill exists, you MUST use `superpowers-agent use-skill` to load it
 - Announce: "I've read the [Skill Name] skill and I'm using it to [purpose]"
 - Skills with checklists require `manage_todo_list` todos for each item (or manual tracking if unavailable)
 - NEVER skip mandatory workflows (brainstorming before coding, TDD, systematic debugging)
