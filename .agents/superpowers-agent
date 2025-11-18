@@ -980,7 +980,9 @@ const installOpencodeCommands = () => {
 const runSetupSkills = () => {
     console.log('# Setting up Superpowers skills for this project\n');
 
-    const projectRoot = paths.projectRoot;
+    // ALWAYS use current directory as project root for setup-skills
+    // Don't search upward - we're setting up THIS directory as a new project
+    const projectRoot = process.cwd();
     const agentsDir = join(projectRoot, '.agents');
     const skillsDir = join(agentsDir, 'skills');
     const rootAgentsMdPath = join(projectRoot, 'AGENTS.md');
