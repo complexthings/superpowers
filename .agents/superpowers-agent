@@ -1094,11 +1094,14 @@ const runSetupSkills = () => {
         }
     }
 
-    // Update CLAUDE.md if it exists
-    const claudeMdPath = join(agentsDir, 'CLAUDE.md');
+    // Update CLAUDE.md if it exists (prefer root, then .agents/)
+    const rootClaudeMdPath = join(projectRoot, 'CLAUDE.md');
+    const dotAgentsClaudeMdPath = join(agentsDir, 'CLAUDE.md');
+    const claudeMdPath = existsSync(rootClaudeMdPath) ? rootClaudeMdPath : dotAgentsClaudeMdPath;
     const claudeResult = updateAgentFile(claudeMdPath, skillsSectionContent);
     if (claudeResult.updated) {
-        console.log(`✓ Updated CLAUDE.md (${claudeResult.type} detection)`);
+        const claudeMdLocation = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated CLAUDE.md (${claudeResult.type} detection, ${claudeMdLocation})`);
         if (claudeResult.backup) {
             console.log(`  Backed up to ${claudeResult.backup}`);
         }
@@ -1108,11 +1111,14 @@ const runSetupSkills = () => {
         console.log('⚠️  Failed to update CLAUDE.md');
     }
 
-    // Update GEMINI.md if it exists
-    const geminiMdPath = join(agentsDir, 'GEMINI.md');
+    // Update GEMINI.md if it exists (prefer root, then .agents/)
+    const rootGeminiMdPath = join(projectRoot, 'GEMINI.md');
+    const dotAgentsGeminiMdPath = join(agentsDir, 'GEMINI.md');
+    const geminiMdPath = existsSync(rootGeminiMdPath) ? rootGeminiMdPath : dotAgentsGeminiMdPath;
     const geminiResult = updateAgentFile(geminiMdPath, skillsSectionContent);
     if (geminiResult.updated) {
-        console.log(`✓ Updated GEMINI.md (${geminiResult.type} detection)`);
+        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated GEMINI.md (${geminiResult.type} detection, ${geminiMdLocation})`);
         if (geminiResult.backup) {
             console.log(`  Backed up to ${geminiResult.backup}`);
         }
