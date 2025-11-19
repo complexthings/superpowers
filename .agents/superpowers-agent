@@ -980,7 +980,9 @@ const installOpencodeCommands = () => {
 const runSetupSkills = () => {
     console.log('# Setting up Superpowers skills for this project\n');
 
-    const projectRoot = paths.projectRoot;
+    // ALWAYS use current directory as project root for setup-skills
+    // Don't search upward - we're setting up THIS directory as a new project
+    const projectRoot = process.cwd();
     const agentsDir = join(projectRoot, '.agents');
     const skillsDir = join(agentsDir, 'skills');
     const rootAgentsMdPath = join(projectRoot, 'AGENTS.md');
@@ -1070,35 +1072,38 @@ const runSetupSkills = () => {
     // Extract just the skills section for updating existing files
     const skillsSectionContent = extractSkillsSection(content);
 
-    // Handle AGENTS.md based on whether it exists
-    let agentsMdResult;
+    // Handle AGENTS.md based on whether it exists (don't fail if this doesn't work)
+    let agentsMdResult = { updated: false, created: false };
     if (agentsMdExists) {
         // Update existing AGENTS.md by inserting/updating skills section
-        agentsMdResult = updateAgentFile(agentsMdPath, skillsSectionContent);
-        if (agentsMdResult.updated) {
+        const result = updateAgentFile(agentsMdPath, skillsSectionContent);
+        if (result.updated) {
+            agentsMdResult = { ...result, updated: true };
             const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
             console.log(`✓ Updated AGENTS.md with skills section (${agentsMdLocation})`);
-        } else if (agentsMdResult.error) {
-            console.log('⚠️  Failed to update AGENTS.md');
-            return;
+        } else if (result.error) {
+            console.log('⚠️  Failed to update AGENTS.md (continuing with other files)');
         }
     } else {
-        // Create new AGENTS.md from full template
+        // Create new AGENTS.md from full template (optional, don't fail if it doesn't work)
         try {
             writeFileSync(agentsMdPath, content, 'utf8');
+            agentsMdResult = { updated: false, created: true };
             const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
             console.log(`✓ Created AGENTS.md from template (${agentsMdLocation})`);
         } catch (error) {
-            console.log(`✗ Failed to write AGENTS.md: ${error.message}`);
-            return;
+            console.log(`⚠️  Could not create AGENTS.md: ${error.message} (continuing with other files)`);
         }
     }
 
-    // Update CLAUDE.md if it exists
-    const claudeMdPath = join(agentsDir, 'CLAUDE.md');
+    // Update CLAUDE.md if it exists (prefer root, then .agents/)
+    const rootClaudeMdPath = join(projectRoot, 'CLAUDE.md');
+    const dotAgentsClaudeMdPath = join(agentsDir, 'CLAUDE.md');
+    const claudeMdPath = existsSync(rootClaudeMdPath) ? rootClaudeMdPath : dotAgentsClaudeMdPath;
     const claudeResult = updateAgentFile(claudeMdPath, skillsSectionContent);
     if (claudeResult.updated) {
-        console.log(`✓ Updated CLAUDE.md (${claudeResult.type} detection)`);
+        const claudeMdLocation = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated CLAUDE.md (${claudeResult.type} detection, ${claudeMdLocation})`);
         if (claudeResult.backup) {
             console.log(`  Backed up to ${claudeResult.backup}`);
         }
@@ -1108,11 +1113,14 @@ const runSetupSkills = () => {
         console.log('⚠️  Failed to update CLAUDE.md');
     }
 
-    // Update GEMINI.md if it exists
-    const geminiMdPath = join(agentsDir, 'GEMINI.md');
+    // Update GEMINI.md if it exists (prefer root, then .agents/)
+    const rootGeminiMdPath = join(projectRoot, 'GEMINI.md');
+    const dotAgentsGeminiMdPath = join(agentsDir, 'GEMINI.md');
+    const geminiMdPath = existsSync(rootGeminiMdPath) ? rootGeminiMdPath : dotAgentsGeminiMdPath;
     const geminiResult = updateAgentFile(geminiMdPath, skillsSectionContent);
     if (geminiResult.updated) {
-        console.log(`✓ Updated GEMINI.md (${geminiResult.type} detection)`);
+        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated GEMINI.md (${geminiResult.type} detection, ${geminiMdLocation})`);
         if (geminiResult.backup) {
             console.log(`  Backed up to ${geminiResult.backup}`);
         }
@@ -1122,16 +1130,34 @@ const runSetupSkills = () => {
         console.log('⚠️  Failed to update GEMINI.md');
     }
 
+    // Build dynamic success message based on what was updated
     let setupMessage = `\n# Setup complete!\n\nYour project now has:
-  - .agents/ directory structure
-  - AGENTS.md with universal skills instructions (${agentsMdPath === rootAgentsMdPath ? 'in project root' : 'in .agents/'})`;
+  - .agents/ directory structure`;
+    
+    if (agentsMdResult.updated || agentsMdResult.created) {
+        const action = agentsMdResult.created ? 'created with' : 'updated with';
+        const location = agentsMdPath === rootAgentsMdPath ? 'in project root' : 'in .agents/';
+        setupMessage += `\n  - AGENTS.md ${action} universal skills instructions (${location})`;
+    }
+    
     if (claudeResult.updated) {
-        setupMessage += '\n  - CLAUDE.md updated with latest skills content';
+        const location = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        setupMessage += `\n  - CLAUDE.md updated with latest skills content (${location})`;
     }
+    
     if (geminiResult.updated) {
-        setupMessage += '\n  - GEMINI.md updated with latest skills content';
+        const location = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        setupMessage += `\n  - GEMINI.md updated with latest skills content (${location})`;
     }
+    
     setupMessage += '\n  - .agents/skills/ ready for project-specific skills\n';
+    
+    // Check if any files were actually updated
+    const anyUpdated = agentsMdResult.updated || agentsMdResult.created || claudeResult.updated || geminiResult.updated;
+    if (!anyUpdated) {
+        setupMessage += '\n⚠️  No agent configuration files were found or updated.\n   Consider creating AGENTS.md, CLAUDE.md, or GEMINI.md for your project.\n';
+    }
+    
     if (existsSync(`${agentsMdPath}.backup-${new Date().toISOString().split('T')[0]}`)) {
         setupMessage += '\n💡 Review the backup and new AGENTS.md to merge any custom content';
     }
