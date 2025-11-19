@@ -4,6 +4,8 @@
 
 REMEMBER WHAT YOU ARE INTEGRATED WITH, MOST OF THE TIME YOU ARE INTEGRATED WITH AN IDE DIRECTLY THERE IS NEVER A NEED TO ECHO OR CAT INTO A FILE WITH A HEREDOC OR SIMILAR METHOD UNLESS SPECIFICALLY INSTRUCTED TO DO SO IN THE USER INSTRUCTIONS FOR A TASK. OR AS PART OF A PLATFORM BEST PRACTICE.
 
+<IMPORTANT>All agents and tools (GitHub Copilot, Codex, Gemini, Claude, etc.) must edit files directly with their IDE or file tools instead of piping heredocs via terminal (`cat <<'EOF' > file`, `node -e ... > file`, etc.), especially in VS Code or other Electron-based IDEs where terminal injection can break the environment.</IMPORTANT>
+
 <important>NEVER EVER CAT A HEREDOC TO A FILE IN TERMINAL, YOU MUST USE THE IDE'S FILE WRITING CAPABILITIES INSTEAD.</important>
 
 ## 🎯 CRITICAL: SKILLS (READ THIS FIRST)

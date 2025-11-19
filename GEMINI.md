@@ -2,6 +2,8 @@
 
 This is the Gemini CLI, a comprehensive skills library of proven techniques, patterns, and workflows for AI coding assistants. This is a fork and extension of Jesse Vincent's incredible Superpowers for Claude Code. Jesse's groundbreaking work and his amazing blog post introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Cursor, and other AI coding assistants.
 
+<IMPORTANT>All agents and tools (GitHub Copilot, Codex, Gemini, Claude, etc.) must edit files directly with their IDE or file tools instead of piping heredocs via terminal (`cat <<'EOF' > file`, `node -e ... > file`, etc.), especially in VS Code or other Electron-based IDEs where terminal injection can break the environment.</IMPORTANT>
+
 The project is a structured collection of "skills" defined in Markdown files. These skills provide a systematic approach to common engineering tasks like testing, debugging, collaboration, and more. The project includes a command-line agent (`superpowers-agent`) that allows users to discover, use, and manage these skills.
 
 ## Key Files
