@@ -4,6 +4,20 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 **This is a fork and extension of Jesse Vincent's incredible [Superpowers for Claude Code](https://github.com/obra/superpowers).** Jesse's groundbreaking work and [his amazing blog post](https://blog.fsck.com/2025/10/09/superpowers/) introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Cursor, Gemini, and other AI coding assistants.
 
+## What's New
+
+**November 2025 Updates:**
+
+- 🎯 **Smart Skill Matching** - Just type `superpowers use-skill brainstorming` instead of the full `superpowers:collaboration/brainstorming` path. Suffix matching with priority resolution makes skill loading much more convenient.
+
+- 🚀 **One-Line Installer** - Install globally with `curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash`. Sets up universal aliases, slash commands, and optional project integration automatically.
+
+- 🔧 **MCP Replacement Skills** - New `context-7` and `playwright-skill` provide library documentation search and browser automation without MCP overhead (~98% context reduction).
+
+- 📝 **Setup Skills Command** - New `/setup-skills` command initializes projects with AGENTS.md, CLAUDE.md, and GEMINI.md instruction files automatically.
+
+- 🛠️ **Universal CLI Tools Skill** - `leveraging-cli-tools` skill teaches agents to use high-performance tools (rg, jq, fd, bat, ast-grep) for 5-50x speedups.
+
 ## What You Get
 
 - **Testing Skills** - TDD, async testing, anti-patterns
@@ -97,15 +111,19 @@ superpowers find-skills | grep -i <topic>
 
 ### Using Skills
 
-**Load a specific skill:**
-```
-/use-skill superpowers:brainstorming
+**Smart skill matching** - Just type the skill name or any suffix:
+```bash
+superpowers use-skill brainstorming              # Finds superpowers:collaboration/brainstorming
+superpowers use-skill test-driven-development    # Finds superpowers:testing/test-driven-development
+superpowers use-skill collaboration/brainstorming # More specific suffix also works
 ```
 
-Or run directly:
+**Full paths still work:**
 ```bash
-superpowers use-skill superpowers:brainstorming
+superpowers use-skill superpowers:collaboration/brainstorming
 ```
+
+**Priority order:** Project skills → Home skills → Global Superpowers skills
 
 ### Common Workflows
 
@@ -240,14 +258,34 @@ Every table points to files that simply shell out to `superpowers-agent use-skil
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
 - **subagent-driven-development** - Fast iteration with quality gates
+- **leveraging-cli-tools** - High-performance CLI tools (rg, jq, fd, bat, ast-grep)
+
+**MCP Replacement** (`skills/mcp-replacement/`)
+- **context-7** - Find library documentation and code examples (replaces MCP)
+- **playwright-skill** - Browser automation and web scraping (replaces MCP)
 
 **Meta** (`skills/meta/`)
 - **writing-skills** - Create new skills following best practices
+- **writing-prompts** - Create custom slash commands for GitHub Copilot, Cursor, or Claude
 - **sharing-skills** - Contribute skills back via branch and PR
-- **testing-skills-with-subagents** - Validate skill quality
+- **testing-skills-with-subagents** - Verify skills work under pressure
 - **using-superpowers** - Introduction to the skills system
 - **finding-skills** - Discover and search available skills
 - **using-a-skill** - Load and apply specific skills
+
+**Problem-Solving** (`skills/problem-solving/`)
+- **collision-zone-thinking** - Force unrelated concepts together for emergent insights
+- **inversion-exercise** - Flip assumptions to reveal hidden constraints
+- **meta-pattern-recognition** - Spot universal principles across domains
+- **scale-game** - Test at extremes to expose fundamental truths
+- **simplification-cascades** - Find insights that eliminate multiple components
+- **when-stuck** - Dispatch to right problem-solving technique
+
+**Research** (`skills/research/`)
+- **tracing-knowledge-lineages** - Understand how ideas evolved over time
+
+**Architecture** (`skills/architecture/`)
+- **preserving-productive-tensions** - Keep multiple valid approaches instead of forcing premature resolution
 
 ### MCP Replacement Skills
 
