@@ -6,6 +6,51 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v5.1.0 (November 21, 2025)
+
+### New Features
+
+**Creating Prompts Skill** (adapted from TÂCHES)
+- Agent-agnostic prompt creation workflow for Do/Plan/Research/Refine patterns
+- Structured templates with examples for each prompt type
+- Dependency detection via file references for chaining prompts
+- Integration with brainstorming, writing-plans, and testing-skills-with-subagents
+- Checklist-driven workflow ensures completeness
+- SUMMARY.md template for executive summaries
+- Credit to TÂCHES for pioneering meta-prompt patterns
+
+**Configuration System**
+- New `.agents/config.json` for project and global settings
+- Configure output directories: `prompts_dir`, `plans_dir`, `skills_dir`
+- Priority resolution: project config > global config > defaults
+- CLI command: `superpowers-agent get-config <key>`
+- Enables customization without modifying core skills
+
+### Improvements
+
+**Writing Plans Skill Update**
+- Now uses `.agents/plans/` directory (configurable via config.json)
+- Respects `.agents/config.json` settings for output location
+- Consistent with new configuration system
+- Added documentation comparing prompts vs plans
+
+### Documentation
+
+**README Updates**
+- Added creating-prompts to Meta skills section
+- New Configuration section explaining config system
+- Examples of global and project-level configuration
+
+**RELEASE-NOTES Updates**
+- Comprehensive changelog for v5.1.0 features
+- Attribution to TÂCHES for create-meta-prompts inspiration
+
+### Credits
+
+Special thanks to TÂCHES ([@glittercowboy](https://github.com/glittercowboy)) for the innovative [`create-meta-prompts` skill](https://github.com/glittercowboy/taches-cc-resources/tree/main/skills/create-meta-prompts) that inspired our `creating-prompts` skill. TÂCHES pioneered structured prompt-to-prompt workflows with dependency management—this adaptation makes those patterns work across all AI coding assistants.
+
+---
+
 ## v5.0.0 (November 19, 2025)
 
 ### New Features
