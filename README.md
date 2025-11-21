@@ -144,6 +144,41 @@ Skills activate automatically when relevant. For example:
 - `systematic-debugging` activates when debugging issues
 - `verification-before-completion` activates before claiming work is done
 
+## Configuration
+
+Superpowers supports project-level and global configuration via `.agents/config.json`.
+
+**Default locations:**
+- Prompts: `.agents/prompts/`
+- Plans: `.agents/plans/`
+- Skills: `.agents/skills/`
+
+**Override globally:**
+```json
+// ~/.agents/config.json
+{
+  "prompts_dir": "custom/prompts",
+  "plans_dir": "custom/plans"
+}
+```
+
+**Override per-project:**
+```json
+// .agents/config.json (in project root)
+{
+  "prompts_dir": ".my-prompts",
+  "plans_dir": ".my-plans"
+}
+```
+
+**Priority:** Project config > Global config > Defaults
+
+**Read config from CLI:**
+```bash
+superpowers-agent get-config prompts_dir
+superpowers-agent get-config plans_dir
+```
+
 ## Slash Commands & Skill Priority
 
 Superpowers ships slash-command prompts for OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex so every agent can load the exact same skill definitions. Each command is a thin wrapper around `superpowers use-skill <name>`, so skill discovery always walks the same hierarchy before running anything. This section is the canonical reference for where those commands live in the repo and how the loader resolves conflicts.
@@ -267,6 +302,7 @@ Every table points to files that simply shell out to `superpowers-agent use-skil
 **Meta** (`skills/meta/`)
 - **writing-skills** - Create new skills following best practices
 - **writing-prompts** - Create custom slash commands for GitHub Copilot, Cursor, or Claude
+- **creating-prompts** - Create structured prompts for Do/Plan/Research/Refine workflows (adapted from TÂCHES)
 - **sharing-skills** - Contribute skills back via branch and PR
 - **testing-skills-with-subagents** - Verify skills work under pressure
 - **using-superpowers** - Introduction to the skills system
