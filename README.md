@@ -202,6 +202,7 @@ When any slash command runs—no matter which agent it originates from—it invo
 | `/skills` | Discover and search available skills | `.opencode/command/skills.md` |
 | `/use-skill` | Load a specific skill by name | `.opencode/command/use-skill.md` |
 | `/setup-skills` | Initialize project with skills documentation | `.opencode/command/setup-skills.md` |
+| `/meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.opencode/command/meta-prompt.md` |
 
 Docs: [OpenCode custom commands](https://opencode.ai/docs/commands/)
 
@@ -215,6 +216,7 @@ Docs: [OpenCode custom commands](https://opencode.ai/docs/commands/)
 | `/finding-skills` | List and search available skills | `commands/finding-skills.md` |
 | `/using-a-skill` | Load a specific skill by name | `commands/using-a-skill.md` |
 | `/setup-skills` | Initialize project with skills documentation | `commands/setup-skills.md` |
+| `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `commands/create-meta-prompt.md` |
 
 Docs: [Claude Code custom slash commands](https://code.claude.com/docs/en/slash-commands#custom-slash-commands)
 
@@ -227,6 +229,7 @@ Docs: [Claude Code custom slash commands](https://code.claude.com/docs/en/slash-
 | `/skills` | Discover and search all skills | `.github/prompts/superpowers-skills.prompt.md` |
 | `/use-skill` | Load a specific skill by name | `.github/prompts/superpowers-use-skill.prompt.md` |
 | `/setup-skills` | Initialize project with skills documentation | `.github/prompts/superpowers-setup-skills.prompt.md` |
+| `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.github/prompts/superpowers-create-meta-prompt.prompt.md` |
 
 Docs: [VS Code Copilot prompt files](https://code.visualstudio.com/docs/copilot/customization/prompt-files#_create-a-prompt-file)
 
@@ -239,6 +242,7 @@ Docs: [VS Code Copilot prompt files](https://code.visualstudio.com/docs/copilot/
 | `/skills` | Show all skills with search tips | `.cursor/commands/skills.md` |
 | `/use-skill` | Load any skill via the CLI | `.cursor/commands/use-skill.md` |
 | `/setup-skills` | Initialize project with skills documentation | `.cursor/commands/setup-skills.md` |
+| `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.cursor/commands/create-meta-prompt.md` |
 
 Docs: [Cursor custom commands](https://cursor.com/docs/agent/chat/commands#creating-commands)
 
@@ -251,6 +255,7 @@ Docs: [Cursor custom commands](https://cursor.com/docs/agent/chat/commands#creat
 | `/skills` | Discover and search all skills | `.gemini/commands/skills.toml` |
 | `/use-skill` | Load a specific skill by name | `.gemini/commands/use-skill.toml` |
 | `/setup-skills` | Initialize project with skills documentation | `.gemini/commands/setup-skills.toml` |
+| `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.gemini/commands/create-meta-prompt.toml` |
 
 Docs: [Gemini CLI custom slash commands](https://cloud.google.com/blog/topics/developers-practitioners/gemini-cli-custom-slash-commands)
 
@@ -263,6 +268,7 @@ Docs: [Gemini CLI custom slash commands](https://cloud.google.com/blog/topics/de
 | `/skills` | List and search available skills | `.codex/prompts/skills.md` |
 | `/use-skill` | Load a specific skill by name | `.codex/prompts/use-skill.md` |
 | `/setup-skills` | Initialize project with skills documentation | `.codex/prompts/setup-skills.md` |
+| `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.codex/prompts/create-meta-prompt.md` |
 
 Docs: [OpenAI Codex custom slash commands](https://developers.openai.com/codex/guides/slash-commands#create-your-own-slash-commands-with-custom-prompts)
 

@@ -6,6 +6,37 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v5.1.1 (November 21, 2025)
+
+### New Features
+
+**Meta-Prompt Slash Command**
+- Added `/meta-prompt` (or `/create-meta-prompt`) command to all supported platforms
+- Provides quick access to the creating-prompts skill for structured prompt creation
+- Consistent command syntax across OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex
+- Commands automatically installed via bootstrap/update processes
+- Makes the creating-prompts skill more discoverable and easy to invoke
+
+### Improvements
+
+**Command Discoverability**
+- All platform command tables in README.md now include `/meta-prompt` command
+- Clear descriptions help users understand when to use the command
+- Platform-specific naming follows existing conventions (e.g., `/meta-prompt` for OpenCode, `/create-meta-prompt` for others)
+
+### Documentation
+
+**README Updates**
+- Added `/meta-prompt` to all platform command tables
+- Updated documentation for OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex
+- Consistent command descriptions across all platforms
+
+**RELEASE-NOTES Updates**
+- Added v5.1.1 release section with comprehensive changelog
+- Documented all new command files and their locations
+
+---
+
 ## v5.1.0 (November 21, 2025)
 
 ### New Features
