@@ -17,7 +17,30 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Context:** This should be run in a dedicated worktree (created by brainstorming skill).
 
-**Save plans to:** `.agents/plans/YYYY-MM-DD-<feature-name>.md`
+## Prompts vs Plans
+
+**Use plans (this skill) when:**
+- Comprehensive implementation (>100 LOC)
+- Multi-phase development with checkpoints
+- Complex features needing detailed roadmap
+
+**Use prompts (creating-prompts skill) when:**
+- Focused, single-purpose tasks (<100 LOC)
+- Lightweight instructions for specific workflows
+- Building prompt chains (research → plan → do)
+
+See skills/meta/creating-prompts for lightweight prompt creation.
+
+**Save plans to:** `.agents/plans/YYYY-MM-DD-<feature-name>.md` (configurable via `.agents/config.json`)
+
+**Get configured directory:**
+```bash
+superpowers-agent get-config plans_dir
+```
+
+**Default:** `.agents/plans/`
+
+**Override:** Set `plans_dir` in `.agents/config.json` (project) or `~/.agents/config.json` (global)
 
 ## Bite-Sized Task Granularity
 
