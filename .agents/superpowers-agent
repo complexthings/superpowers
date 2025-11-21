@@ -1978,6 +1978,72 @@ const installAliases = () => {
 // CONFIG MANAGEMENT
 // ============================================================================
 
+// Get configuration value with priority: project > global > default
+const getConfig = (key) => {
+    // Default values
+    const defaults = {
+        prompts_dir: '.agents/prompts',
+        plans_dir: '.agents/plans',
+        skills_dir: '.agents/skills'
+    };
+    
+    if (!defaults.hasOwnProperty(key)) {
+        console.error(`Unknown config key: ${key}`);
+        process.exit(1);
+    }
+    
+    let value = defaults[key];
+    
+    // Check global config
+    const globalConfigPath = join(homedir(), '.agents', 'config.json');
+    if (existsSync(globalConfigPath)) {
+        try {
+            const globalConfig = JSON.parse(readFileSync(globalConfigPath, 'utf8'));
+            if (globalConfig[key]) {
+                value = globalConfig[key];
+            }
+        } catch (error) {
+            // Ignore parse errors, use default
+        }
+    }
+    
+    // Check project config (highest priority)
+    const projectConfigPath = join(process.cwd(), '.agents', 'config.json');
+    if (existsSync(projectConfigPath)) {
+        try {
+            const projectConfig = JSON.parse(readFileSync(projectConfigPath, 'utf8'));
+            if (projectConfig[key]) {
+                value = projectConfig[key];
+            }
+        } catch (error) {
+            // Ignore parse errors, use current value
+        }
+    }
+    
+    return value;
+};
+
+const runGetConfig = () => {
+    const key = process.argv[3];
+    
+    if (!key) {
+        console.log(`Usage: .agents/superpowers-agent get-config <key>
+
+Available keys:
+  prompts_dir - Directory for prompts (default: .agents/prompts)
+  plans_dir   - Directory for plans (default: .agents/plans)
+  skills_dir  - Directory for skills (default: .agents/skills)
+
+Examples:
+  .agents/superpowers-agent get-config prompts_dir
+  .agents/superpowers-agent get-config plans_dir`);
+        return;
+    }
+    
+    const value = getConfig(key);
+    console.log(value);
+};
+
 const runConfigGet = () => {
     const config = readConfig();
     console.log('Current configuration:');
@@ -2019,6 +2085,7 @@ const commands = {
         const skipReinstall = process.argv.includes('--no-reinstall');
         runUpdate({ skipReinstall });
     },
+    'get-config': runGetConfig,
     'config-get': runConfigGet,
     'config-set': runConfigSet,
     'setup-skills': runSetupSkills,
@@ -2038,6 +2105,7 @@ const commands = {
 Usage:
   .agents/superpowers-agent bootstrap [--no-update]        # Run complete bootstrap with all skills
   .agents/superpowers-agent update [--no-reinstall]        # Update to latest version from GitHub
+  .agents/superpowers-agent get-config <key>               # Get configuration value
   .agents/superpowers-agent config-get                     # Show current configuration
   .agents/superpowers-agent config-set <key> <value>       # Update configuration
   .agents/superpowers-agent setup-skills                   # Initialize project with skills documentation
