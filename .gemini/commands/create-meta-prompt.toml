@@ -1,0 +1,20 @@
+description = "Create structured prompts for Do/Plan/Research/Refine workflows"
+prompt = """
+I'm using the creating-prompts skill to create a structured prompt.
+
+First, let me load the skill:
+
+```bash
+superpowers-agent use-skill superpowers:creating-prompts
+```
+
+Now I'll follow the skill guidance to:
+1. Determine prompt purpose (Do/Plan/Research/Refine)
+2. Get next number using scripts/get-next-number.sh
+3. Load appropriate template and fill with specific details
+4. Add frontmatter metadata with dependencies
+5. Create directory structure with completed/ subfolder
+6. Save prompt file and guide execution
+
+Let's start by understanding what prompt you want to create. What's the purpose?
+"""
