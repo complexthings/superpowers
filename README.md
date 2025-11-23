@@ -148,6 +148,8 @@ Skills activate automatically when relevant. For example:
 
 Superpowers supports project-level and global configuration via `.agents/config.json`.
 
+### Directory Configuration
+
 **Default locations:**
 - Prompts: `.agents/prompts/`
 - Plans: `.agents/plans/`
@@ -158,7 +160,8 @@ Superpowers supports project-level and global configuration via `.agents/config.
 // ~/.agents/config.json
 {
   "prompts_dir": "custom/prompts",
-  "plans_dir": "custom/plans"
+  "plans_dir": "custom/plans",
+  "installLocation": "global"
 }
 ```
 
@@ -167,7 +170,8 @@ Superpowers supports project-level and global configuration via `.agents/config.
 // .agents/config.json (in project root)
 {
   "prompts_dir": ".my-prompts",
-  "plans_dir": ".my-plans"
+  "plans_dir": ".my-plans",
+  "installLocation": "project"
 }
 ```
 
@@ -178,6 +182,52 @@ Superpowers supports project-level and global configuration via `.agents/config.
 superpowers-agent get-config prompts_dir
 superpowers-agent get-config plans_dir
 ```
+
+### Repository Aliases
+
+Superpowers allows you to create shortcuts for frequently used skill repositories using repository aliases.
+
+**Add a repository alias:**
+```bash
+# Automatic alias detection from skill.json
+superpowers-agent add-repository https://github.com/example/skills.git
+
+# Custom alias
+superpowers-agent add-repository https://github.com/example/skills.git --as=@myskills
+
+# Add to project config
+superpowers-agent add-repository https://github.com/example/skills.git --project
+```
+
+**Use repository aliases to install skills:**
+```bash
+# Install all skills from repository
+superpowers-agent add @myskills
+
+# Install specific skill path
+superpowers-agent add @myskills path/to/skill
+
+# Install to project
+superpowers-agent add @myskills path/to/skill --project
+```
+
+**Configuration format:**
+```json
+// ~/.agents/config.json or .agents/config.json
+{
+  "installLocation": "global",
+  "repositories": {
+    "@myskills": "https://github.com/example/skills.git",
+    "@internal": "https://github.com/myorg/internal-skills.git"
+  }
+}
+```
+
+Repository aliases make it easy to:
+- Install skills from multiple sources
+- Share skill repositories across teams
+- Quickly access frequently used skill collections
+- Support both Git URLs and local paths
 
 ## Slash Commands & Skill Priority
 
@@ -374,6 +424,140 @@ Commands are thin wrappers that activate the corresponding skill:
 - **execute-plan.md** - Activates the `executing-plans` skill
 - **finding-skills.md** - Activates the `finding-skills` utility
 - **using-a-skill.md** - Activates the `using-a-skill` utility
+
+### CLI Commands
+
+The `superpowers-agent` CLI provides powerful commands for managing skills:
+
+**Skill Discovery:**
+```bash
+superpowers-agent find-skills              # List all available skills
+superpowers-agent use-skill <name>         # Load a specific skill
+superpowers-agent dir <skill-name>         # Get skill directory path
+superpowers-agent get-helpers <skill> <term>  # Find helper files in skill
+```
+
+**Skill Installation:**
+```bash
+superpowers-agent add <url-or-path>        # Install skill(s) from Git or local
+superpowers-agent add @alias path/to/skill # Install from repository alias
+superpowers-agent add-repository <git-url> # Add repository alias
+```
+
+**Configuration:**
+```bash
+superpowers-agent config-get               # Show current configuration
+superpowers-agent config-set <key> <value> # Update configuration
+superpowers-agent get-config <key>         # Get specific config value
+```
+
+**Project Setup:**
+```bash
+superpowers-agent setup-skills             # Initialize project with skills docs
+superpowers-agent bootstrap                # Run complete bootstrap
+superpowers-agent update                   # Update to latest version
+```
+
+### Skill Metadata with skill.json
+
+Skills can include a `skill.json` file to define metadata for the superpowers-agent CLI. This enables powerful features like repository aliases, helper file discovery, and multi-skill repositories.
+
+#### Single Skill Configuration
+
+For a single skill, `skill.json` defines the skill's identity and helpers:
+
+```json
+{
+  "version": "1.0.0",
+  "name": "aem/block-collection-and-party",
+  "title": "AEM Block Collection and Party",
+  "helpers": [
+    "scripts/get-block-structure.js",
+    "scripts/search-block-collection-github.js",
+    "scripts/search-block-collection.js",
+    "scripts/search-block-party.js"
+  ],
+  "aliases": [
+    "block-party",
+    "block-collection"
+  ]
+}
+```
+
+**Fields:**
+- `name`: Canonical skill name (used for installation path)
+- `title`: Human-readable display name
+- `helpers`: Array of helper script paths relative to skill directory
+- `aliases`: Short names that can be used with `use-skill` and `get-helpers`
+- `version`: Skill version for tracking updates
+
+**Usage with helpers:**
+```bash
+# Find helper files
+superpowers-agent get-helpers block-collection search-block
+# Returns: /path/to/skill/scripts/search-block-collection.js
+
+# Use skill aliases
+superpowers-agent use-skill block-party
+# Loads: aem/block-collection-and-party
+```
+
+#### Multi-Skill Repository Configuration
+
+For repositories containing multiple skills, the root `skill.json` lists all skills and defines a repository alias:
+
+```json
+{
+  "version": "1.0.0",
+  "repository": "@baici",
+  "skills": [
+    "aem/authoring-analysis",
+    "aem/block-collection-and-party",
+    "aem/block-inventory",
+    "aem/building-blocks",
+    "aem/content-driven-development"
+  ]
+}
+```
+
+**Fields:**
+- `repository`: Default alias for this repository (used with `add-repository`)
+- `skills`: Array of skill paths within the repository
+- `version`: Repository version
+
+**Each skill then has its own skill.json:**
+```
+repository/
+├── skill.json           # Repository manifest
+├── aem/
+│   ├── authoring-analysis/
+│   │   ├── SKILL.md
+│   │   └── skill.json   # Individual skill metadata
+│   └── block-inventory/
+│       ├── SKILL.md
+│       └── skill.json
+```
+
+**Usage with multi-skill repositories:**
+```bash
+# Add repository with automatic alias detection
+superpowers-agent add-repository https://github.com/example/skills.git
+# Detects @baici alias from skill.json
+
+# Install specific skill from repository
+superpowers-agent add @baici aem/building-blocks
+
+# Install all skills from repository
+superpowers-agent add @baici
+```
+
+#### Benefits of skill.json
+
+1. **Helper Discovery**: Find and execute helper scripts easily
+2. **Skill Aliases**: Use short, memorable names instead of full paths
+3. **Repository Management**: Organize and share multi-skill collections
+4. **Automatic Detection**: CLI reads metadata for smart defaults
+5. **Installation Paths**: Control where skills install with `name` field
 
 ## How It Works
 

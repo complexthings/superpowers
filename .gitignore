@@ -3,3 +3,5 @@
 docs/*
 .config.json
 .DS_Store
+.agents/prompts/*
+*.backup
