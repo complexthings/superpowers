@@ -1,0 +1,12 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:collaboration/requesting-code-review",
+    "title": "Requesting Code Review",
+    "helpers": [
+        "code-reviewer.md"
+    ],
+    "aliases": [
+        "requesting-code-review",
+        "collaboration/requesting-code-review"
+    ]
+}

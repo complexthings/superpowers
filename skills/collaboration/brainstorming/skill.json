@@ -1,0 +1,9 @@
+{
+    "version": "2.2.0",
+    "name": "superpowers:collaboration/brainstorming",
+    "title": "Brainstorming Ideas Into Designs",
+    "aliases": [
+        "brainstorming",
+        "collaboration/brainstorming"
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "version": "2.2.0",
+    "name": "superpowers:collaboration/executing-plans",
+    "title": "Executing Plans",
+    "aliases": [
+        "executing-plans",
+        "collaboration/executing-plans"
+    ]
+}

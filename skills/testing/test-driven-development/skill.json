@@ -1,0 +1,9 @@
+{
+    "version": "3.1.0",
+    "name": "superpowers:testing/test-driven-development",
+    "title": "Test-Driven Development (TDD)",
+    "aliases": [
+        "test-driven-development",
+        "testing/test-driven-development"
+    ]
+}

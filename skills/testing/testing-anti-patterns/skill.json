@@ -1,0 +1,9 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:testing/testing-anti-patterns",
+    "title": "Testing Anti-Patterns",
+    "aliases": [
+        "testing-anti-patterns",
+        "testing/testing-anti-patterns"
+    ]
+}

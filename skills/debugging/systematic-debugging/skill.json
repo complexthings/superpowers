@@ -1,0 +1,9 @@
+{
+    "version": "2.1.0",
+    "name": "superpowers:debugging/systematic-debugging",
+    "title": "Systematic Debugging",
+    "aliases": [
+        "systematic-debugging",
+        "debugging/systematic-debugging"
+    ]
+}

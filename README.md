@@ -468,6 +468,8 @@ superpowers-agent update                   # Update to latest version
 
 Skills can include a `skill.json` file to define metadata for the superpowers-agent CLI. This enables powerful features like repository aliases, helper file discovery, and multi-skill repositories.
 
+**All skills in this repository include skill.json files** with version tracking, helper file listings, and aliases for convenient access.
+
 #### Single Skill Configuration
 
 For a single skill, `skill.json` defines the skill's identity and helpers:
@@ -564,6 +566,22 @@ superpowers-agent add @baici
 3. **Repository Management**: Organize and share multi-skill collections
 4. **Automatic Detection**: CLI reads metadata for smart defaults
 5. **Installation Paths**: Control where skills install with `name` field
+6. **Version Tracking**: Each skill tracks its version independently
+
+#### This Repository's skill.json
+
+This repository includes skill.json files for:
+- **35 individual skills** with versions ranging from 1.0.0 to 5.1.0
+- **Version tracking** synced with SKILL.md frontmatter
+- **Helper file listings** for skills with scripts, templates, and resources
+- **Skill aliases** for convenient loading (e.g., `brainstorming` or `collaboration/brainstorming`)
+
+All skills are ready to use with commands like:
+```bash
+superpowers-agent get-helpers creating-prompts template
+superpowers-agent use-skill brainstorming
+superpowers-agent dir test-driven-development
+```
 
 ## How It Works
 

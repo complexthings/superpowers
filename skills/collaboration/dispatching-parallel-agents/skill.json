@@ -1,0 +1,9 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:collaboration/dispatching-parallel-agents",
+    "title": "Dispatching Parallel Agents",
+    "aliases": [
+        "dispatching-parallel-agents",
+        "collaboration/dispatching-parallel-agents"
+    ]
+}

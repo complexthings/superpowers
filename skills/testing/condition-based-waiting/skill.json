@@ -1,0 +1,12 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:testing/condition-based-waiting",
+    "title": "Condition-Based Waiting",
+    "helpers": [
+        "example.ts"
+    ],
+    "aliases": [
+        "condition-based-waiting",
+        "testing/condition-based-waiting"
+    ]
+}
