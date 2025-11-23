@@ -1,0 +1,20 @@
+{
+    "version": "5.1.0",
+    "name": "superpowers:meta/creating-prompts",
+    "title": "Creating Prompts",
+    "helpers": [
+        "scripts/get-next-number.sh",
+        "examples/do-example.md",
+        "examples/plan-example.md",
+        "examples/refine-example.md",
+        "examples/research-example.md",
+        "templates/do-template.md",
+        "templates/plan-template.md",
+        "templates/refine-template.md",
+        "templates/research-template.md"
+    ],
+    "aliases": [
+        "creating-prompts",
+        "meta/creating-prompts"
+    ]
+}

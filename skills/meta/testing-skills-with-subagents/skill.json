@@ -1,0 +1,12 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:meta/testing-skills-with-subagents",
+    "title": "Testing Skills With Subagents",
+    "helpers": [
+        "examples/CLAUDE_MD_TESTING.md"
+    ],
+    "aliases": [
+        "testing-skills-with-subagents",
+        "meta/testing-skills-with-subagents"
+    ]
+}

@@ -6,6 +6,80 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v5.2.1 (November 23, 2025)
+
+### 📋 Metadata Management
+
+**Complete skill.json Coverage**
+- Added skill.json files for all 35 skills in the repository
+- Automated extraction of metadata from SKILL.md frontmatter
+- Version tracking synced with individual skill versions (1.0.0 to 5.1.0)
+- Helper file discovery for all skills with scripts and resources
+
+**Version Distribution**
+- **v5.1.0** (2 skills): creating-prompts, writing-skills - Most mature skills
+- **v3.1.0** (1 skill): test-driven-development
+- **v2.2.0** (2 skills): brainstorming, executing-plans
+- **v2.1.0** (3 skills): sharing-skills, writing-plans, systematic-debugging
+- **v1.1.0** (20 skills): Most collaboration, debugging, and problem-solving skills
+- **v1.0.0** (6 skills): Skills without explicit versions in frontmatter
+
+**skill.json Structure**
+- **version**: Extracted from SKILL.md frontmatter or defaults to 1.0.0
+- **name**: Full skill path with `superpowers:` prefix (e.g., `superpowers:collaboration/brainstorming`)
+- **title**: Human-readable name from SKILL.md frontmatter
+- **helpers**: Auto-detected scripts, examples, templates, and resources
+- **aliases**: Short names and full paths for flexible skill loading
+
+**Helper File Detection**
+- Automatically scans: scripts, tools, resources, references, examples, helpers, utils, utilities, templates
+- Includes root-level helper files (excluding SKILL.md and skill.json)
+- 9 skills with helper files identified and cataloged
+
+### 🎯 Skills with Helper Files
+
+- **creating-prompts** (v5.1.0): 9 helpers including scripts, examples, templates
+- **gardening-skills-wiki** (v1.1.0): 7 analysis and maintenance scripts
+- **playwright-skill** (v1.0.0): 3 helpers including scripts and API reference
+- **context-7** (v1.0.0): 3 helpers including search and docs scripts
+- **writing-skills** (v5.1.0): 2 helpers (graphviz conventions, persuasion principles)
+- **root-cause-tracing** (v1.1.0): find-polluter.sh script
+- **testing-skills-with-subagents** (v1.1.0): example test file
+- **requesting-code-review** (v1.1.0): code-reviewer agent definition
+- **condition-based-waiting** (v1.1.0): TypeScript example
+
+### 📚 Documentation Updates
+
+**README.md**
+- Added note about complete skill.json coverage across all 35 skills
+- Documented version tracking and distribution
+- Added examples of using skill.json features
+- Listed most mature skills and their versions
+
+**Benefits**
+- Helper file discovery via `superpowers-agent get-helpers`
+- Skill alias support for convenient loading
+- Version tracking for skill evolution monitoring
+- Foundation for future skill marketplace and sharing features
+
+### 💡 Usage Examples
+
+```bash
+# Use skill with aliases
+superpowers-agent use-skill brainstorming
+superpowers-agent use-skill tdd  # Works with test-driven-development
+
+# Find helper files
+superpowers-agent get-helpers creating-prompts template
+superpowers-agent get-helpers root-cause-tracing polluter
+
+# Get skill directory for direct file access
+SKILL_DIR=$(superpowers-agent dir writing-skills)
+ls -la "$SKILL_DIR"
+```
+
+---
+
 ## v5.2.0 (November 23, 2025)
 
 ### 🎯 Major New Features

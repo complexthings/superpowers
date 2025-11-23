@@ -1,0 +1,9 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:collaboration/using-git-worktrees",
+    "title": "Using Git Worktrees",
+    "aliases": [
+        "using-git-worktrees",
+        "collaboration/using-git-worktrees"
+    ]
+}

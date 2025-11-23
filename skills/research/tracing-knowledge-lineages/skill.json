@@ -1,0 +1,9 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:research/tracing-knowledge-lineages",
+    "title": "Tracing Knowledge Lineages",
+    "aliases": [
+        "tracing-knowledge-lineages",
+        "research/tracing-knowledge-lineages"
+    ]
+}

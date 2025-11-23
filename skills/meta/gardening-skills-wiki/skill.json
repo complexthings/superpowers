@@ -1,0 +1,16 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:meta/gardening-skills-wiki",
+    "title": "Gardening Skills Wiki",
+    "helpers": [
+        "analyze-search-gaps.sh",
+        "check-index-coverage.sh",
+        "check-links.sh",
+        "check-naming.sh",
+        "garden.sh"
+    ],
+    "aliases": [
+        "gardening-skills-wiki",
+        "meta/gardening-skills-wiki"
+    ]
+}

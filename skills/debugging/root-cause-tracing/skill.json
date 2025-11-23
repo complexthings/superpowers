@@ -1,0 +1,12 @@
+{
+    "version": "1.1.0",
+    "name": "superpowers:debugging/root-cause-tracing",
+    "title": "Root Cause Tracing",
+    "helpers": [
+        "find-polluter.sh"
+    ],
+    "aliases": [
+        "root-cause-tracing",
+        "debugging/root-cause-tracing"
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "version": "5.1.0",
+    "name": "superpowers:meta/writing-skills",
+    "title": "Writing Skills",
+    "helpers": [
+        "persuasion-principles.md"
+    ],
+    "aliases": [
+        "writing-skills",
+        "meta/writing-skills"
+    ]
+}
