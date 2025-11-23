@@ -12,6 +12,12 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 - 🚀 **One-Line Installer** - Install globally with `curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash`. Sets up universal aliases, slash commands, and optional project integration automatically.
 
+- 📦 **Skill Installation System** - New `add` and `add-repository` commands make it easy to install skills from Git repositories, local directories, or repository aliases. Create shortcuts with `superpowers-agent add-repository` and install skills with `superpowers-agent add @alias path/to/skill`.
+
+- 🔍 **Helper File Discovery** - New `get-helpers` command finds helper scripts within skills using smart substring matching. Skills can define helper files in their `skill.json` for easy discovery.
+
+- 📂 **Skill Directory Navigation** - New `dir` command returns the directory path of any skill, making it easy to access skill resources and helper scripts programmatically.
+
 - 🔧 **MCP Replacement Skills** - New `context-7` and `playwright-skill` provide library documentation search and browser automation without MCP overhead (~98% context reduction).
 
 - 📝 **Setup Skills Command** - New `/setup-skills` command initializes projects with AGENTS.md, CLAUDE.md, and GEMINI.md instruction files automatically.
