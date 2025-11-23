@@ -338,6 +338,7 @@ Every table points to files that simply shell out to `superpowers-agent use-skil
 - **test-driven-development** - RED-GREEN-REFACTOR cycle
 - **condition-based-waiting** - Async test patterns
 - **testing-anti-patterns** - Common pitfalls to avoid
+- **verification-before-completion** - Evidence-based completion claims (ported from obra/superpowers)
 
 **Debugging** (`skills/debugging/`)
 - **systematic-debugging** - 4-phase root cause process
@@ -365,6 +366,7 @@ Every table points to files that simply shell out to `superpowers-agent use-skil
 - **writing-skills** - Create new skills following best practices
 - **writing-prompts** - Create custom slash commands for GitHub Copilot, Cursor, or Claude
 - **creating-prompts** - Create structured prompts for Do/Plan/Research/Refine workflows (adapted from TÂCHES)
+- **create-skill-json** - Generate skill.json metadata files from SKILL.md and directory structure
 - **sharing-skills** - Contribute skills back via branch and PR
 - **testing-skills-with-subagents** - Verify skills work under pressure
 - **using-superpowers** - Introduction to the skills system

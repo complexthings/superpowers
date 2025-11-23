@@ -6,6 +6,68 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v5.2.2 (November 23, 2025)
+
+### 🎯 New Skills
+
+**create-skill-json Skill** (meta/create-skill-json)
+- Generate skill.json metadata files from SKILL.md frontmatter and directory structure
+- Ensures consistent metadata across repositories
+- Automatically extracts version, title, and helpers from existing files
+- Generates standard aliases (full path + skill name)
+- Validates JSON syntax with jq (if available)
+- TDD-tested with baseline and pressure scenarios
+
+**verification-before-completion Skill** (testing/verification-before-completion)
+- Ported from Jesse Vincent's original Superpowers repository
+- Enforces evidence-based completion claims
+- Prevents "should work" or "looks correct" without verification
+- Requires running verification commands before success claims
+- Comprehensive rationalization prevention
+- Critical for maintaining trust and quality
+
+### 🔧 Infrastructure Updates
+
+**Hook Modernization**
+- Updated `hooks/session-start.sh` to use `superpowers-agent` CLI
+- Updated `hooks/cursor/inject-bootstrap.sh` for superpowers-agent detection
+- Removed direct filesystem references in favor of CLI commands
+- Better error handling when superpowers-agent not installed
+- Installation instructions displayed when CLI tool missing
+
+### 📚 Documentation
+
+**Skill Documentation**
+- create-skill-json includes complete process with validation steps
+- verification-before-completion maintains original iron law philosophy
+- Both skills include frontmatter for proper metadata extraction
+
+### 💡 Usage Examples
+
+**Generate skill.json:**
+```bash
+# Load the skill (if superpowers-agent indexed)
+superpowers-agent use-skill create-skill-json
+
+# Follow the process to generate skill.json
+# Input: path to SKILL.md or directory containing SKILL.md
+# Output: skill.json in same directory as SKILL.md
+```
+
+**Verification before completion:**
+```bash
+# Automatically activates when claiming work is complete
+# Enforces: Evidence before claims, always
+# Prevents premature success declarations
+```
+
+### 🎓 Credits
+
+- **create-skill-json**: Created using writing-skills and testing-skills-with-subagents methodology
+- **verification-before-completion**: Ported from [@obra/superpowers](https://github.com/obra/superpowers) with gratitude to Jesse Vincent
+
+---
+
 ## v5.2.1 (November 23, 2025)
 
 ### 📋 Metadata Management

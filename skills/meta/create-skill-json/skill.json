@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "name": "meta/create-skill-json",
+  "title": "Create skill.json",
+  "helpers": [],
+  "aliases": [
+    "meta/create-skill-json",
+    "create-skill-json"
+  ]
+}
