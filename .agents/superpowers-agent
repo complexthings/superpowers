@@ -1719,6 +1719,40 @@ const locateSkillByNameOrAlias = (skillIdentifier) => {
     return null;
 };
 
+const runDir = () => {
+    const skillName = process.argv[3];
+    
+    if (!skillName) {
+        console.log(`Usage: superpowers-agent dir <skill-name>
+
+Examples:
+  superpowers-agent dir brainstorming
+  superpowers-agent dir aem/block-collection-and-party
+  superpowers-agent dir block-collection  # Using alias
+  superpowers-agent dir superpowers:testing/test-driven-development
+
+Description:
+  Returns the directory path where the specified skill is located.
+  Supports skill aliases defined in skill.json files.`);
+        return;
+    }
+    
+    // Locate the skill (supporting aliases)
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+    
+    const { skillFile } = location;
+    const skillDir = dirname(skillFile);
+    
+    // Output the directory path
+    console.log(skillDir);
+};
+
 const runGetHelpers = () => {
     const skillName = process.argv[3];
     const helperSearchTerm = process.argv[4];
@@ -2311,6 +2345,7 @@ const commands = {
     'setup-skills': runSetupSkills,
     'use-skill': () => runUseSkill(process.argv[3]),
     'find-skills': runFindSkills,
+    'dir': runDir,
     'get-helpers': runGetHelpers,
     'install-copilot-prompts': installCopilotPrompts,
     'install-copilot-instructions': installCopilotInstructions,
@@ -2332,6 +2367,7 @@ Usage:
   .agents/superpowers-agent setup-skills                         # Initialize project with skills documentation
   .agents/superpowers-agent use-skill <skill-name>               # Load a specific skill
   .agents/superpowers-agent find-skills                          # List all available skills
+  .agents/superpowers-agent dir <skill-name>                     # Get skill directory path
   .agents/superpowers-agent get-helpers <skill> <search-term>    # Get helper file path from skill.json
   .agents/superpowers-agent install-copilot-prompts              # Install GitHub Copilot prompts only
   .agents/superpowers-agent install-copilot-instructions         # Install universal instructions only
@@ -2351,6 +2387,7 @@ Examples:
   .agents/superpowers-agent use-skill superpowers:brainstorming
   .agents/superpowers-agent use-skill claude:persistent-planning
   .agents/superpowers-agent use-skill my-custom-skill
+  .agents/superpowers-agent dir brainstorming
   .agents/superpowers-agent get-helpers block-collection search-block`);
     }
 };
