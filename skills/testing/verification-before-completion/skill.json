@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "name": "testing/verification-before-completion",
+  "title": "verification-before-completion",
+  "helpers": [],
+  "aliases": [
+    "testing/verification-before-completion",
+    "verification-before-completion"
+  ]
+}
