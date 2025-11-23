@@ -6,6 +6,179 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v5.2.0 (November 23, 2025)
+
+### 🎯 Major New Features
+
+**Skill Installation System**
+- **`add` command** - Install skills from Git repositories, local directories, or repository aliases
+  - Supports GitHub repositories (including tree URLs with branches)
+  - Supports local file system paths
+  - Automatic multi-skill detection from `skill.json`
+  - Global (`~/.agents/skills/`) or project (`.agents/skills/`) installation
+  - Smart directory structure creation based on skill `name` field
+  - Example: `superpowers-agent add https://github.com/example/skills.git`
+
+- **`add-repository` command** - Create shortcuts for frequently used skill repositories
+  - Automatic alias detection from repository's `skill.json`
+  - Custom aliases with `--as=@alias` flag
+  - Stores aliases in config files for easy reuse
+  - Project or global alias registration
+  - Example: `superpowers-agent add-repository https://github.com/example/skills.git --as=@myskills`
+
+- **Repository alias support** - Install skills using short, memorable aliases
+  - Configure aliases in `config.json` under `repositories` object
+  - Use aliases with paths: `superpowers-agent add @myskills path/to/skill`
+  - Install entire repositories: `superpowers-agent add @myskills`
+  - Priority resolution: project repositories > global repositories
+  - Lists available aliases when unknown alias is used
+
+**Skill Metadata with skill.json**
+- **`helpers` field** - Define helper scripts for easy discovery
+  - Smart substring matching for finding helpers
+  - Used by `get-helpers` command
+  - Example: `"helpers": ["scripts/search.js", "scripts/parse.js"]`
+
+- **`aliases` field** - Define short names for skills
+  - Multiple aliases per skill supported
+  - Used by `use-skill` and `get-helpers` commands
+  - Example: `"aliases": ["block-party", "block-collection"]`
+
+- **`repository` field** - Set default repository alias
+  - Automatic detection during `add-repository`
+  - Example: `"repository": "@myskills"`
+
+- **`skills` array** - Define multi-skill repositories
+  - Lists all skills in the repository
+  - Each skill has its own `skill.json`
+  - Example: `"skills": ["skill-one", "skill-two"]`
+
+- **`name` field** - Control installation paths
+  - Determines directory structure when installing
+  - Supports nested paths like `category/skill-name`
+  - Example: `"name": "aem/building-blocks"`
+
+- **`title` field** - Human-readable skill name
+  - Used in installation success messages
+  - Example: `"title": "Building Blocks for AEM"`
+
+**Helper File Discovery**
+- **`get-helpers` command** - Find helper files within skills
+  - Reads `helpers` array from skill's `skill.json`
+  - Smart substring matching to find best match
+  - Supports skill aliases for convenience
+  - Returns full path to helper file
+  - Example: `superpowers-agent get-helpers block-collection search`
+
+**Skill Directory Navigation**
+- **`dir` command** - Get the directory path of any skill
+  - Supports all skill name formats (short names, aliases, full paths)
+  - Useful for scripting and automation
+  - Works with skill aliases
+  - Example: `superpowers-agent dir brainstorming`
+
+### 🔧 Configuration Enhancements
+
+**Repository Management**
+- New `repositories` object in `config.json` for repository aliases
+- Global configuration: `~/.agents/config.json`
+- Project configuration: `.agents/config.json`
+- Repository URLs can be Git URLs or local paths
+- Example configuration:
+  ```json
+  {
+    "installLocation": "global",
+    "repositories": {
+      "@myskills": "https://github.com/example/skills.git",
+      "@internal": "/path/to/local/skills"
+    }
+  }
+  ```
+
+**Installation Location Control**
+- New `installLocation` config option ("global" or "project")
+- Controls default behavior for `add` and `add-repository` commands
+- Can be overridden with `--global` or `--project` flags
+- Project config takes precedence over global config
+
+### 📚 Documentation Updates
+
+**README.md**
+- Added comprehensive skill.json documentation
+  - Single skill configuration
+  - Multi-skill repository configuration
+  - Field descriptions and usage examples
+- Added CLI commands section
+  - Skill discovery commands
+  - Skill installation commands
+  - Configuration commands
+  - Project setup commands
+- Enhanced repository aliases section
+  - Configuration format examples
+  - Usage examples with aliases
+  - Benefits of using repository aliases
+- Added detailed examples for new commands
+
+**Command Reference**
+- `add <url-or-path|@alias> [path] [options]` - Install skills
+- `add-repository <git-url> [--as=@alias] [options]` - Add repository alias
+- `dir <skill-name>` - Get skill directory path
+- `get-helpers <skill> <search-term>` - Find helper files
+
+### 🚀 Improvements
+
+**Skill Installation**
+- Automatic cleanup of temporary directories
+- Detailed success/error reporting
+- Support for nested directory structures
+- Handles both single skills and multi-skill repositories
+- Validates skill.json presence and format
+
+**Error Handling**
+- Clear error messages when skills not found
+- Lists available aliases when unknown alias used
+- Validates repository URLs and local paths
+- Helpful suggestions for fixing errors
+
+**User Experience**
+- Progressive output during installation
+- Clear indication of install location
+- Lists all installed skills with paths and titles
+- Confirms repository alias registration
+
+### 🐛 Bug Fixes
+
+- Fixed skill installation from local paths
+- Corrected handling of tree URLs with branches
+- Improved directory creation for nested skill paths
+- Fixed config file creation when directories don't exist
+
+### 💡 Usage Examples
+
+**Install skills from Git repository:**
+```bash
+superpowers-agent add https://github.com/example/skills.git
+```
+
+**Add repository alias and use it:**
+```bash
+superpowers-agent add-repository https://github.com/example/skills.git --as=@myskills
+superpowers-agent add @myskills path/to/skill
+```
+
+**Find helper files:**
+```bash
+superpowers-agent get-helpers block-collection search-block
+```
+
+**Get skill directory:**
+```bash
+SKILL_DIR=$(superpowers-agent dir brainstorming)
+ls -la "$SKILL_DIR"
+```
+
+---
+
 ## v5.1.1 (November 21, 2025)
 
 ### New Features
