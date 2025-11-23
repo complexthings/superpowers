@@ -42,17 +42,25 @@ if [ "$loop_count" -gt 0 ]; then
     exit 0
 fi
 
-# Build bootstrap message
-superpowers_root="${HOME}/.agents/superpowers"
+# Check if superpowers-agent is installed
+if ! command -v superpowers-agent &> /dev/null; then
+    # superpowers-agent not installed, provide installation instructions
+    bootstrap_content="<EXTREMELY_IMPORTANT>
+You have superpowers available, but the CLI tool is not installed.
 
-# Check if superpowers is installed
-if [ ! -d "$superpowers_root" ]; then
-    echo '{"followup_message": ""}'
-    exit 0
-fi
+**To install:**
+\`\`\`bash
+curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
+\`\`\`
 
-# Build the bootstrap content
-bootstrap_content="<EXTREMELY_IMPORTANT>
+After installation, restart your editor to enable superpowers features.
+</EXTREMELY_IMPORTANT>"
+else
+    # Use superpowers-agent bootstrap to generate the message
+    bootstrap_content=$(superpowers-agent bootstrap --no-update 2>&1 | sed 's/^/  /')
+    
+    # Wrap the bootstrap output in context tags
+    bootstrap_content="<EXTREMELY_IMPORTANT>
 You have superpowers. Superpowers teach you new skills and capabilities.
 
 **Available Cursor Commands:**
@@ -91,6 +99,7 @@ You have superpowers. Superpowers teach you new skills and capabilities.
 
 IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
 </EXTREMELY_IMPORTANT>"
+fi
 
 # Escape for JSON
 bootstrap_escaped=$(echo "$bootstrap_content" | jq -Rs .)

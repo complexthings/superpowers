@@ -5,4 +5,4 @@ This skill provides access to skill discovery and search functionality across:
 - Personal skills (`~/.agents/skills/`)
 - System skills (`~/.agents/superpowers/skills/`)
 
-Run `.agents/superpowers-agent find-skills` to see all available skills, or use grep to filter results.
+Run `superpowers-agent find-skills` to see all available skills, or use grep to filter results.
