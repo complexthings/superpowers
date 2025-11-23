@@ -1605,6 +1605,188 @@ const extractSkillContent = (skillFile) => {
     }
 };
 
+const readSkillJson = (skillDir) => {
+    const skillJsonPath = join(skillDir, 'skill.json');
+    if (!existsSync(skillJsonPath)) {
+        return null;
+    }
+    
+    try {
+        const content = readFileSync(skillJsonPath, 'utf8');
+        return JSON.parse(content);
+    } catch (error) {
+        return null;
+    }
+};
+
+const findHelperInSkill = (skillDir, helperSearchTerm) => {
+    const skillJson = readSkillJson(skillDir);
+    
+    if (!skillJson || !skillJson.helpers || !Array.isArray(skillJson.helpers)) {
+        return null;
+    }
+    
+    const helpers = skillJson.helpers;
+    const normalizedSearchTerm = helperSearchTerm.toLowerCase();
+    
+    // Try to find best match using substring matching
+    let bestMatch = null;
+    let bestScore = 0;
+    
+    for (const helper of helpers) {
+        const helperLower = helper.toLowerCase();
+        
+        // Exact match (highest priority)
+        if (helperLower === normalizedSearchTerm) {
+            bestMatch = helper;
+            break;
+        }
+        
+        // Helper contains search term
+        if (helperLower.includes(normalizedSearchTerm)) {
+            const score = normalizedSearchTerm.length / helperLower.length;
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = helper;
+            }
+        }
+        
+        // Search term contains helper basename
+        const helperBasename = parse(helper).name.toLowerCase();
+        if (normalizedSearchTerm.includes(helperBasename)) {
+            const score = helperBasename.length / normalizedSearchTerm.length;
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = helper;
+            }
+        }
+    }
+    
+    return bestMatch ? join(skillDir, bestMatch) : null;
+};
+
+const locateSkillByNameOrAlias = (skillIdentifier) => {
+    // First try normal skill location
+    const location = locateSkill(skillIdentifier);
+    if (location) {
+        return location;
+    }
+    
+    // If not found, search for aliases in skill.json files
+    const { type, path: actualSkillPath } = parseSkillName(skillIdentifier);
+    
+    const searchOrder = type 
+        ? [{ type, dir: {
+            'superpowers': paths.homeSuperpowersSkills,
+            'claude': paths.projectClaudeSkills,
+            'project': paths.projectAgentsSkills,
+            'personal': paths.homePersonalSkills
+          }[type] }]
+        : [
+            { type: 'project', dir: paths.projectAgentsSkills },
+            { type: 'claude', dir: paths.projectClaudeSkills },
+            { type: 'personal', dir: paths.homePersonalSkills },
+            { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+          ];
+    
+    // Search through all skill directories for matching aliases
+    for (const { type: sourceType, dir } of searchOrder) {
+        if (!existsSync(dir)) continue;
+        
+        const skills = findSkillsInDir(dir, sourceType, null);
+        
+        for (const skillPath of skills) {
+            const skillJson = readSkillJson(skillPath);
+            
+            if (skillJson && skillJson.aliases && Array.isArray(skillJson.aliases)) {
+                const normalizedIdentifier = actualSkillPath.toLowerCase();
+                
+                for (const alias of skillJson.aliases) {
+                    if (alias.toLowerCase() === normalizedIdentifier) {
+                        const skillFile = join(skillPath, 'SKILL.md');
+                        const relPath = relative(dir, skillPath);
+                        return {
+                            skillFile,
+                            sourceType,
+                            actualSkillPath: relPath
+                        };
+                    }
+                }
+            }
+        }
+    }
+    
+    return null;
+};
+
+const runGetHelpers = () => {
+    const skillName = process.argv[3];
+    const helperSearchTerm = process.argv[4];
+    
+    if (!skillName || !helperSearchTerm) {
+        console.log(`Usage: superpowers-agent get-helpers <skill-name> <helper-search-term>
+
+Examples:
+  superpowers-agent get-helpers block-collection search-block
+  superpowers-agent get-helpers aem/block-collection-and-party get-block-structure
+  superpowers-agent get-helpers superpowers:testing/test-driven-development example
+
+Description:
+  Searches for helper files within a skill's skill.json configuration.
+  Returns the full path to the best matching helper file.
+  
+  The command uses the skill's aliases if available, so you can use
+  short names like "block-collection" instead of the full path.`);
+        return;
+    }
+    
+    // Locate the skill (supporting aliases)
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+    
+    const { skillFile } = location;
+    const skillDir = dirname(skillFile);
+    
+    // Check if skill.json exists
+    const skillJson = readSkillJson(skillDir);
+    
+    if (!skillJson) {
+        console.log(`Error: No skill.json found for skill: ${skillName}\n  Location: ${skillDir}`);
+        return;
+    }
+    
+    if (!skillJson.helpers || !Array.isArray(skillJson.helpers) || skillJson.helpers.length === 0) {
+        console.log(`Error: No helpers defined in skill.json for skill: ${skillName}\n  Location: ${skillDir}`);
+        return;
+    }
+    
+    // Find the best matching helper
+    const helperPath = findHelperInSkill(skillDir, helperSearchTerm);
+    
+    if (!helperPath) {
+        console.log(`Error: No helper found matching "${helperSearchTerm}" in skill: ${skillName}`);
+        console.log(`\nAvailable helpers:`);
+        for (const helper of skillJson.helpers) {
+            console.log(`  - ${helper}`);
+        }
+        return;
+    }
+    
+    // Verify the helper file exists
+    if (!existsSync(helperPath)) {
+        console.log(`Error: Helper file not found: ${helperPath}\n  Defined in skill.json but missing from filesystem`);
+        return;
+    }
+    
+    // Output the full path
+    console.log(helperPath);
+};
+
 const runUseSkill = (skillName) => {
     if (!skillName) {
         console.log(`Usage: superpowers-agent use-skill <skill-name>
@@ -1626,7 +1808,7 @@ Smart matching:
         return;
     }
 
-    const location = locateSkill(skillName);
+    const location = locateSkillByNameOrAlias(skillName);
     
     if (!location) {
         console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
@@ -2129,6 +2311,7 @@ const commands = {
     'setup-skills': runSetupSkills,
     'use-skill': () => runUseSkill(process.argv[3]),
     'find-skills': runFindSkills,
+    'get-helpers': runGetHelpers,
     'install-copilot-prompts': installCopilotPrompts,
     'install-copilot-instructions': installCopilotInstructions,
     'install-cursor-commands': installCursorCommands,
@@ -2141,32 +2324,34 @@ const commands = {
     default: () => {
         console.log(`Superpowers for Agents
 Usage:
-  .agents/superpowers-agent bootstrap [--no-update]        # Run complete bootstrap with all skills
-  .agents/superpowers-agent update [--no-reinstall]        # Update to latest version from GitHub
-  .agents/superpowers-agent get-config <key>               # Get configuration value
-  .agents/superpowers-agent config-get                     # Show current configuration
-  .agents/superpowers-agent config-set <key> <value>       # Update configuration
-  .agents/superpowers-agent setup-skills                   # Initialize project with skills documentation
-  .agents/superpowers-agent use-skill <skill-name>         # Load a specific skill
-  .agents/superpowers-agent find-skills                    # List all available skills
-  .agents/superpowers-agent install-copilot-prompts        # Install GitHub Copilot prompts only
-  .agents/superpowers-agent install-copilot-instructions   # Install universal instructions only
-  .agents/superpowers-agent install-cursor-commands        # Install Cursor commands only
-  .agents/superpowers-agent install-cursor-hooks           # Install Cursor hooks only
-  .agents/superpowers-agent install-codex-prompts          # Install OpenAI Codex prompts only
-  .agents/superpowers-agent install-gemini-commands        # Install Gemini commands only
-  .agents/superpowers-agent install-claude-commands        # Install Claude Code commands only
-  .agents/superpowers-agent install-opencode-commands      # Install opencode commands only
-  .agents/superpowers-agent install-aliases                # Install universal aliases (superpowers, superpowers-agent)
+  .agents/superpowers-agent bootstrap [--no-update]              # Run complete bootstrap with all skills
+  .agents/superpowers-agent update [--no-reinstall]              # Update to latest version from GitHub
+  .agents/superpowers-agent get-config <key>                     # Get configuration value
+  .agents/superpowers-agent config-get                           # Show current configuration
+  .agents/superpowers-agent config-set <key> <value>             # Update configuration
+  .agents/superpowers-agent setup-skills                         # Initialize project with skills documentation
+  .agents/superpowers-agent use-skill <skill-name>               # Load a specific skill
+  .agents/superpowers-agent find-skills                          # List all available skills
+  .agents/superpowers-agent get-helpers <skill> <search-term>    # Get helper file path from skill.json
+  .agents/superpowers-agent install-copilot-prompts              # Install GitHub Copilot prompts only
+  .agents/superpowers-agent install-copilot-instructions         # Install universal instructions only
+  .agents/superpowers-agent install-cursor-commands              # Install Cursor commands only
+  .agents/superpowers-agent install-cursor-hooks                 # Install Cursor hooks only
+  .agents/superpowers-agent install-codex-prompts                # Install OpenAI Codex prompts only
+  .agents/superpowers-agent install-gemini-commands              # Install Gemini commands only
+  .agents/superpowers-agent install-claude-commands              # Install Claude Code commands only
+  .agents/superpowers-agent install-opencode-commands            # Install opencode commands only
+  .agents/superpowers-agent install-aliases                      # Install universal aliases (superpowers, superpowers-agent)
 
 Examples:
-  .agents/superpowers-agent bootstrap                      # Auto-update then bootstrap
-  .agents/superpowers-agent bootstrap --no-update          # Skip update, just bootstrap
-  .agents/superpowers-agent update                         # Update and reinstall changed integrations
-  .agents/superpowers-agent config-set auto_update false   # Disable auto-update
+  .agents/superpowers-agent bootstrap                            # Auto-update then bootstrap
+  .agents/superpowers-agent bootstrap --no-update                # Skip update, just bootstrap
+  .agents/superpowers-agent update                               # Update and reinstall changed integrations
+  .agents/superpowers-agent config-set auto_update false         # Disable auto-update
   .agents/superpowers-agent use-skill superpowers:brainstorming
   .agents/superpowers-agent use-skill claude:persistent-planning
-  .agents/superpowers-agent use-skill my-custom-skill`);
+  .agents/superpowers-agent use-skill my-custom-skill
+  .agents/superpowers-agent get-helpers block-collection search-block`);
     }
 };
 
