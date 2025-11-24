@@ -14,6 +14,8 @@ Generate a `skill.json` metadata file for a skill based on its `SKILL.md` frontm
 
 **Core principle:** skill.json is generated from existing information (frontmatter, file structure), not created from scratch with assumptions.
 
+**CRITICAL:** skill.json contains **EXACTLY 5 FIELDS** - no more, no less. Any additional fields are forbidden.
+
 ## When to Use
 
 Use this skill when:
@@ -133,7 +135,7 @@ Aliases allow users to reference the skill with shorter names.
 
 ### 6. Create skill.json
 
-Assemble the complete skill.json:
+Assemble the complete skill.json with **EXACTLY these 5 fields**:
 
 ```json
 {
@@ -150,6 +152,8 @@ Assemble the complete skill.json:
   ]
 }
 ```
+
+**FORBIDDEN:** Do NOT add any other fields. No `description`, `tags`, `capabilities`, `triggers`, `keyConcepts`, `components`, `references`, `quickReference`, `resources`, `stats`, or any other creative fields.
 
 ### 7. Write and Validate
 
@@ -210,6 +214,91 @@ version: 2.1.0
 }
 ```
 
+## FORBIDDEN FIELDS
+
+**skill.json must contain EXACTLY 5 fields.** The following fields are explicitly FORBIDDEN:
+
+### Documentation Fields (belongs in SKILL.md)
+- ❌ `description` - Use SKILL.md frontmatter `description` field
+- ❌ `when_to_use` - Use SKILL.md frontmatter `when_to_use` field
+- ❌ `keyConcepts` - Document in SKILL.md content
+- ❌ `overview` - Document in SKILL.md content
+- ❌ `documentation` - Use SKILL.md
+
+### Discovery Fields (handled by find-skills)
+- ❌ `tags` - Use SKILL.md frontmatter fields for search
+- ❌ `keywords` - Use SKILL.md content for search
+- ❌ `triggers` - Use SKILL.md `when_to_use` field
+- ❌ `categories` - Path already indicates category
+- ❌ `topics` - Use SKILL.md content
+
+### Capability Fields (documented in SKILL.md)
+- ❌ `capabilities` - Document in SKILL.md content
+- ❌ `features` - Document in SKILL.md content
+- ❌ `functions` - Document in SKILL.md content
+- ❌ `commands` - Document in SKILL.md content
+- ❌ `operations` - Document in SKILL.md content
+
+### Reference Fields (use helper files)
+- ❌ `references` - Link to helper files in SKILL.md
+- ❌ `resources` - Add to `helpers` array if needed
+- ❌ `links` - Add to SKILL.md content
+- ❌ `importantLinks` - Add to SKILL.md content
+- ❌ `externalDocs` - Add to SKILL.md content
+
+### Structure Fields (use helper files)
+- ❌ `components` - Document in SKILL.md or helper files
+- ❌ `modules` - Document in SKILL.md or helper files
+- ❌ `apis` - Document in SKILL.md or helper files
+- ❌ `quickReference` - Create as helper file if needed
+- ❌ `quickNavigation` - Use SKILL.md table of contents
+
+### Metadata Fields (not used by tooling)
+- ❌ `author` - Track in git history
+- ❌ `contributors` - Track in git history
+- ❌ `license` - Inherited from repository
+- ❌ `repository` - Known from location
+- ❌ `homepage` - Not applicable
+- ❌ `bugs` - Use repository issues
+
+### Usage Fields (belongs in SKILL.md)
+- ❌ `examples` - Add as helper files or SKILL.md content
+- ❌ `userLevels` - Document in SKILL.md content
+- ❌ `quickStart` - Document in SKILL.md content
+- ❌ `tutorials` - Create as helper files
+
+### Statistics Fields (unnecessary)
+- ❌ `stats` - Not used by any tooling
+- ❌ `metrics` - Not used by any tooling
+- ❌ `counts` - Not used by any tooling
+
+### Update Fields (unnecessary)
+- ❌ `updateInstructions` - Document in SKILL.md or README
+- ❌ `changelog` - Track in git history
+- ❌ `lastUpdated` - Track in git history
+
+### Configuration Fields (not part of metadata)
+- ❌ `config` - Create as helper file if needed
+- ❌ `settings` - Create as helper file if needed
+- ❌ `options` - Document in SKILL.md
+
+## Rationalization Table
+
+| Rationalization | Counter |
+|-----------------|---------|
+| "Adding `description` helps with discoverability" | NO. Description is in SKILL.md frontmatter. find-skills reads that. |
+| "`tags` make it easier to categorize and search" | NO. find-skills uses SKILL.md content and frontmatter. Path already indicates category. |
+| "`capabilities` document what the skill does" | NO. That's what SKILL.md content is for. skill.json is for tooling, not documentation. |
+| "`triggers` help agents know when to use this" | NO. SKILL.md `when_to_use` field serves this purpose. Don't duplicate. |
+| "These fields might be useful for future features" | YAGNI violation. No imaginary consumers. Only add fields when tooling actually needs them. |
+| "`quickReference` provides fast access to commands" | NO. Create as a helper file and add to `helpers` array if needed. |
+| "`references` link to documentation sources" | NO. Add links in SKILL.md content or as helper files. |
+| "Other skill systems use these fields" | Irrelevant. superpowers-agent uses 5 fields. Period. |
+| "Extra metadata is harmless" | NO. Bloats files, creates maintenance burden, misleads about what tooling uses. |
+| "I want to preserve information from SKILL.md" | NO. Information belongs in SKILL.md. skill.json is for superpowers-agent configuration only. |
+
+**The rule is absolute:** skill.json contains EXACTLY 5 fields. No exceptions.
+
 ## Common Mistakes
 
 ### ❌ Adding namespace prefixes to name
@@ -267,12 +356,19 @@ version: 2.1.0
 After creating skill.json, verify:
 
 - [ ] JSON is valid syntax (use `jq` if available)
+- [ ] **File contains EXACTLY 5 top-level fields** (version, name, title, helpers, aliases)
+- [ ] No forbidden fields present (see FORBIDDEN FIELDS section)
 - [ ] `version` matches SKILL.md frontmatter (or is "1.0.0")
 - [ ] `name` is the relative path without namespace prefix
 - [ ] `title` matches `name` field from SKILL.md frontmatter
 - [ ] `helpers` array includes all support files with correct relative paths
 - [ ] `aliases` contains exactly two entries: full path and skill name
 - [ ] File saved to same directory as SKILL.md
+
+**Field count check:**
+```bash
+jq 'keys | length' skill.json  # Must output: 5
+```
 
 ## Related Skills
 
