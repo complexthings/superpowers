@@ -96,7 +96,7 @@ const writeConfig = (updates) => {
 
 const isRepoClean = () => {
     try {
-        const output = execSync('git status --porcelain', {
+        const output = execSync('git status --porcelain --untracked-files=no', {
             cwd: paths.superpowersRepo,
             encoding: 'utf8',
             stdio: 'pipe',
