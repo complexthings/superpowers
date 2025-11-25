@@ -1,0 +1,13 @@
+**Tool Mapping for Codex:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `update_plan` (simple step tracker; no full todo manager)
+- `Task` tool with subagents → Execute the work yourself (no subagent tool)
+- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Read` → `shell_command` with `cat`/`sed` (no dedicated read tool)
+- `Write` → `apply_patch` (create/edit files) or `shell_command` with redirection for new files
+- `Edit` → `apply_patch` (targeted edits)
+- `Bash` → `shell_command` (execute shell commands)
+- `List` → `shell_command` (`ls`, `find`)
+- `Grep` → `shell_command` (`rg`)
+- `Glob` → `shell_command` (`rg --files`, `find`)
+- `WebFetch` → `features.web_search_request, web_search_request` (fetch web content)

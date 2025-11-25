@@ -1,0 +1,14 @@
+**Tool Mapping for OpenCode:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `todowrite` (manage todo lists with status tracking)
+- `TodoRead` → `todoread` (read current todo list state)
+- `Task` → `task` (dispatch specialized subagents for complex multi-step tasks)
+- `Skill` → `superpowers-agent execute` command (already available)
+- `Read` → `read` (read file contents with line numbers, supports offset/limit)
+- `Write` → `write` (create/overwrite files, requires prior read for existing files)
+- `Edit` → `edit` (make exact string replacements in files)
+- `Bash` → `bash` (execute shell commands with timeout support)
+- `List` → `list` (list directory contents with optional ignore patterns)
+- `Grep` → `grep` (search file contents using regex, supports file patterns)
+- `Glob` → `glob` (find files by glob pattern, sorted by modification time)
+- `WebFetch` → `webfetch` (fetch web content in text, markdown, or html format)

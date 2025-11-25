@@ -418,8 +418,6 @@ const findSkillsInDir = (dir, sourceType, maxDepth = null) => {
 
 // Commands
 const runFindSkills = () => {
-    console.log('Available skills:\n==================\n');
-
     const foundSkills = new Set();
     
     // Skill discovery order (priority: project > claude > personal > superpowers)
@@ -788,7 +786,7 @@ const installCursorHooks = () => {
     }
 
     if (installed > 0) {
-        console.log(`\n✓ Installed ${installed} hook(s) to ${hooksDestDir}\n  Cursor will now auto-bootstrap skills at conversation start\n  Restart Cursor for hooks to take effect`);
+        console.log(`\n✓ Installed ${installed} hook(s) to ${hooksDestDir}\n  Cursor will now check for skills before each prompt submission\n  Restart Cursor for hooks to take effect`);
     }
 };
 
@@ -1004,6 +1002,134 @@ const installOpencodeCommands = () => {
     }
 };
 
+// Helper function to load tool mapping template for a platform
+const loadToolMappingTemplate = (platform) => {
+    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', `TOOLS-${platform.toUpperCase()}.md.template`);
+    try {
+        if (existsSync(templatePath)) {
+            return readFileSync(templatePath, 'utf8');
+        }
+    } catch (error) {
+        console.log(`⚠️  Warning: Could not load tool mapping for ${platform}: ${error.message}`);
+    }
+    return '';
+};
+
+// Helper function to generate tool mappings section based on detected platforms
+const generateToolMappings = (platforms) => {
+    if (!platforms || platforms.length === 0) {
+        return '';
+    }
+    
+    const mappings = platforms
+        .map(platform => loadToolMappingTemplate(platform))
+        .filter(mapping => mapping.length > 0)
+        .join('\n\n');
+    
+    return mappings ? `\n${mappings}\n` : '';
+};
+
+// Helper function to detect available platforms
+const detectPlatforms = () => {
+    const detected = [];
+    
+    if (toolDetection.copilot.check()) detected.push('github-copilot');
+    if (toolDetection.cursor.check()) detected.push('cursor');
+    if (toolDetection.claude.check()) detected.push('claude-code');
+    if (toolDetection.opencode.check()) detected.push('opencode');
+    if (toolDetection.gemini.check()) detected.push('gemini');
+    if (toolDetection.codex.check()) detected.push('codex');
+    
+    return detected;
+};
+
+// Helper function to update or create a platform-specific file with tool mappings
+const updatePlatformFile = (filePath, templateContent, platforms, createIfMissing = true) => {
+    const fileExists = existsSync(filePath);
+    
+    // If file doesn't exist and we shouldn't create it, skip
+    if (!fileExists && !createIfMissing) {
+        return { updated: false, created: false, skipped: true };
+    }
+    
+    // Generate tool mappings for the specified platforms
+    const toolMappings = generateToolMappings(platforms);
+    
+    // Replace placeholder in template
+    let content = templateContent.replace(/\{\{TOOL_MAPPINGS\}\}/g, toolMappings);
+    
+    // Replace other placeholders
+    const currentDate = new Date().toISOString().split('T')[0];
+    content = content.replace(/\{\{DATE\}\}/g, currentDate);
+    content = content.replace(/\{\{SUPERPOWERS_PATH\}\}/g, paths.superpowersRepo);
+    
+    // Wrap content in markers
+    const wrappedContent = `<!-- SUPERPOWERS_SKILLS_START -->\n${content}\n<!-- SUPERPOWERS_SKILLS_END -->`;
+    
+    if (fileExists) {
+        // Backup existing file
+        const timestamp = new Date().toISOString().split('T')[0];
+        const backupPath = `${filePath}.backup-${timestamp}`;
+        try {
+            execSync(`cp "${filePath}" "${backupPath}"`, { stdio: 'pipe' });
+        } catch (error) {
+            return { updated: false, error: true, message: `Failed to backup: ${error.message}` };
+        }
+        
+        // Read existing file
+        let existingContent;
+        try {
+            existingContent = readFileSync(filePath, 'utf8');
+        } catch (error) {
+            return { updated: false, error: true, message: `Failed to read: ${error.message}` };
+        }
+        
+        // Check if file already has SUPERPOWERS markers
+        const startMarker = '<!-- SUPERPOWERS_SKILLS_START -->';
+        const endMarker = '<!-- SUPERPOWERS_SKILLS_END -->';
+        
+        let newContent;
+        if (existingContent.includes(startMarker) && existingContent.includes(endMarker)) {
+            // Replace existing superpowers section
+            const regex = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`, 'g');
+            newContent = existingContent.replace(regex, wrappedContent);
+        } else {
+            // Find opening header or prepend to top
+            const headerMatch = existingContent.match(/^#\s+.+$/m);
+            if (headerMatch) {
+                // Insert after first header
+                const headerEndPos = existingContent.indexOf('\n', headerMatch.index) + 1;
+                newContent = existingContent.slice(0, headerEndPos) + '\n' + wrappedContent + '\n' + existingContent.slice(headerEndPos);
+            } else {
+                // No header, prepend to top
+                newContent = wrappedContent + '\n\n' + existingContent;
+            }
+        }
+        
+        // Write updated content
+        try {
+            writeFileSync(filePath, newContent, 'utf8');
+            return { updated: true, created: false, backup: backupPath };
+        } catch (error) {
+            return { updated: false, error: true, message: `Failed to write: ${error.message}` };
+        }
+    } else {
+        // Create new file
+        try {
+            // Ensure directory exists
+            const dir = dirname(filePath);
+            if (!existsSync(dir)) {
+                execSync(`mkdir -p "${dir}"`, { stdio: 'pipe' });
+            }
+            
+            writeFileSync(filePath, wrappedContent, 'utf8');
+            return { updated: false, created: true };
+        } catch (error) {
+            return { updated: false, created: false, error: true, message: `Failed to create: ${error.message}` };
+        }
+    }
+};
+
 const runSetupSkills = () => {
     console.log('# Setting up Superpowers skills for this project\n');
 
@@ -1075,64 +1201,80 @@ const runSetupSkills = () => {
         return;
     }
 
-    // Replace placeholders
-    const currentDate = new Date().toISOString().split('T')[0];
-    const superpowersPath = paths.superpowersRepo;
+    // Detect which platforms are present in the project or available globally
+    const projectPlatforms = [];
     
-    // Get available skills list
-    let skillsList = '';
-    try {
-        const output = execSync(`"${join(__dirname, 'superpowers-agent')}" find-skills`, {
-            encoding: 'utf8',
-            stdio: 'pipe'
-        });
-        skillsList = '\n```\n' + output + '```\n';
-    } catch {
-        skillsList = '\nRun `superpowers-agent find-skills` to see available skills.\n';
+    // Check for existing platform files or detected platforms
+    const rootCopilotPath = join(projectRoot, '.github', 'copilot-instructions.md');
+    const globalCopilotPath = join(paths.home, '.github', 'copilot-instructions.md');
+    if (existsSync(rootCopilotPath) || existsSync(globalCopilotPath) || toolDetection.copilot.check()) {
+        projectPlatforms.push('github-copilot');
+    }
+    
+    const rootClaudeMdPath = join(projectRoot, 'CLAUDE.md');
+    const dotAgentsClaudeMdPath = join(agentsDir, 'CLAUDE.md');
+    if (existsSync(rootClaudeMdPath) || existsSync(dotAgentsClaudeMdPath) || toolDetection.claude.check()) {
+        projectPlatforms.push('claude-code');
+    }
+    
+    const rootGeminiMdPath = join(projectRoot, 'GEMINI.md');
+    const dotAgentsGeminiMdPath = join(agentsDir, 'GEMINI.md');
+    if (existsSync(rootGeminiMdPath) || existsSync(dotAgentsGeminiMdPath) || toolDetection.gemini.check()) {
+        projectPlatforms.push('gemini');
+    }
+    
+    // Cursor and OpenCode only go in AGENTS.md (not platform-specific files)
+    if (toolDetection.cursor.check()) {
+        projectPlatforms.push('cursor');
+    }
+    
+    if (toolDetection.opencode.check()) {
+        projectPlatforms.push('opencode');
+    }
+    
+    if (toolDetection.codex.check()) {
+        projectPlatforms.push('codex');
+    }
+    
+    console.log(`\nDetected platforms for project: ${projectPlatforms.join(', ') || 'none'}\n`);
+    
+    // Handle AGENTS.md with detected platform tool mappings
+    let agentsMdResult = { updated: false, created: false };
+    const agentsPlatforms = projectPlatforms.filter(p => ['github-copilot', 'cursor', 'opencode', 'codex'].includes(p));
+    const agentsResult = updatePlatformFile(agentsMdPath, template, agentsPlatforms, !agentsMdExists);
+    if (agentsResult.created) {
+        agentsMdResult = { updated: false, created: true };
+        const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
+        console.log(`✓ Created AGENTS.md with platform tool mappings (${agentsMdLocation})`);
+    } else if (agentsResult.updated) {
+        agentsMdResult = { updated: true, created: false };
+        const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated AGENTS.md with platform tool mappings (${agentsMdLocation})`);
+    } else if (agentsResult.error) {
+        console.log('⚠️  Failed to update AGENTS.md (continuing with other files)');
     }
 
-    let content = template;
-    content = content.replace(/\{\{DATE\}\}/g, currentDate);
-    content = content.replace(/\{\{SUPERPOWERS_PATH\}\}/g, superpowersPath);
-    content = content.replace(/\{\{AVAILABLE_SKILLS_LIST\}\}/g, skillsList);
-
-    // Extract just the skills section for updating existing files
-    const skillsSectionContent = extractSkillsSection(content);
-
-    // Handle AGENTS.md based on whether it exists (don't fail if this doesn't work)
-    let agentsMdResult = { updated: false, created: false };
-    if (agentsMdExists) {
-        // Update existing AGENTS.md by inserting/updating skills section
-        const result = updateAgentFile(agentsMdPath, skillsSectionContent);
-        if (result.updated) {
-            agentsMdResult = { ...result, updated: true };
-            const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
-            console.log(`✓ Updated AGENTS.md with skills section (${agentsMdLocation})`);
-        } else if (result.error) {
-            console.log('⚠️  Failed to update AGENTS.md (continuing with other files)');
-        }
-    } else {
-        // Create new AGENTS.md from full template (optional, don't fail if it doesn't work)
-        try {
-            writeFileSync(agentsMdPath, content, 'utf8');
-            agentsMdResult = { updated: false, created: true };
-            const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
-            console.log(`✓ Created AGENTS.md from template (${agentsMdLocation})`);
-        } catch (error) {
-            console.log(`⚠️  Could not create AGENTS.md: ${error.message} (continuing with other files)`);
-        }
+    // Update GitHub Copilot instructions if it exists
+    const copilotResult = updatePlatformFile(rootCopilotPath, template, ['github-copilot'], false);
+    if (copilotResult.created) {
+        console.log(`✓ Created copilot-instructions.md with GitHub Copilot tool mappings`);
+    } else if (copilotResult.updated) {
+        console.log(`✓ Updated copilot-instructions.md with GitHub Copilot tool mappings`);
+    } else if (copilotResult.skipped) {
+        console.log('ℹ️  Skipped copilot-instructions.md (does not exist)');
     }
 
     // Update CLAUDE.md if it exists (prefer root, then .agents/)
-    const rootClaudeMdPath = join(projectRoot, 'CLAUDE.md');
-    const dotAgentsClaudeMdPath = join(agentsDir, 'CLAUDE.md');
     const claudeMdPath = existsSync(rootClaudeMdPath) ? rootClaudeMdPath : dotAgentsClaudeMdPath;
-    const claudeResult = updateAgentFile(claudeMdPath, skillsSectionContent);
-    if (claudeResult.updated) {
+    const claudeResult = updatePlatformFile(claudeMdPath, template, ['claude-code'], false);
+    if (claudeResult.created) {
         const claudeMdLocation = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
-        console.log(`✓ Updated CLAUDE.md (${claudeResult.type} detection, ${claudeMdLocation})`);
+        console.log(`✓ Created CLAUDE.md with Claude Code tool mappings (${claudeMdLocation})`);
+    } else if (claudeResult.updated) {
+        const claudeMdLocation = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated CLAUDE.md with Claude Code tool mappings (${claudeMdLocation})`);
         if (claudeResult.backup) {
-            console.log(`  Backed up to ${claudeResult.backup}`);
+            console.log(`  Backed up to ${parse(claudeResult.backup).base}`);
         }
     } else if (claudeResult.skipped) {
         console.log('ℹ️  Skipped CLAUDE.md (does not exist)');
@@ -1141,15 +1283,16 @@ const runSetupSkills = () => {
     }
 
     // Update GEMINI.md if it exists (prefer root, then .agents/)
-    const rootGeminiMdPath = join(projectRoot, 'GEMINI.md');
-    const dotAgentsGeminiMdPath = join(agentsDir, 'GEMINI.md');
     const geminiMdPath = existsSync(rootGeminiMdPath) ? rootGeminiMdPath : dotAgentsGeminiMdPath;
-    const geminiResult = updateAgentFile(geminiMdPath, skillsSectionContent);
-    if (geminiResult.updated) {
+    const geminiResult = updatePlatformFile(geminiMdPath, template, ['gemini'], false);
+    if (geminiResult.created) {
         const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
-        console.log(`✓ Updated GEMINI.md (${geminiResult.type} detection, ${geminiMdLocation})`);
+        console.log(`✓ Created GEMINI.md with Gemini tool mappings (${geminiMdLocation})`);
+    } else if (geminiResult.updated) {
+        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated GEMINI.md with Gemini tool mappings (${geminiMdLocation})`);
         if (geminiResult.backup) {
-            console.log(`  Backed up to ${geminiResult.backup}`);
+            console.log(`  Backed up to ${parse(geminiResult.backup).base}`);
         }
     } else if (geminiResult.skipped) {
         console.log('ℹ️  Skipped GEMINI.md (does not exist)');
@@ -1388,6 +1531,89 @@ const runBootstrap = () => {
         console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
     }
     console.log('\n---\n');
+
+    // Generate platform-specific AGENTS.md files with tool mappings
+    console.log('## Generating Platform-Specific Files\n');
+    
+    const detectedPlatforms = detectPlatforms();
+    console.log(`Detected platforms: ${detectedPlatforms.join(', ') || 'none'}\n`);
+    
+    // Read the base template
+    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'AGENTS.md.template');
+    let baseTemplate = '';
+    try {
+        baseTemplate = readFileSync(templatePath, 'utf8');
+    } catch (error) {
+        console.log(`⚠️  Could not read AGENTS.md template: ${error.message}\n`);
+    }
+    
+    if (baseTemplate) {
+        // Update ~/.agents/AGENTS.md with all detected platforms
+        const globalAgentsPath = join(paths.home, '.agents', 'AGENTS.md');
+        const globalResult = updatePlatformFile(globalAgentsPath, baseTemplate, detectedPlatforms, true);
+        if (globalResult.created) {
+            console.log(`✓ Created ${globalAgentsPath} with all detected platforms`);
+        } else if (globalResult.updated) {
+            console.log(`✓ Updated ${globalAgentsPath} with all detected platforms`);
+        } else if (globalResult.error) {
+            console.log(`⚠️  Failed to update ${globalAgentsPath}`);
+        }
+        
+        // Update platform-specific files
+        if (detectedPlatforms.includes('github-copilot')) {
+            const copilotPath = join(paths.home, '.github', 'copilot-instructions.md');
+            const copilotResult = updatePlatformFile(copilotPath, baseTemplate, ['github-copilot'], true);
+            if (copilotResult.created) {
+                console.log(`✓ Created ${copilotPath}`);
+            } else if (copilotResult.updated) {
+                console.log(`✓ Updated ${copilotPath}`);
+            }
+        }
+        
+        if (detectedPlatforms.includes('claude-code')) {
+            const claudePath = join(paths.home, '.claude', 'CLAUDE.md');
+            const claudeResult = updatePlatformFile(claudePath, baseTemplate, ['claude-code'], true);
+            if (claudeResult.created) {
+                console.log(`✓ Created ${claudePath}`);
+            } else if (claudeResult.updated) {
+                console.log(`✓ Updated ${claudePath}`);
+            }
+        }
+        
+        if (detectedPlatforms.includes('gemini')) {
+            const geminiPath = join(paths.home, '.gemini', 'GEMINI.md');
+            const geminiResult = updatePlatformFile(geminiPath, baseTemplate, ['gemini'], true);
+            if (geminiResult.created) {
+                console.log(`✓ Created ${geminiPath}`);
+            } else if (geminiResult.updated) {
+                console.log(`✓ Updated ${geminiPath}`);
+            }
+        }
+        
+        if (detectedPlatforms.includes('opencode')) {
+            const opencodePath = join(paths.home, '.config', 'opencode', 'AGENTS.md');
+            const opencodeResult = updatePlatformFile(opencodePath, baseTemplate, ['opencode'], true);
+            if (opencodeResult.created) {
+                console.log(`✓ Created ${opencodePath}`);
+            } else if (opencodeResult.updated) {
+                console.log(`✓ Updated ${opencodePath}`);
+            }
+        }
+        
+        if (detectedPlatforms.includes('codex')) {
+            const codexPath = join(paths.home, '.codex', 'AGENTS.md');
+            const codexResult = updatePlatformFile(codexPath, baseTemplate, ['codex'], true);
+            if (codexResult.created) {
+                console.log(`✓ Created ${codexPath}`);
+            } else if (codexResult.updated) {
+                console.log(`✓ Updated ${codexPath}`);
+            }
+        }
+        
+        console.log('');
+    }
+    
+    console.log('---\n');
 
     // Show bootstrap instructions
     if (existsSync(paths.bootstrap)) {
