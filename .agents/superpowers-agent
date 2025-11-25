@@ -2118,6 +2118,72 @@ Description:
     console.log(skillDir);
 };
 
+const runPath = () => {
+    const skillName = process.argv[3];
+    
+    if (!skillName) {
+        console.log(`Usage: superpowers-agent path <skill-name-or-alias>
+
+Examples:
+  superpowers-agent path brainstorming
+  superpowers-agent path superpowers:collaboration/brainstorming
+  superpowers-agent path aem/block-collection-and-party
+  superpowers-agent path block-collection  # Using alias
+
+Description:
+  Outputs the file system path of the specified SKILL.md file.
+  Supports skill aliases defined in skill.json files.`);
+        return;
+    }
+    
+    // Locate the skill (supporting aliases)
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+    
+    const { skillFile } = location;
+    
+    // Output the SKILL.md file path
+    console.log(skillFile);
+};
+
+const runExecute = () => {
+    const skillName = process.argv[3];
+    
+    if (!skillName) {
+        console.log(`Usage: superpowers-agent execute <skill-name-or-alias>
+
+Examples:
+  superpowers-agent execute brainstorming
+  superpowers-agent execute superpowers:collaboration/brainstorming
+  superpowers-agent execute aem/block-collection-and-party
+  superpowers-agent execute block-collection  # Using alias
+
+Description:
+  Instructs the agent to execute the specified skill.
+  Supports skill aliases defined in skill.json files.`);
+        return;
+    }
+    
+    // Locate the skill (supporting aliases)
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+    
+    const { skillFile } = location;
+    
+    // Output instruction to execute the skill
+    console.log(`Follow the instructions, guidelines, rules, and validations defined in the Skill located at ${skillFile}`);
+};
+
 const runGetHelpers = () => {
     const skillName = process.argv[3];
     const helperSearchTerm = process.argv[4];
@@ -2873,6 +2939,8 @@ const commands = {
     'add': runAdd,
     'add-repository': runAddRepository,
     'dir': runDir,
+    'path': runPath,
+    'execute': runExecute,
     'get-helpers': runGetHelpers,
     'install-copilot-prompts': installCopilotPrompts,
     'install-copilot-instructions': installCopilotInstructions,
@@ -2897,6 +2965,8 @@ Usage:
   .agents/superpowers-agent add <url-or-path|@alias> [path] [options]      # Install skill(s) from Git, local, or alias
   .agents/superpowers-agent add-repository <git-url> [--as=@alias] [opts]  # Add repository alias for easy access
   .agents/superpowers-agent dir <skill-name>                                # Get skill directory path
+  .agents/superpowers-agent path <skill-name>                               # Get skill SKILL.md file path
+  .agents/superpowers-agent execute <skill-name>                            # Get instruction to execute a skill
   .agents/superpowers-agent get-helpers <skill> <search-term>               # Get helper file path from skill.json
   .agents/superpowers-agent install-copilot-prompts                         # Install GitHub Copilot prompts only
   .agents/superpowers-agent install-copilot-instructions                    # Install universal instructions only
@@ -2922,6 +2992,8 @@ Examples:
   .agents/superpowers-agent add-repository https://github.com/example/skills.git --as=@myskills
   .agents/superpowers-agent add @myskills path/to/skill
   .agents/superpowers-agent dir brainstorming
+  .agents/superpowers-agent path brainstorming
+  .agents/superpowers-agent execute brainstorming
   .agents/superpowers-agent get-helpers block-collection search-block`);
     }
 };
