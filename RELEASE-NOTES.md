@@ -6,6 +6,144 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v5.3.0 (November 24, 2025)
+
+### 🔄 Command Refactoring
+
+**Renamed: `use-skill` → `execute`**
+- More intuitive command name for loading and running skills
+- Updated all documentation, examples, and slash commands
+- Backward compatibility note: Old `use-skill` command still works but is deprecated
+
+**Command Updates Across All Platforms:**
+- OpenCode: `/execute` (was `/use-skill`)
+- Claude Code: Updated commands/using-a-skill.md
+- GitHub Copilot: `/execute` via superpowers-execute.prompt.md
+- Cursor: `/execute` command
+- Gemini: `/execute` via execute.toml
+- Codex: `/execute` prompt file
+
+### 🆕 New Commands
+
+**`path` Command**
+- Returns the file system path to a skill's SKILL.md file
+- Supports aliases and smart matching
+- Enables programmatic access to skill content
+- Usage: `superpowers-agent path <skill-name-or-alias>`
+
+**Examples:**
+```bash
+superpowers-agent path brainstorming
+# Output: /Users/username/.agents/superpowers/skills/collaboration/brainstorming/SKILL.md
+
+superpowers-agent path superpowers:collaboration/brainstorming
+superpowers-agent path block-collection  # Using alias
+```
+
+**Complementary Commands:**
+- `dir` - Returns skill directory path
+- `path` - Returns SKILL.md file path
+- `get-helpers` - Returns specific helper file path
+- `execute` - Loads and executes a skill
+
+### 🛠️ Enhanced create-skill-json Skill
+
+**Strict 5-Field Enforcement**
+- Added CRITICAL note that skill.json must have EXACTLY 5 fields
+- Comprehensive FORBIDDEN FIELDS section with 40+ banned fields organized by category
+- Rationalization Table with 10 common excuses and counters
+- Updated verification checklist with field count requirement (`jq 'keys | length'` must equal 5)
+- Created test-scenarios.md for testing with subagents
+
+**Forbidden Field Categories:**
+- Documentation fields (description, keyConcepts, overview) → Use SKILL.md
+- Discovery fields (tags, keywords, triggers) → Use find-skills
+- Capability fields (capabilities, features, functions) → Document in SKILL.md
+- Reference fields (references, resources, links) → Use helper files
+- Structure fields (components, modules, apis) → Use SKILL.md or helpers
+- Metadata fields (author, contributors, license) → Track in git
+- Usage fields (examples, userLevels, quickStart) → Use helpers
+- Statistics fields (stats, metrics, counts) → Not used by tooling
+- Update fields (updateInstructions, changelog) → Track in git
+- Configuration fields (config, settings, options) → Use helper files
+
+**The Only 5 Allowed Fields:**
+1. `version` - Version tracking
+2. `name` - Skill path identifier
+3. `title` - Human-readable name
+4. `helpers` - Array of helper file paths
+5. `aliases` - Array of alternative names
+
+### 📚 Documentation Updates
+
+**Updated Files:**
+- README.md - All `use-skill` references changed to `execute`, added `path` command documentation
+- INSTALL.md - Updated command reference
+- RELEASE-NOTES.md - This section
+- All slash command files updated for command rename
+- .github/copilot-instructions.md - Updated with `execute` command
+
+**Command Comparison:**
+| Old Command | New Command | Purpose |
+|-------------|-------------|---------|
+| `use-skill <name>` | `execute <name>` | Load and run a skill |
+| N/A | `path <name>` | Get SKILL.md file path |
+| `dir <name>` | `dir <name>` | Get skill directory (unchanged) |
+
+### 🔧 Breaking Changes
+
+**None - Backward Compatible**
+- Old `use-skill` command still works (deprecated but functional)
+- Existing scripts and workflows continue to function
+- Gradual migration recommended but not required
+
+### 💡 Migration Guide
+
+**For Users:**
+- Replace `superpowers-agent use-skill` with `superpowers-agent execute` in scripts
+- Update slash command usage from `/use-skill` to `/execute`
+- No immediate action required - both commands work
+
+**For Skill Authors:**
+- When creating new skill.json files, strictly follow the 5-field structure
+- Use enhanced create-skill-json skill to prevent field bloat
+- Verify with `jq 'keys | length' skill.json` (must output 5)
+
+---
+
+## v5.2.3 (November 23, 2025)
+
+### 🐛 Bug Fixes
+
+**Symlink Support for Nested Skills**
+- Fixed `find-skills` to discover skills in symlinked directories
+- Fixed `execute` to load skills from symlinked nested directories
+- Both functions now detect and follow symlinks using `statSync()`
+- Gracefully handles broken symlinks with try/catch
+- Enables personal skill organization with symlinked category directories
+
+**Technical Details:**
+- Node.js `readdirSync()` with `withFileTypes` returns `isDirectory()=false` for symlinks
+- Solution: Check `entry.isSymbolicLink()` and use `statSync()` to verify target is directory
+- Applied to both `findSkillsInDir()` and `findMatchingSkills()` functions
+
+**Example Use Case:**
+```bash
+# Personal skills organized with symlinks
+~/.agents/skills/
+  aem/ -> /Users/username/sites/ai/skills/aem/  # Symlinked directory
+    authoring-analysis/SKILL.md
+    block-collection-and-party/SKILL.md
+    # ... 14+ more AEM skills
+
+# Now discovered correctly by find-skills
+superpowers-agent find-skills | grep aem
+superpowers-agent execute aem/authoring-analysis  # Works!
+superpowers-agent execute authoring-analysis       # Smart matching works too!
+```
+
+---
+
 ## v5.2.2 (November 23, 2025)
 
 ### 🎯 New Skills

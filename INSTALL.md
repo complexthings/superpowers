@@ -44,7 +44,7 @@ superpowers execute systematic-debugging
 - `/brainstorm` or `/brainstorm-with-superpowers`
 - `/write-skill` or `/write-a-skill`
 - `/skills` - Discover available skills
-- `/use-skill` - Load and apply a specific skill
+- `/execute` - Load and apply a specific skill
 - `/write-plan` - Create implementation plans
 - `/execute-plan` - Execute plans in batches
 
