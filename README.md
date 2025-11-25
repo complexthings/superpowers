@@ -6,7 +6,17 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
-**November 2025 Updates:**
+**v5.4.0 (November 25, 2025):**
+
+- 🎯 **Dynamic Tool Mappings** - Platform-specific tool mapping templates automatically generate configuration files for detected AI coding assistants. Each platform gets its own template (GitHub Copilot, Cursor, Claude Code, Gemini, OpenCode, Codex) with comprehensive tool documentation.
+
+- 📦 **Automated Platform Detection** - Bootstrap command now detects installed platforms and creates customized configuration files (`~/.github/copilot-instructions.md`, `~/.claude/CLAUDE.md`, `~/.gemini/GEMINI.md`, etc.) with only relevant tool mappings.
+
+- 🔄 **Smart File Updates** - Marker-based content updates (`<!-- SUPERPOWERS_SKILLS_START/END -->`) preserve custom content while keeping tool mappings current. Automatic backups before updates.
+
+- ⚡ **Cursor Hook Optimization** - New `beforeSubmitPrompt` hook injects skills context before prompt submission (replacing post-response hooks) for better performance and reduced overhead.
+
+**Previous Updates:**
 
 - 🎯 **Smart Skill Matching** - Just type `superpowers execute brainstorming` instead of the full `superpowers:collaboration/brainstorming` path. Suffix matching with priority resolution makes skill loading much more convenient.
 
