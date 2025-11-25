@@ -6,6 +6,153 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v5.4.0 (November 25, 2025)
+
+### 🎯 Dynamic Tool Mappings System
+
+**Platform-Specific Tool Mapping Templates**
+- Created modular tool mapping template files for each platform in `.agents/templates/`:
+  - `TOOLS-GITHUB-COPILOT.md.template` - Comprehensive GitHub Copilot tool mappings (20+ tools)
+  - `TOOLS-CURSOR.md.template` - Complete Cursor tool mappings including MCP support
+  - `TOOLS-CLAUDE-CODE.md.template` - Full Claude Code tool mappings with subagents
+  - `TOOLS-GEMINI.md.template` - Gemini CLI tool mappings
+  - `TOOLS-OPENCODE.md.template` - OpenCode tool mappings with subagent support
+  - `TOOLS-CODEX.md.template` - Codex tool mappings
+- Updated `AGENTS.md.template` to use `{{TOOL_MAPPINGS}}` placeholder for dynamic injection
+- Updated `superpowers-bootstrap.md` to reference platform-specific files instead of inline mappings
+
+**Automated Platform Detection and File Generation**
+- New `detectPlatforms()` function automatically detects installed AI coding assistants
+- New `generateToolMappings(platforms)` creates combined tool mappings for multiple platforms
+- New `updatePlatformFile()` creates/updates platform-specific files with proper markers
+- Files wrapped in `<!-- SUPERPOWERS_SKILLS_START -->` / `<!-- SUPERPOWERS_SKILLS_END -->` markers for safe updates
+
+**Bootstrap Command Enhancement**
+- `superpowers-agent bootstrap` now generates platform-specific configuration files:
+  - `~/.agents/AGENTS.md` - Universal file with all detected platform mappings
+  - `~/.github/copilot-instructions.md` - GitHub Copilot specific (if detected)
+  - `~/.claude/CLAUDE.md` - Claude Code specific (if detected)
+  - `~/.gemini/GEMINI.md` - Gemini specific (if detected)
+  - `~/.config/opencode/AGENTS.md` - OpenCode specific (if detected)
+  - `~/.codex/AGENTS.md` - Codex specific (if detected)
+- Each file includes only the relevant tool mappings for that platform
+- Automatic heading generation for new files (e.g., `# CLAUDE.MD`, `# GEMINI.MD`)
+- Backup protection for existing files before updates
+
+**Setup-Skills Command Enhancement**
+- `superpowers-agent setup-skills` detects project platforms and generates appropriate mappings
+- Updates project `AGENTS.md` with detected platform tool mappings
+- Updates platform-specific files (copilot-instructions.md, CLAUDE.md, GEMINI.md) if they exist
+- Only includes relevant platforms per file type (e.g., Cursor/OpenCode in AGENTS.md, not in CLAUDE.md)
+
+### 🔄 Cursor Hook Optimization
+
+**New beforeSubmitPrompt Hook**
+- Created `hooks/cursor/before-submit-prompt.sh` for prompt injection before submission
+- Checks if project `AGENTS.md` has proper superpowers content with Cursor mappings
+- If not found, instructs agent to read `~/.agents/AGENTS.md` before processing prompt
+- Replaces old `afterAgentResponse` and `stop` hooks for better performance
+
+**Updated Hooks Configuration**
+- `hooks/cursor/hooks.json` now uses `beforeSubmitPrompt` instead of `afterAgentResponse`/`stop`
+- More efficient: injects context once per prompt instead of post-response
+- Reduces conversation overhead and improves response times
+- Old hook files (`detect-new-conversation.sh`, `inject-bootstrap.sh`) kept for reference but no longer used
+
+**Bootstrap Integration**
+- `installCursorHooks()` automatically installs new hook system
+- Success message updated to reflect new behavior
+- Restart Cursor for hooks to take effect
+
+### 📝 Enhanced Tool Mappings
+
+**GitHub Copilot (20+ tools documented)**
+- Task management: `manage_todo_list`, `runSubagent`
+- File operations: `read_file`, `create_file`, `replace_string_in_file`, `multi_replace_string_in_file`
+- Search: `grep_search`, `file_search`, `semantic_search`
+- Terminal: `run_in_terminal`, `get_terminal_output`
+- Notebooks: `edit_notebook_file`, `run_notebook_cell`, `copilot_getNotebookSummary`
+- Diagnostics: `get_errors`
+- Git: `get_changed_files`
+- Web: `fetch_webpage`
+
+**Cursor (15+ tools documented)**
+- Task management: `todo_write`
+- File operations: `read_file`, `write`, `search_replace`, `delete_file`
+- Search: `grep`, `glob_file_search`, `codebase_search`
+- Terminal: `run_terminal_cmd`
+- Notebooks: `edit_notebook`
+- Diagnostics: `read_lints`
+- MCP: Various MCP server tools (Playwright, Context7)
+- Web: `web_search`
+
+**Claude Code (20+ tools documented)**
+- Full tool suite including `TodoWrite`, `Task`, `Skill`, `SlashCommand`
+- Comprehensive file operations and search tools
+- Background process management: `BashOutput`, `KillShell`
+- Interactive features: `AskUserQuestion`
+- MCP integration: `mcp__ide__getDiagnostics`, `mcp__ide__executeCode`
+
+**Gemini, OpenCode, Codex**
+- Complete tool mappings with platform-specific details
+- Clear explanations of capabilities and limitations
+- Proper tool name mappings for each platform
+
+### 🛠️ Technical Improvements
+
+**Helper Functions**
+- `loadToolMappingTemplate(platform)` - Loads individual platform templates
+- `generateToolMappings(platforms)` - Combines multiple platform mappings
+- `detectPlatforms()` - Auto-detects installed AI coding tools
+- `updatePlatformFile(filePath, templateContent, platforms, createIfMissing)` - Unified file update logic
+
+**File Management**
+- Automatic directory creation for platform-specific files
+- Proper heading generation for new markdown files
+- Marker-based content updates preserve custom content
+- Timestamp-based backups before overwriting files
+
+**Code Organization**
+- Separated tool mappings from main template for maintainability
+- Centralized platform detection logic
+- Reusable file update function for bootstrap and setup-skills commands
+
+### 📚 Documentation Updates
+
+- Updated `AGENTS.md.template` with dynamic tool mapping system
+- Updated `superpowers-bootstrap.md` to reference platform-specific files
+- This release notes section
+
+### 🔧 Breaking Changes
+
+**None - Backward Compatible**
+- Existing `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` files continue to work
+- New marker-based system only activates on next update
+- Old tool mappings in existing files remain functional
+- No action required for existing installations
+
+### 💡 Benefits
+
+**For Users:**
+- Always up-to-date tool mappings for your specific platforms
+- No more outdated or irrelevant tool documentation
+- Cleaner, more focused tool references
+- Automatic updates when new platforms are installed
+
+**For Maintainers:**
+- Single source of truth for each platform's tool mappings
+- Easy to update individual platform templates
+- Reduced duplication across multiple files
+- Automated synchronization across global and project files
+
+**For AI Agents:**
+- More accurate tool usage guidance
+- Platform-specific instructions always available
+- Reduced confusion from irrelevant tool mappings
+- Better skill execution with correct tool names
+
+---
+
 ## v5.3.0 (November 24, 2025)
 
 ### 🔄 Command Refactoring
