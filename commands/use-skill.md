@@ -32,5 +32,5 @@ If you haven't specified a skill name yet, you can:
 
 Once you tell me which skill, I'll run:
 ```bash
-superpowers-agent use-skill <skill-name>
+superpowers-agent execute <skill-name>
 ```

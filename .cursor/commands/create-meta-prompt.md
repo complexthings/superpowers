@@ -7,8 +7,9 @@ I'm using the creating-prompts skill to create a structured prompt.
 
 First, let me load the skill:
 
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
 ```bash
-superpowers-agent use-skill superpowers:creating-prompts
+superpowers-agent execute superpowers:creating-prompts
 ```
 
 Now I'll follow the skill guidance to:

@@ -6,8 +6,10 @@ description: Create detailed implementation plan with bite-sized tasks
 
 I'll use the writing-plans skill to create a comprehensive implementation plan.
 
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
+
 ```bash
-superpowers-agent use-skill superpowers:writing-plans
+superpowers-agent execute superpowers:writing-plans
 ```
 
 This skill ensures:

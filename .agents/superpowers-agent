@@ -2181,7 +2181,7 @@ Description:
     const { skillFile } = location;
     
     // Output instruction to execute the skill
-    console.log(`Follow the instructions, guidelines, rules, and validations defined in the Skill located at ${skillFile}`);
+    console.log(`Open this file with your Read Tool: ${skillFile} <IMPORTANT>DO NOT \`cat\` OR print the file contents directly. USE YOUR Read Tool to process it correctly.</IMPORTANT>`);
 };
 
 const runGetHelpers = () => {

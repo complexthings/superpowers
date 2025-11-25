@@ -8,8 +8,9 @@ I'm using the brainstorming skill to help develop your idea.
 
 First, let me load the skill:
 
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
 ```bash
-superpowers-agent use-skill superpowers:brainstorming
+superpowers-agent execute superpowers:collaboration/brainstorming
 ```
 
 Now I'll follow the skill guidance to:

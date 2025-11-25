@@ -31,6 +31,8 @@ If you haven't specified a skill name yet, you can:
 - `superpowers:leveraging-cli-tools` - Use high-performance CLI tools
 
 Once you tell me which skill, I'll run:
+
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
 ```bash
-superpowers-agent use-skill $ARGUMENTS
+superpowers-agent execute $ARGUMENTS
 ```

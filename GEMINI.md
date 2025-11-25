@@ -45,7 +45,7 @@ The SKILL.md file contains detailed instructions that you must follow exactly as
 2. **Check for relevant Skills**: If a relevant skill exists for your tasks, even if there are more than one, you must read it using your available tools with the full path shown in the results. 
 3. **Selection of Skills**: Use each skill based on its name and description when it feels appropriate to do so. Think carefully about all the skills available to you and choose the best ones to use. Note that some skills may reference other skills, so you may need to apply more than one skill to get things done. Some tasks or instructions may also reference skills and require you to use them. 
 4. **Execute the Skill**: When you need to use a skill:
-  - Use `superpowers-agent use-skill {Skill Name}` 
+  - Use `superpowers-agent execute {Skill Name}` and follow the instructions to load it.
   - Announce you are using the skill by stating: "Using Skill: {Skill Name} to {Purpose}"
   - Follow the skill's instructions exactly as written.
   - Read any referenced resources or scripts as needed, execute scripts and tools as needed.
@@ -87,7 +87,7 @@ superpowers-agent find-skills debug
 superpowers-agent find-skills brainstorm
 ```
 
-**Then use the Read tool** on the skill path shown in results (e.g., `superpowers-agent use-skill test-driven-development`)
+**Then use the Read tool** on the skill path shown in results (e.g., `superpowers-agent path test-driven-development`)
 
 ### Skills with Checklists
 
@@ -105,9 +105,51 @@ Skills will be added to `.agents/skills/` as needed for this project. Check `sup
 
 Help users understand they can also use the following slash commands to interact with skills depending on the agent tool the user is using such as `/skills` to list skills, and `/use-skill {Skill Name}` to use a skill.
 
----
+<EXTREMELY_IMPORTANT>
+You have superpowers. Superpowers teach you new skills and capabilities.
 
-*Generated/Updated by Superpowers on 2025-11-18*
+**Tool for running skills:**
+- `superpowers-agent execute <skill-name>`
+
+**Tool Mapping for Gemini:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `write_todos` (create and manage task lists)
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Read` → `read_file` (read file contents)
+- `Write` → `write_file` (create/overwrite files)
+- `Edit` → `replace` (make targeted edits to files)
+- `Bash` → `run_shell_command` (execute shell commands)
+- `List` → `list_directory` (read directory structure)
+- `Grep` → `search_file_content` (search file contents)
+- `Glob` → `glob` (find files by pattern)
+- `WebFetch` → `web_fetch` (fetch web content)
+
+**Skills naming:**
+- Project skills: `skill-name` (from .agents/skills/ - highest priority)
+- Claude skills: `claude:skill-name` (from .claude/skills/)
+- Personal skills: `skill-name` (from ~/.agents/skills/)
+- Superpowers skills: `superpowers:skill-name` (from ~/.agents/superpowers/skills/)
+
+**Skills priority:**
+Project skills override Claude skills, which override personal skills, which override superpowers skills when names match.
+
+**Critical Rules:**
+- Before ANY task, review the skills list (shown at bootstrap)
+- If a relevant skill exists, you MUST use `superpowers-agent execute` to load it and follow instructions.
+  - YOU MUST USE YOUR `Read` TOOL TO READ THE SKILL FILE FROM THE PATH SHOWN. YOU MUST NOT `cat` the file or `print` it to yourself.
+- Announce: "I've read the [Skill Name] skill and I'm using it to [purpose]"
+- Skills with checklists require `manage_todo_list` todos for each item (or manual tracking if unavailable)
+- NEVER skip mandatory workflows (brainstorming before coding, TDD, systematic debugging)
+
+**Skills location:**
+- Project skills: .agents/skills/ (project-specific, highest priority)
+- Claude skills: .claude/skills/ (project's existing skill system)
+- Personal skills: ~/.agents/skills/ (your personal cross-project skills)
+- Superpowers skills: ~/.agents/superpowers/skills/ (shared community skills)
+
+IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
+</EXTREMELY_IMPORTANT>
 <!-- SUPERPOWERS_SKILLS_END -->
 
 

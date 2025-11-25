@@ -6,8 +6,9 @@ description: Execute plan in batches with review checkpoints
 
 I'll use the executing-plans skill to execute the plan systematically.
 
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
 ```bash
-superpowers-agent use-skill superpowers:executing-plans
+superpowers-agent execute superpowers:executing-plans
 ```
 
 This skill ensures:

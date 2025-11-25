@@ -1,14 +1,5 @@
 # AGENTS.md
 
-## CRITICAL FOR ALL AGENTS:
-
-REMEMBER WHAT YOU ARE INTEGRATED WITH, MOST OF THE TIME YOU ARE INTEGRATED WITH AN IDE DIRECTLY THERE IS NEVER A NEED TO ECHO OR CAT INTO A FILE WITH A HEREDOC OR SIMILAR METHOD UNLESS SPECIFICALLY INSTRUCTED TO DO SO IN THE USER INSTRUCTIONS FOR A TASK. OR AS PART OF A PLATFORM BEST PRACTICE.
-
-<IMPORTANT>All agents and tools (GitHub Copilot, Codex, Gemini, Claude, etc.) must edit files directly with their IDE or file tools instead of piping heredocs via terminal (`cat <<'EOF' > file`, `node -e ... > file`, etc.), especially in VS Code or other Electron-based IDEs where terminal injection can break the environment.</IMPORTANT>
-
-<important>NEVER EVER CAT A HEREDOC TO A FILE IN TERMINAL, YOU MUST USE THE IDE'S FILE WRITING CAPABILITIES INSTEAD.</important>
-
-<!-- SUPERPOWERS_SKILLS_START -->
 ## 🎯 CRITICAL: SKILLS (READ THIS FIRST)
 
 <IMPORTANT>
@@ -53,7 +44,7 @@ The SKILL.md file contains detailed instructions that you must follow exactly as
 2. **Check for relevant Skills**: If a relevant skill exists for your tasks, even if there are more than one, you must read it using your available tools with the full path shown in the results. 
 3. **Selection of Skills**: Use each skill based on its name and description when it feels appropriate to do so. Think carefully about all the skills available to you and choose the best ones to use. Note that some skills may reference other skills, so you may need to apply more than one skill to get things done. Some tasks or instructions may also reference skills and require you to use them. 
 4. **Execute the Skill**: When you need to use a skill:
-  - Use `superpowers-agent use-skill {Skill Name}` 
+  - Use `superpowers-agent execute {Skill Name}` and follow the instructions to load it.
   - Announce you are using the skill by stating: "Using Skill: {Skill Name} to {Purpose}"
   - Follow the skill's instructions exactly as written.
   - Read any referenced resources or scripts as needed, execute scripts and tools as needed.
@@ -95,7 +86,7 @@ superpowers-agent find-skills debug
 superpowers-agent find-skills brainstorm
 ```
 
-**Then use the Read tool** on the skill path shown in results (e.g., `superpowers-agent use-skill test-driven-development`)
+**Then use the Read tool** on the skill path shown in results (e.g., `superpowers-agent path test-driven-development`)
 
 ### Skills with Checklists
 
@@ -113,41 +104,104 @@ Skills will be added to `.agents/skills/` as needed for this project. Check `sup
 
 Help users understand they can also use the following slash commands to interact with skills depending on the agent tool the user is using such as `/skills` to list skills, and `/use-skill {Skill Name}` to use a skill.
 
----
+<EXTREMELY_IMPORTANT>
+You have superpowers. Superpowers teach you new skills and capabilities.
 
-*Generated/Updated by Superpowers on 2025-11-18*
-<!-- SUPERPOWERS_SKILLS_END -->### HOW SKILLS WORK
+**Tool for running skills:**
+- `superpowers-agent execute <skill-name>`
 
-Each Skill is a directory in `./skills/{skill-name}` that contains a `SKILL.md` file with detailed instructions. (sometimes they're in `.claude/skills`, or other agent-specific or skill directories as well). And have pretty standard stuctures:
+**Tool Mapping for GitHub Copilot:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `manage_todo_list` (your planning/task tracking tool)
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Read` → `Read File` tool (read file contents)
+- `Write` → `WriteFile` tool (create/overwrite files)
+- `Edit` → `Edit & Reapply` tool (suggest edits to files)
+- `Bash` → `Terminal` tool (execute terminal commands)
+- `List` → `List Directory` tool (read directory structure)
+- `Grep` → `SearchText` tool (search file contents)
+- `Glob` → `FindFiles` tool (find files by pattern)
+- `WebFetch` → `Web` tool (fetch and search web content)
 
-```
-./skills/{skill-name}/
-└── SKILL.md                # Main instructions (REQUIRED)
-└── scripts/                # Optional scripts to support the skill
-└── resources/              # Optional resources (data files, templates, etc.) to support the skill
-```
+**Tool Mapping for Cursor:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → Manual tracking or your own task management approach
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Read` → `Read File` tool (read file contents)
+- `Write` → `Write File` tool (create/overwrite files)
+- `Edit` → `Edit & Reapply` tool (suggest edits to files)
+- `Bash` → `Terminal` tool (execute terminal commands)
+- `List` → `List Directory` tool (read directory structure)
+- `Grep` → `Grep` tool (search file contents)
+- `Glob` → `Search Files` tool (find files by pattern)
+- `WebFetch` → `Web` tool (fetch and search web content)
 
-The SKILL.md file contains detailed instructions that you must follow exactly as written. Skills are designed to:
+**Tool Mapping for Claude Code:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `TodoWrite` (built-in task management)
+- `Task` → `Task` (built-in subagent dispatch)
+- `Skill` → `Skill` tool or `superpowers-agent execute` command (both available)
+- `Read` → `Read` tool (read file contents)
+- `Write` → `Write` tool (create/overwrite files)
+- `Edit` → `Edit` tool (make targeted edits to files)
+- `Bash` → `Bash` tool (execute shell commands)
+- `List` → Use `Read` tool with directory path
+- `Grep` → `Grep` tool (search file contents)
+- `Glob` → `Glob` tool (find files by pattern)
+- `WebFetch` → `WebFetch` tool (fetch web content)
 
-- Provide specialized workflows for common tasks
-- Ensure consistency with project standards and best practices
-- Reduce errors by codifying expert knowledge
-- Chain together when tasks require multiple skill applications
+**Tool Mapping for Gemini:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `write_todos` (create and manage task lists)
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Read` → `read_file` (read file contents)
+- `Write` → `write_file` (create/overwrite files)
+- `Edit` → `replace` (make targeted edits to files)
+- `Bash` → `run_shell_command` (execute shell commands)
+- `List` → `list_directory` (read directory structure)
+- `Grep` → `search_file_content` (search file contents)
+- `Glob` → `glob` (find files by pattern)
+- `WebFetch` → `web_fetch` (fetch web content)
 
-<CRITICAL_STEPS>
-**BEFORE STARTING ANY TASK, YOU MUST:**
+**Tool Mapping for OpenCode:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `todowrite` (manage todo lists)
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Read` → `read` tool (read file contents)
+- `Write` → `write` tool (create/overwrite files)
+- `Edit` → `edit` tool (make exact string replacements)
+- `Bash` → `bash` tool (execute shell commands)
+- `List` → `list` tool (list directory contents)
+- `Grep` → `grep` tool (search file contents)
+- `Glob` → `glob` tool (find files by pattern)
+- `WebFetch` → `webfetch` tool (fetch web content)
 
+**Skills naming:**
+- Project skills: `skill-name` (from .agents/skills/ - highest priority)
+- Claude skills: `claude:skill-name` (from .claude/skills/)
+- Personal skills: `skill-name` (from ~/.agents/skills/)
+- Superpowers skills: `superpowers:skill-name` (from ~/.agents/superpowers/skills/)
 
-0. **Install Superpowers**: If you don't have superpowers installed, run: `superpowers-agent bootstrap`. This will install superpowers and all the skills you need to get started.
-1. **Discovery of Skills**: When a new conversation starts, discover available skills by running: `superpowers-agent find-skills`. This will show you all available skills with their names, paths, and descriptions without loading everything into context.
-2. **Check for relevant Skills**: If a relevant skill exists for your tasks, even if there are more than one, you must read it using your available tools with the full path shown in the results. 
-3. **Selection of Skills**: Use each skill based on its name and description when it feels appropriate to do so.  Think carefully about all the skills available to you and choose the best ones to use.  Note that some skills may reference other skills, so you may need to apply more than one skill to get things done. Some tasks or instructions may also reference skills and require you to use them. 
-4. **Execute the Skill**: When you need to use a skill:
-  - Use `superpowers-agent use-skill {Skill Name}` 
-  - Announce you are using the skill by stating: "Using Skill: {Skill Name} to {Purpose}"
-  - Follow the fkill's instructions exactly as written.
-  - Read any referenced resources or scripts as needed, execute scripts and tools as needed.
-  - Complete all stapes in the skill before moving to the next task.  Do not rationalize or adapt away the discipline.
-</CRITICAL_STEPS>
+**Skills priority:**
+Project skills override Claude skills, which override personal skills, which override superpowers skills when names match.
 
-**Location of Skills System:** `./skills/{skill-name}/SKILL.md`
+**Critical Rules:**
+- Before ANY task, review the skills list (shown at bootstrap)
+- If a relevant skill exists, you MUST use `superpowers-agent execute` to load it and follow instructions.
+  - YOU MUST USE YOUR `Read` TOOL TO READ THE SKILL FILE FROM THE PATH SHOWN. YOU MUST NOT `cat` the file or `print` it to yourself.
+- Announce: "I've read the [Skill Name] skill and I'm using it to [purpose]"
+- Skills with checklists require `manage_todo_list` todos for each item (or manual tracking if unavailable)
+- NEVER skip mandatory workflows (brainstorming before coding, TDD, systematic debugging)
+
+**Skills location:**
+- Project skills: .agents/skills/ (project-specific, highest priority)
+- Claude skills: .claude/skills/ (project's existing skill system)
+- Personal skills: ~/.agents/skills/ (your personal cross-project skills)
+- Superpowers skills: ~/.agents/superpowers/skills/ (shared community skills)
+
+IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
+</EXTREMELY_IMPORTANT>
