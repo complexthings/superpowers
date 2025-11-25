@@ -49,6 +49,7 @@ const paths = {
     projectRoot: findProjectRoot(),
     get projectClaudeSkills() { return join(this.projectRoot, '.claude', 'skills'); },
     get projectAgentsSkills() { return join(this.projectRoot, '.agents', 'skills'); },
+    get projectSkillsDir() { return join(this.projectRoot, 'skills'); }, // For superpowers repo itself
     get homePersonalSkills() { return join(this.home, '.agents', 'skills'); },
     get bootstrap() { return join(this.projectRoot, '.agents', 'superpowers-bootstrap.md'); },
     get superpowersRepo() { 
@@ -60,7 +61,12 @@ const paths = {
         }
         return join(this.home, '.agents', 'superpowers');
     },
-    get homeSuperpowersSkills() { return join(this.superpowersRepo, 'skills'); }
+    get homeSuperpowersSkills() { return join(this.superpowersRepo, 'skills'); },
+    get isSuperpowersRepo() {
+        // Check if we're running from within the superpowers repo
+        const currentRepoCheck = join(__dirname, '..', 'skills');
+        return existsSync(currentRepoCheck) && existsSync(join(__dirname, '..', '.github', 'prompts'));
+    }
 };
 
 // Utility functions
@@ -1537,15 +1543,30 @@ const locateSkill = (skillName) => {
         'personal': paths.homePersonalSkills
     };
     
-    // Search order configuration
-    const searchOrder = type 
-        ? [{ type, dir: typeToDirMap[type] }]
-        : [
-            { type: 'project', dir: paths.projectAgentsSkills },
-            { type: 'claude', dir: paths.projectClaudeSkills },
-            { type: 'personal', dir: paths.homePersonalSkills },
-            { type: 'superpowers', dir: paths.homeSuperpowersSkills }
-          ];
+    // Build search order
+    let searchOrder;
+    if (type) {
+        searchOrder = [{ type, dir: typeToDirMap[type] }];
+    } else {
+        // Default search order - check if we're in superpowers repo
+        if (paths.isSuperpowersRepo && existsSync(paths.projectSkillsDir)) {
+            // When in superpowers repo, treat skills/ as highest priority "project" source
+            searchOrder = [
+                { type: 'project', dir: paths.projectSkillsDir },
+                { type: 'project', dir: paths.projectAgentsSkills },
+                { type: 'claude', dir: paths.projectClaudeSkills },
+                { type: 'personal', dir: paths.homePersonalSkills },
+                { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+            ];
+        } else {
+            searchOrder = [
+                { type: 'project', dir: paths.projectAgentsSkills },
+                { type: 'claude', dir: paths.projectClaudeSkills },
+                { type: 'personal', dir: paths.homePersonalSkills },
+                { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+            ];
+        }
+    }
 
     // For each priority level, find all matching skills
     for (const { type: sourceType, dir } of searchOrder) {
@@ -1675,19 +1696,34 @@ const locateSkillByNameOrAlias = (skillIdentifier) => {
     // If not found, search for aliases in skill.json files
     const { type, path: actualSkillPath } = parseSkillName(skillIdentifier);
     
-    const searchOrder = type 
-        ? [{ type, dir: {
+    // Build search order
+    let searchOrder;
+    if (type) {
+        searchOrder = [{ type, dir: {
             'superpowers': paths.homeSuperpowersSkills,
             'claude': paths.projectClaudeSkills,
             'project': paths.projectAgentsSkills,
             'personal': paths.homePersonalSkills
-          }[type] }]
-        : [
-            { type: 'project', dir: paths.projectAgentsSkills },
-            { type: 'claude', dir: paths.projectClaudeSkills },
-            { type: 'personal', dir: paths.homePersonalSkills },
-            { type: 'superpowers', dir: paths.homeSuperpowersSkills }
-          ];
+        }[type] }];
+    } else {
+        // Default search order - check if we're in superpowers repo
+        if (paths.isSuperpowersRepo && existsSync(paths.projectSkillsDir)) {
+            searchOrder = [
+                { type: 'project', dir: paths.projectSkillsDir },
+                { type: 'project', dir: paths.projectAgentsSkills },
+                { type: 'claude', dir: paths.projectClaudeSkills },
+                { type: 'personal', dir: paths.homePersonalSkills },
+                { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+            ];
+        } else {
+            searchOrder = [
+                { type: 'project', dir: paths.projectAgentsSkills },
+                { type: 'claude', dir: paths.projectClaudeSkills },
+                { type: 'personal', dir: paths.homePersonalSkills },
+                { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+            ];
+        }
+    }
     
     // Search through all skill directories for matching aliases
     for (const { type: sourceType, dir } of searchOrder) {
@@ -2178,10 +2214,44 @@ Description:
         return;
     }
     
-    const { skillFile } = location;
+    const { skillFile, sourceType } = location;
     
-    // Output instruction to execute the skill
-    console.log(`Open this file with your Read Tool: ${skillFile} <IMPORTANT>DO NOT \`cat\` OR print the file contents directly. USE YOUR Read Tool to process it correctly.</IMPORTANT>`);
+    // Determine if skill is workspace-accessible
+    const cwd = process.cwd();
+    const isWorkspaceRelative = skillFile.startsWith(cwd);
+    
+    // Check if we're in a workspace context with project skills
+    const hasProjectSkills = existsSync(paths.projectAgentsSkills) || existsSync(paths.projectClaudeSkills);
+    
+    // Output instruction based on accessibility
+    if (isWorkspaceRelative) {
+        // Skill is in workspace - all Read tools should work
+        console.log(`Open this file with your Read Tool: ${skillFile}
+
+<IMPORTANT>
+USE YOUR Read Tool to process this file. DO NOT use \`cat\` or print commands.
+</IMPORTANT>`);
+    } else if (hasProjectSkills && sourceType !== 'project') {
+        // Workspace has project skills but we're using a global skill
+        // Suggest using workspace copy if available
+        console.log(`Open this file with your Read Tool: ${skillFile}
+
+<IMPORTANT>
+1. Try using your Read Tool first
+2. If your Read tool fails (file outside workspace), use: cat "${skillFile}"
+3. Consider using workspace-local skills for better tool compatibility
+   Run: superpowers-agent setup-skills
+</IMPORTANT>`);
+    } else {
+        // Global skill and no project alternative
+        console.log(`Open this file with your Read Tool: ${skillFile}
+
+<IMPORTANT>
+1. Try using your Read Tool first
+2. If your Read tool fails (file outside workspace), use: cat "${skillFile}"
+3. NEVER skip loading the skill content
+</IMPORTANT>`);
+    }
 };
 
 const runGetHelpers = () => {
