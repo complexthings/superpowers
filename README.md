@@ -8,7 +8,7 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 **November 2025 Updates:**
 
-- 🎯 **Smart Skill Matching** - Just type `superpowers use-skill brainstorming` instead of the full `superpowers:collaboration/brainstorming` path. Suffix matching with priority resolution makes skill loading much more convenient.
+- 🎯 **Smart Skill Matching** - Just type `superpowers execute brainstorming` instead of the full `superpowers:collaboration/brainstorming` path. Suffix matching with priority resolution makes skill loading much more convenient.
 
 - 🚀 **One-Line Installer** - Install globally with `curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash`. Sets up universal aliases, slash commands, and optional project integration automatically.
 
@@ -31,7 +31,7 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 - **Collaboration Skills** - Brainstorming, planning, code review, parallel agents
 - **Development Skills** - Git worktrees, finishing branches, subagent workflows
 - **Meta Skills** - Creating, testing, and sharing skills
-- **Utility Commands** - `/skills` to discover available skills, `/use-skill` to load them
+- **Utility Commands** - `/skills` to discover available skills, `/execute` to load them
 
 Plus:
 - **Universal Prompts** - Work across Claude, GitHub Copilot, Cursor, Gemini, and other AI assistants
@@ -65,14 +65,14 @@ The installer will:
 ```bash
 superpowers --help
 superpowers find-skills
-superpowers use-skill systematic-debugging
+superpowers execute systematic-debugging
 ```
 
 **Installed slash commands:**
 - `/brainstorm` (or `/brainstorm-with-superpowers`) - Interactive design refinement
 - `/write-skill` (or `/write-a-skill`) - Create new skills with TDD
 - `/skills` - Discover available skills
-- `/use-skill` - Load and apply a specific skill
+- `/execute` - Load and apply a specific skill
 - `/write-plan` - Create implementation plans
 - `/execute-plan` - Execute plans in batches
 
@@ -119,14 +119,14 @@ superpowers find-skills | grep -i <topic>
 
 **Smart skill matching** - Just type the skill name or any suffix:
 ```bash
-superpowers use-skill brainstorming              # Finds superpowers:collaboration/brainstorming
-superpowers use-skill test-driven-development    # Finds superpowers:testing/test-driven-development
-superpowers use-skill collaboration/brainstorming # More specific suffix also works
+superpowers execute brainstorming              # Finds superpowers:collaboration/brainstorming
+superpowers execute test-driven-development    # Finds superpowers:testing/test-driven-development
+superpowers execute collaboration/brainstorming # More specific suffix also works
 ```
 
 **Full paths still work:**
 ```bash
-superpowers use-skill superpowers:collaboration/brainstorming
+superpowers execute superpowers:collaboration/brainstorming
 ```
 
 **Priority order:** Project skills → Home skills → Global Superpowers skills
@@ -237,7 +237,7 @@ Repository aliases make it easy to:
 
 ## Slash Commands & Skill Priority
 
-Superpowers ships slash-command prompts for OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex so every agent can load the exact same skill definitions. Each command is a thin wrapper around `superpowers use-skill <name>`, so skill discovery always walks the same hierarchy before running anything. This section is the canonical reference for where those commands live in the repo and how the loader resolves conflicts.
+Superpowers ships slash-command prompts for OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex so every agent can load the exact same skill definitions. Each command is a thin wrapper around `superpowers execute <name>`, so skill discovery always walks the same hierarchy before running anything. This section is the canonical reference for where those commands live in the repo and how the loader resolves conflicts.
 
 **Skill priority pipeline (first match wins):**
 1. `./skills/` or `.agents/skills/` inside the workspace (project-specific overrides)
@@ -256,7 +256,7 @@ When any slash command runs—no matter which agent it originates from—it invo
 | `/execute-plan` | Execute plans in batches with review checkpoints | `.opencode/command/execute-plan.md` |
 | `/write-skill` | Create new skills following TDD methodology | `.opencode/command/write-skill.md` |
 | `/skills` | Discover and search available skills | `.opencode/command/skills.md` |
-| `/use-skill` | Load a specific skill by name | `.opencode/command/use-skill.md` |
+| `/execute` | Load a specific skill by name | `.opencode/command/execute.md` |
 | `/setup-skills` | Initialize project with skills documentation | `.opencode/command/setup-skills.md` |
 | `/meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.opencode/command/meta-prompt.md` |
 
@@ -283,7 +283,7 @@ Docs: [Claude Code custom slash commands](https://code.claude.com/docs/en/slash-
 | `/brainstorm-with-superpowers` | Refine ideas into designs with the brainstorming skill | `.github/prompts/superpowers-brainstorming.prompt.md` |
 | `/write-a-skill` | Follow the writing-skills workflow to create a new skill | `.github/prompts/superpowers-writing-skills.prompt.md` |
 | `/skills` | Discover and search all skills | `.github/prompts/superpowers-skills.prompt.md` |
-| `/use-skill` | Load a specific skill by name | `.github/prompts/superpowers-use-skill.prompt.md` |
+| `/execute` | Load a specific skill by name | `.github/prompts/superpowers-execute.prompt.md` |
 | `/setup-skills` | Initialize project with skills documentation | `.github/prompts/superpowers-setup-skills.prompt.md` |
 | `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.github/prompts/superpowers-create-meta-prompt.prompt.md` |
 
@@ -296,7 +296,7 @@ Docs: [VS Code Copilot prompt files](https://code.visualstudio.com/docs/copilot/
 | `/brainstorm-with-superpowers` | Guide brainstorming with collaborative questioning | `.cursor/commands/brainstorm-with-superpowers.md` |
 | `/write-a-skill` | Apply the writing-skills TDD workflow | `.cursor/commands/write-a-skill.md` |
 | `/skills` | Show all skills with search tips | `.cursor/commands/skills.md` |
-| `/use-skill` | Load any skill via the CLI | `.cursor/commands/use-skill.md` |
+| `/execute` | Load any skill via the CLI | `.cursor/commands/execute.md` |
 | `/setup-skills` | Initialize project with skills documentation | `.cursor/commands/setup-skills.md` |
 | `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.cursor/commands/create-meta-prompt.md` |
 
@@ -309,7 +309,7 @@ Docs: [Cursor custom commands](https://cursor.com/docs/agent/chat/commands#creat
 | `/brainstorm-with-superpowers` | Refine ideas into designs with the brainstorming skill | `.gemini/commands/brainstorm-with-superpowers.toml` |
 | `/write-a-skill` | Follow the writing-skills workflow to create a new skill | `.gemini/commands/write-a-skill.toml` |
 | `/skills` | Discover and search all skills | `.gemini/commands/skills.toml` |
-| `/use-skill` | Load a specific skill by name | `.gemini/commands/use-skill.toml` |
+| `/execute` | Load a specific skill by name | `.gemini/commands/execute.toml` |
 | `/setup-skills` | Initialize project with skills documentation | `.gemini/commands/setup-skills.toml` |
 | `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.gemini/commands/create-meta-prompt.toml` |
 
@@ -322,13 +322,13 @@ Docs: [Gemini CLI custom slash commands](https://cloud.google.com/blog/topics/de
 | `/brainstorm-with-superpowers` | Run brainstorming with optional topic arguments | `.codex/prompts/brainstorm.md` |
 | `/write-a-skill` | Create a new skill using writing-skills | `.codex/prompts/write-skill.md` |
 | `/skills` | List and search available skills | `.codex/prompts/skills.md` |
-| `/use-skill` | Load a specific skill by name | `.codex/prompts/use-skill.md` |
+| `/execute` | Load a specific skill by name | `.codex/prompts/execute.md` |
 | `/setup-skills` | Initialize project with skills documentation | `.codex/prompts/setup-skills.md` |
 | `/create-meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.codex/prompts/create-meta-prompt.md` |
 
 Docs: [OpenAI Codex custom slash commands](https://developers.openai.com/codex/guides/slash-commands#create-your-own-slash-commands-with-custom-prompts)
 
-Every table points to files that simply shell out to `superpowers-agent use-skill`, so the shared priority order above applies automatically across all integrations.
+Every table points to files that simply shell out to `superpowers-agent execute`, so the shared priority order above applies automatically across all integrations.
 
 ## What's Inside
 
@@ -440,7 +440,8 @@ The `superpowers-agent` CLI provides powerful commands for managing skills:
 **Skill Discovery:**
 ```bash
 superpowers-agent find-skills              # List all available skills
-superpowers-agent use-skill <name>         # Load a specific skill
+superpowers-agent execute <name>           # Load a specific skill
+superpowers-agent path <skill-name>        # Get SKILL.md file path
 superpowers-agent dir <skill-name>         # Get skill directory path
 superpowers-agent get-helpers <skill> <term>  # Find helper files in skill
 ```
@@ -498,7 +499,7 @@ For a single skill, `skill.json` defines the skill's identity and helpers:
 - `name`: Canonical skill name (used for installation path)
 - `title`: Human-readable display name
 - `helpers`: Array of helper script paths relative to skill directory
-- `aliases`: Short names that can be used with `use-skill` and `get-helpers`
+- `aliases`: Short names that can be used with `execute` and `get-helpers`
 - `version`: Skill version for tracking updates
 
 **Usage with helpers:**
@@ -508,7 +509,7 @@ superpowers-agent get-helpers block-collection search-block
 # Returns: /path/to/skill/scripts/search-block-collection.js
 
 # Use skill aliases
-superpowers-agent use-skill block-party
+superpowers-agent execute block-party
 # Loads: aem/block-collection-and-party
 ```
 
@@ -581,7 +582,7 @@ This repository includes skill.json files for:
 All skills are ready to use with commands like:
 ```bash
 superpowers-agent get-helpers creating-prompts template
-superpowers-agent use-skill brainstorming
+superpowers-agent execute brainstorming
 superpowers-agent dir test-driven-development
 ```
 
