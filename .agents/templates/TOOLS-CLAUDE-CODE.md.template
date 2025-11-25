@@ -1,0 +1,22 @@
+**Tool Mapping for Claude Code:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `TodoWrite` (create and manage task lists with status tracking)
+- `TodoRead` → Check todo list via system reminders (automatically provided)
+- `Task` → `Task` (dispatch specialized subagents: general-purpose, Explore, Plan, claude-code-guide, code-reviewer, etc.)
+- `Skill` → `Skill` tool or `superpowers-agent execute` command (both available)
+- `SlashCommand` → `SlashCommand` tool (execute custom slash commands from .claude/commands/)
+- `Read` → `Read` tool (read files including images, PDFs, Jupyter notebooks; supports offset/limit for large files)
+- `Write` → `Write` tool (create/overwrite files; requires prior Read for existing files)
+- `Edit` → `Edit` tool (exact string replacements; supports replace_all for renaming)
+- `Bash` → `Bash` tool (execute shell commands with timeout support; supports background execution)
+- `List` → `Read` tool with directory path or `Bash` with `ls`/`tree` commands
+- `Grep` → `Grep` tool (ripgrep-based search with regex, supports -A/-B/-C context, multiple output modes)
+- `Glob` → `Glob` tool (find files by glob pattern, sorted by modification time)
+- `WebFetch` → `WebFetch` tool (fetch and analyze web content with AI processing)
+- `WebSearch` → `WebSearch` tool (search the web with domain filtering)
+- `NotebookEdit` → `NotebookEdit` tool (edit/insert/delete Jupyter notebook cells)
+- `BashOutput` → `BashOutput` tool (retrieve output from background shells)
+- `KillShell` → `KillShell` tool (terminate background shells)
+- `AskUserQuestion` → `AskUserQuestion` tool (ask questions with multiple choice options during execution)
+- `GetDiagnostics` → `mcp__ide__getDiagnostics` (get VS Code language diagnostics)
+- `ExecuteCode` → `mcp__ide__executeCode` (execute code in Jupyter kernel)

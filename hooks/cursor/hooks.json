@@ -1,14 +1,9 @@
 {
   "version": 1,
   "hooks": {
-    "afterAgentResponse": [
+    "beforeSubmitPrompt": [
       {
-        "command": "./hooks/detect-new-conversation.sh"
-      }
-    ],
-    "stop": [
-      {
-        "command": "./hooks/inject-bootstrap.sh"
+        "command": "./hooks/before-submit-prompt.sh"
       }
     ]
   }

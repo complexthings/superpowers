@@ -1,0 +1,13 @@
+**Tool Mapping for Gemini:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `write_todos` (create and manage task lists)
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Read` → `read_file` (read file contents)
+- `Write` → `write_file` (create/overwrite files)
+- `Edit` → `replace` (make targeted edits to files)
+- `Bash` → `run_shell_command` (execute shell commands)
+- `List` → `list_directory` (read directory structure)
+- `Grep` → `search_file_content` (search file contents)
+- `Glob` → `glob` (find files by pattern)
+- `WebFetch` → `web_fetch` (fetch web content)
