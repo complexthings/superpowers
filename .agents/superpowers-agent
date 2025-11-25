@@ -1122,7 +1122,13 @@ const updatePlatformFile = (filePath, templateContent, platforms, createIfMissin
                 execSync(`mkdir -p "${dir}"`, { stdio: 'pipe' });
             }
             
-            writeFileSync(filePath, wrappedContent, 'utf8');
+            // Determine heading based on filename
+            const fileName = parse(filePath).base.toUpperCase();
+            const heading = `# ${fileName}\n\n`;
+            
+            // Write file with heading + content
+            const finalContent = heading + wrappedContent;
+            writeFileSync(filePath, finalContent, 'utf8');
             return { updated: false, created: true };
         } catch (error) {
             return { updated: false, created: false, error: true, message: `Failed to create: ${error.message}` };
