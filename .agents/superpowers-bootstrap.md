@@ -6,75 +6,14 @@ You have superpowers. Superpowers teach you new skills and capabilities.
 **Tool for running skills:**
 - `superpowers-agent execute <skill-name>`
 
-**Tool Mapping for GitHub Copilot:**
-When skills reference tools you don't have, substitute your equivalent tools:
-- `TodoWrite` → `manage_todo_list` (your planning/task tracking tool)
-- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
-- `Skill` tool → `superpowers-agent execute` command (already available)
-- `Read` → `Read File` tool (read file contents)
-- `Write` → `WriteFile` tool (create/overwrite files)
-- `Edit` → `Edit & Reapply` tool (suggest edits to files)
-- `Bash` → `Terminal` tool (execute terminal commands)
-- `List` → `List Directory` tool (read directory structure)
-- `Grep` → `SearchText` tool (search file contents)
-- `Glob` → `FindFiles` tool (find files by pattern)
-- `WebFetch` → `Web` tool (fetch and search web content)
-
-**Tool Mapping for Cursor:**
-When skills reference tools you don't have, substitute your equivalent tools:
-- `TodoWrite` → Manual tracking or your own task management approach
-- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
-- `Skill` tool → `superpowers-agent execute` command (already available)
-- `Read` → `Read File` tool (read file contents)
-- `Write` → `Write File` tool (create/overwrite files)
-- `Edit` → `Edit & Reapply` tool (suggest edits to files)
-- `Bash` → `Terminal` tool (execute terminal commands)
-- `List` → `List Directory` tool (read directory structure)
-- `Grep` → `Grep` tool (search file contents)
-- `Glob` → `Search Files` tool (find files by pattern)
-- `WebFetch` → `Web` tool (fetch and search web content)
-
-**Tool Mapping for Claude Code:**
-When skills reference tools you don't have, substitute your equivalent tools:
-- `TodoWrite` → `TodoWrite` (built-in task management)
-- `Task` → `Task` (built-in subagent dispatch)
-- `Skill` → `Skill` tool or `superpowers-agent execute` command (both available)
-- `Read` → `Read` tool (read file contents)
-- `Write` → `Write` tool (create/overwrite files)
-- `Edit` → `Edit` tool (make targeted edits to files)
-- `Bash` → `Bash` tool (execute shell commands)
-- `List` → Use `Read` tool with directory path
-- `Grep` → `Grep` tool (search file contents)
-- `Glob` → `Glob` tool (find files by pattern)
-- `WebFetch` → `WebFetch` tool (fetch web content)
-
-**Tool Mapping for Gemini:**
-When skills reference tools you don't have, substitute your equivalent tools:
-- `TodoWrite` → `write_todos` (create and manage task lists)
-- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
-- `Skill` tool → `superpowers-agent execute` command (already available)
-- `Read` → `read_file` (read file contents)
-- `Write` → `write_file` (create/overwrite files)
-- `Edit` → `replace` (make targeted edits to files)
-- `Bash` → `run_shell_command` (execute shell commands)
-- `List` → `list_directory` (read directory structure)
-- `Grep` → `search_file_content` (search file contents)
-- `Glob` → `glob` (find files by pattern)
-- `WebFetch` → `web_fetch` (fetch web content)
-
-**Tool Mapping for OpenCode:**
-When skills reference tools you don't have, substitute your equivalent tools:
-- `TodoWrite` → `todowrite` (manage todo lists)
-- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
-- `Skill` tool → `superpowers-agent execute` command (already available)
-- `Read` → `read` tool (read file contents)
-- `Write` → `write` tool (create/overwrite files)
-- `Edit` → `edit` tool (make exact string replacements)
-- `Bash` → `bash` tool (execute shell commands)
-- `List` → `list` tool (list directory contents)
-- `Grep` → `grep` tool (search file contents)
-- `Glob` → `glob` tool (find files by pattern)
-- `WebFetch` → `webfetch` tool (fetch web content)
+**Platform-specific tool mappings:**
+Tool mappings for your detected platforms are automatically included in your platform-specific configuration files:
+- GitHub Copilot: `~/.github/copilot-instructions.md`
+- Cursor: Included in `AGENTS.md`
+- Claude Code: `~/.claude/CLAUDE.md`
+- Gemini: `~/.gemini/GEMINI.md`
+- OpenCode: `~/.config/opencode/AGENTS.md`
+- Codex: `~/.codex/AGENTS.md`
 
 **Skills naming:**
 - Project skills: `skill-name` (from .agents/skills/ - highest priority)
