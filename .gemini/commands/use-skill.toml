@@ -2,8 +2,9 @@ description = "Load and apply a specific skill by name"
 prompt = """
 I'll load the skill you specified.
 
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
 ```bash
-superpowers-agent use-skill {{args}}
+superpowers-agent execute {{args}}
 ```
 
 **Skill naming:**

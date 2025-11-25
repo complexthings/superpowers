@@ -96,7 +96,7 @@ $ARGUMENTS
 
 These commands integrate seamlessly with the Superpowers skills system by:
 
-1. Loading the appropriate skill using `superpowers-agent use-skill`
+1. Loading the appropriate skill using `superpowers-agent execute <skill-name>` and follow the instructions
 2. Following skill-specific workflows and methodologies
 3. Maintaining consistency with other AI environments (Cursor, GitHub Copilot, Claude Code, etc.)
 
@@ -126,8 +126,9 @@ description: My custom command
 
 # Custom Command
 
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
 ```bash
-superpowers-agent use-skill my-skill
+superpowers-agent execute my-skill
 ```
 
 $ARGUMENTS

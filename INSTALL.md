@@ -37,7 +37,7 @@ You can use Superpowers from anywhere:
 ```bash
 superpowers --help
 superpowers find-skills
-superpowers use-skill systematic-debugging
+superpowers execute systematic-debugging
 ```
 
 **Slash commands available in GitHub Copilot, Cursor, Windsurf:**

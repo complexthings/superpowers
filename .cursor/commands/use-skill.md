@@ -5,8 +5,9 @@ Load and apply a specific skill by name
 
 I'll load the skill you specified.
 
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
 ```bash
-superpowers-agent use-skill {skill-name}
+superpowers-agent execute {skill-name}
 ```
 
 **Skill naming:**

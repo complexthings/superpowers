@@ -1,203 +1,149 @@
-# Superpowers Skills System
+## 🎯 CRITICAL: SKILLS (READ THIS FIRST)
 
-## What This Is
+<IMPORTANT>
+**YOU ARE REQUIRED TO USE THESE SKILLS TO ACCOMPLISH YOUR TASKS. FAILING TO DO SO WILL RESULT IN INCREASED COSTS, WASTED TIME, AND CYCLES.**
+</IMPORTANT>
 
-You have access to a **skills library** - proven techniques, patterns, and workflows for systematic software development. Skills are markdown reference guides that teach you rigorous approaches to common engineering tasks.
+### Installation Check
 
-**When Superpowers is installed, skills are available from two locations:**
-1. **System skills** - Universal best practices installed at `~/.config/superpowers/skills/` (or similar)
-2. **Repository skills** - Project-specific skills in the repo you're working in at `skills/`
+**If the superpowers-agent is not available on the user's system**, run the following to install:
 
-## How Skills Work
-
-### Finding Skills
-
-Skills have YAML frontmatter optimized for search:
-```yaml
----
-name: test-driven-development
-description: Use when implementing any feature or bugfix, before writing implementation code - write the test first, watch it fail, write minimal code to pass
----
+```bash
+curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
 ```
 
-The `description` field tells you **when to use** the skill and **what it does**. When you encounter a situation matching the "Use when..." pattern, that skill applies to your current task.
+Read and follow all instructions in the installation guide to set up the superpowers-agent and universal agent-agnostic skills system.
 
-### Using Skills
+### HOW SKILLS WORK
 
-**Skills are mandatory when they apply to your task.** If a skill exists for what you're doing, you must use it.
+Each Skill is a directory in `.agents/skills` that contains a `SKILL.md` file with detailed instructions. (sometimes they're in `.claude/skills`, `.gemini/skills` or other agent-specific or skill directories as well). And have pretty standard structures:
 
-Skills reference each other by name (e.g., `superpowers:test-driven-development`). Load skills on-demand when you need them - don't force-load with `@` syntax as that wastes context.
-
-### Skill Locations
-
-Check both locations for skills:
-- System: `~/.config/superpowers/skills/*/SKILL.md` (universal best practices)
-- Repo: `<workspace>/skills/*/SKILL.md` (project-specific workflows)
-
-## Core Disciplines You Must Follow
-
-When skills exist for your current task, they define **mandatory workflows**. These are not suggestions - they're systematic approaches proven to prevent common failures.
-
-### 1. Test-Driven Development (TDD)
-
-**Use when:** Implementing any feature or bugfix, before writing implementation code
-
-**The workflow:**
-- Write the test first
-- Watch it fail (RED)
-- Write minimal code to pass (GREEN)  
-- Refactor while keeping tests green
-
-**Why the order matters:** Tests passing immediately prove nothing. You must see the test fail to know it tests the right thing.
-
-**Common rationalizations the skill explicitly forbids:**
-- "Too simple to test" - Test takes 30 seconds
-- "I'll test after" - Tests-after = "what does this do?" Tests-first = "what should this do?"
-- "Already manually tested" - Ad-hoc ≠ systematic, can't re-run
-- "Keep code as reference" - Delete means delete, start fresh from tests
-
-### 2. Systematic Debugging
-
-**Use when:** Encountering any bug, test failure, or unexpected behavior, before proposing fixes
-
-**The workflow:**
-1. **Root Cause Investigation** - Read errors, reproduce, trace data flow, gather evidence
-2. **Pattern Analysis** - Find working examples, compare, identify differences
-3. **Hypothesis Testing** - Form single hypothesis, test minimally, verify before continuing
-4. **Implementation** - Create failing test, implement single fix, verify
-
-**Critical rule:** NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
-
-**Red flags the skill calls out:**
-- "Quick fix for now, investigate later"
-- "Just try changing X and see if it works"  
-- Proposing solutions before tracing data flow
-- After 3 failed fixes, question the architecture (don't attempt a fourth fix)
-
-### 3. Verification Before Completion
-
-**Use when:** About to claim work is complete, fixed, or passing, before committing or creating PRs
-
-**The gate function:**
-1. IDENTIFY: What command proves this claim?
-2. RUN: Execute the FULL command (fresh, complete)
-3. READ: Full output, check exit code, count failures
-4. VERIFY: Does output confirm the claim?
-5. ONLY THEN: Make the claim with evidence
-
-**The iron law:** NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
-
-**Words that trigger this requirement:**
-- ANY variation of success/completion claims
-- ANY expression of satisfaction ("Great!", "Perfect!", "Done!")
-- ANY positive statement about work state
-
-### 4. Brainstorming
-
-**Use when:** Creating or developing features/designs, before writing code or implementation plans
-
-**The workflow:**
-- Understand current project context first (files, docs, commits)
-- Ask questions one at a time to refine the idea
-- Explore 2-3 alternative approaches with trade-offs
-- Present design in sections (200-300 words), validate each
-- Write validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
-
-**Don't use during:** Clear mechanical processes where requirements are fully specified
-
-## Why These Rules Exist
-
-**These skills contain "rationalization tables"** - explicit lists of common excuses agents use to skip process discipline, with counters for each excuse.
-
-Example from TDD skill:
-- "Deleting X hours of work is wasteful" → Sunk cost fallacy. Keeping unverified code is technical debt.
-- "TDD is dogmatic, being pragmatic means adapting" → TDD IS pragmatic - finds bugs before commit, prevents regressions, documents behavior.
-
-The goal is **systematic rigor under pressure**. When you're tired, rushed, or facing sunk cost, the rationalization tables close every loophole.
-
-## Creating Repository-Specific Skills
-
-You can add project-specific skills to any repository at `<workspace>/skills/*/SKILL.md`.
-
-**When to create repository skills:**
-- Project-specific conventions (build commands, deployment workflows)
-- Domain-specific patterns (how this codebase handles auth, data flow)
-- Team workflows (code review process, branch strategies)
-
-**When NOT to create repository skills:**
-- Universal best practices (those belong in system skills)
-- One-off solutions (use comments or README instead)
-- Content that duplicates existing system skills
-
-**Skill format requirements:**
-```markdown
----
-name: skill-name-with-hyphens-only
-description: Use when [specific trigger conditions] - [what it does]
----
-
-# Skill Name
-
-## Overview
-Core principle in 1-2 sentences.
-
-## When to Use  
-Specific situations and symptoms
-
-## Implementation
-Concrete patterns with examples
-
-## Common Mistakes
-What goes wrong + fixes
+```
+.agents/skills/
+└── {skill-name}/               # Skill directory, sometimes nested in other subdirectories for organization
+    └── SKILL.md                # Main instructions (REQUIRED)
+    └── scripts/                # Optional scripts to support the skill
+    └── resources/              # Optional resources (data files, templates, etc.) to support the skill
 ```
 
-**For complete skill authoring guidance:** See `superpowers:writing-skills` (system skill)
+Additional files and folders may also exist, usually for the purpose of supporting the skill with scripts or resources.
 
-## Discovering Available Skills
+The SKILL.md file contains detailed instructions that you must follow exactly as written. Skills are designed to:
 
-**Check multiple locations for skills relevant to your task:**
+- Provide specialized workflows for common tasks
+- Ensure consistency with project standards and best practices
+- Reduce errors by codifying expert knowledge
+- Chain together when tasks require multiple skill applications
 
-1. **System skills** - Universal best practices
-   - Location: `~/.config/superpowers/skills/` (or equivalent for your platform)
-   - Contains: TDD, debugging, brainstorming, planning, verification, etc.
+<CRITICAL_STEPS>
+**BEFORE STARTING ANY TASK, YOU MUST:**
 
-2. **Repository skills** - Project-specific workflows  
-   - Location: `<workspace>/skills/` directory
-   - Contains: Build commands, deployment workflows, domain patterns
+1. **Discovery of Skills**: When a new conversation starts, discover available skills by running: `superpowers-agent find-skills`. This will show you all available skills with their names, paths, and descriptions without loading everything into context.
+2. **Check for relevant Skills**: If a relevant skill exists for your tasks, even if there are more than one, you must read it using your available tools with the full path shown in the results. 
+3. **Selection of Skills**: Use each skill based on its name and description when it feels appropriate to do so. Think carefully about all the skills available to you and choose the best ones to use. Note that some skills may reference other skills, so you may need to apply more than one skill to get things done. Some tasks or instructions may also reference skills and require you to use them. 
+4. **Execute the Skill**: When you need to use a skill:
+  - Use `superpowers-agent execute {Skill Name}` and follow the instructions to load it.
+  - Announce you are using the skill by stating: "Using Skill: {Skill Name} to {Purpose}"
+  - Follow the skill's instructions exactly as written.
+  - Read any referenced resources or scripts as needed, execute scripts and tools as needed.
+  - Complete all steps in the skill before moving to the next task. Do not rationalize or adapt away the discipline.
+</CRITICAL_STEPS>
 
-**To find relevant skills:**
-- Read skill descriptions (YAML frontmatter) looking for "Use when..." matches
-- Skills with descriptions matching your current situation are mandatory to use
-- When in doubt, check `superpowers:using-superpowers` for the discovery protocol
+**Location of Skills System:**
+- Skills are stored in the `.agents/skills/` directory of the project.
+- Skills may also be found in agent-specific directories like `.claude/skills/` or `.gemini/skills/`.
+- System level skills may also exist in `~/.agents/skills/`.
 
-## Key System Skills to Know
+### Why This Matters
 
-These skills define foundational workflows you'll use constantly:
+Skills document **proven techniques** that save time and prevent mistakes. Not using available skills means:
 
-- **test-driven-development** - RED-GREEN-REFACTOR cycle, the Iron Law
-- **systematic-debugging** - 4-phase root cause investigation before fixes
-- **verification-before-completion** - Evidence before claims, always
-- **brainstorming** - Design before implementation
-- **writing-plans** - Detailed implementation plans for complex work
-- **executing-plans** - Batch execution with review checkpoints
-- **root-cause-tracing** - Backward tracing for deep stack errors
-- **condition-based-waiting** - Replace arbitrary timeouts with polling
-- **defense-in-depth** - Multiple validation layers
+- ❌ Repeating already-solved problems
+- ❌ Making known errors
+- ❌ Skipping critical workflows (TDD, debugging, verification)
+- ❌ Failing at your task
 
-## Cross-Referencing Skills
+**If a skill for your task exists, you MUST use it or you will fail.**
 
-Skills reference other skills using patterns like:
-- `**REQUIRED SUB-SKILL:** Use superpowers:skill-name`  
-- `**REQUIRED BACKGROUND:** You MUST understand superpowers:skill-name`
+### Common Rationalizations to REJECT
 
-When you see these, load and follow the referenced skill.
+- ❌ "I remember this skill" - Skills evolve. Read the current version.
+- ❌ "This doesn't count as a task" - It counts. Check for skills.
+- ❌ "Workflow is overkill for this simple task" - Skipping process on "simple" tasks creates complex problems.
+- ❌ "Instructions were specific so I can skip TDD/brainstorming" - Specific instructions mean clear requirements, which is when workflows matter MOST.
 
-## Philosophy
+### Quick Start
 
-1. **Evidence over claims** - Run verification commands, report actual output
-2. **Systematic over ad-hoc** - Follow proven processes even under pressure  
-3. **Test-Driven Everything** - Tests first, watch them fail, then implement
-4. **Simplicity as primary goal** - YAGNI ruthlessly
-5. **Close every loophole** - Rationalization tables forbid shortcuts explicitly
+```bash
+# Find skills for your task
+superpowers-agent find-skills [PATTERN]
 
-**The skills system exists to make you systematically rigorous, especially when tired, rushed, or facing sunk costs.**
+# Examples
+superpowers-agent find-skills test
+superpowers-agent find-skills debug
+superpowers-agent find-skills brainstorm
+```
+
+**Then use the Read tool** on the skill path shown in results (e.g., `superpowers-agent path test-driven-development`)
+
+### Skills with Checklists
+
+If a skill has a checklist, you MUST create `manage_todo_list` todos for EACH item. Mental tracking = steps get skipped. Every time.
+
+### Creating New Skills
+
+Create New Skills by using the skill `writing-skills`, it's recommended users use the skill `brainstorming` first to plan out the skill before having `writing-skills` create it. Skills can be further improved with `testing-skills-with-subagents`. These should be added to `.agents/skills/` in the project or to `~/.agents/superpowers/skills/` for system-wide skills.
+
+### Available Skills
+
+Skills will be added to `.agents/skills/` as needed for this project. Check `superpowers-agent find-skills` for the current list of available skills.
+
+### Slash Commands
+
+Help users understand they can also use the following slash commands to interact with skills depending on the agent tool the user is using such as `/skills` to list skills, and `/use-skill {Skill Name}` to use a skill.
+
+<EXTREMELY_IMPORTANT>
+You have superpowers. Superpowers teach you new skills and capabilities.
+
+**Tool for running skills:**
+- `superpowers-agent execute <skill-name>`
+
+**Tool Mapping for GitHub Copilot:**
+When skills reference tools you don't have, substitute your equivalent tools:
+- `TodoWrite` → `manage_todo_list` (your planning/task tracking tool)
+- `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
+- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Read` → `Read File` tool (read file contents)
+- `Write` → `WriteFile` tool (create/overwrite files)
+- `Edit` → `Edit & Reapply` tool (suggest edits to files)
+- `Bash` → `Terminal` tool (execute terminal commands)
+- `List` → `List Directory` tool (read directory structure)
+- `Grep` → `SearchText` tool (search file contents)
+- `Glob` → `FindFiles` tool (find files by pattern)
+- `WebFetch` → `Web` tool (fetch and search web content)
+
+**Skills naming:**
+- Project skills: `skill-name` (from .agents/skills/ - highest priority)
+- Claude skills: `claude:skill-name` (from .claude/skills/)
+- Personal skills: `skill-name` (from ~/.agents/skills/)
+- Superpowers skills: `superpowers:skill-name` (from ~/.agents/superpowers/skills/)
+
+**Skills priority:**
+Project skills override Claude skills, which override personal skills, which override superpowers skills when names match.
+
+**Critical Rules:**
+- Before ANY task, review the skills list (shown at bootstrap)
+- If a relevant skill exists, you MUST use `superpowers-agent execute` to load it and follow instructions.
+  - YOU MUST USE YOUR `Read` TOOL TO READ THE SKILL FILE FROM THE PATH SHOWN. YOU MUST NOT `cat` the file or `print` it to yourself.
+- Announce: "I've read the [Skill Name] skill and I'm using it to [purpose]"
+- Skills with checklists require `manage_todo_list` todos for each item (or manual tracking if unavailable)
+- NEVER skip mandatory workflows (brainstorming before coding, TDD, systematic debugging)
+
+**Skills location:**
+- Project skills: .agents/skills/ (project-specific, highest priority)
+- Claude skills: .claude/skills/ (project's existing skill system)
+- Personal skills: ~/.agents/skills/ (your personal cross-project skills)
+- Superpowers skills: ~/.agents/superpowers/skills/ (shared community skills)
+
+IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
+</EXTREMELY_IMPORTANT>

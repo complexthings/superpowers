@@ -7,8 +7,9 @@ argument-hint: SKILL_NAME="<skill-name>"
 
 I'll load the skill you specified: $SKILL_NAME
 
+**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
 ```bash
-superpowers-agent use-skill $SKILL_NAME
+superpowers-agent execute $SKILL_NAME
 ```
 
 **Skill naming:**

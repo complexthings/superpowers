@@ -6,4 +6,4 @@ This skill provides access to skill loading functionality with automatic priorit
 - Personal skills  
 - System skills (lowest priority)
 
-Run `.agents/superpowers-agent use-skill <skill-name>` to load any skill.
+Run `superpowers-agent execute <skill-name>` to load any skill and follow it's instructions.
