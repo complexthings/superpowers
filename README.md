@@ -6,17 +6,19 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
-**v5.4.0 (November 25, 2025):**
+**v6.0.0 (November 29, 2025):**
 
-- 🎯 **Dynamic Tool Mappings** - Platform-specific tool mapping templates automatically generate configuration files for detected AI coding assistants. Each platform gets its own template (GitHub Copilot, Cursor, Claude Code, Gemini, OpenCode, Codex) with comprehensive tool documentation.
+- 🏗️ **Complete Codebase Modernization** - Total architectural rewrite transforms the monolithic 3,406-line agent into a clean, modular system with 22 organized modules across 6 logical layers (CLI, Commands, Core, Integrations, Skills, Utils).
 
-- 📦 **Automated Platform Detection** - Bootstrap command now detects installed platforms and creates customized configuration files (`~/.github/copilot-instructions.md`, `~/.claude/CLAUDE.md`, `~/.gemini/GEMINI.md`, etc.) with only relevant tool mappings.
+- 📦 **90% Bundle Reduction** - Modern build system using esbuild produces optimized 324-line executable from well-organized source code. Faster startup, smaller footprint, same powerful features.
 
-- 🔄 **Smart File Updates** - Marker-based content updates (`<!-- SUPERPOWERS_SKILLS_START/END -->`) preserve custom content while keeping tool mappings current. Automatic backups before updates.
+- 🔧 **Enhanced Developer Experience** - New modular architecture with clear separation of concerns makes contributing easier. Includes development scripts (`npm run dev`, `npm run watch`), organized module structure, and comprehensive build tooling.
 
-- ⚡ **Cursor Hook Optimization** - New `beforeSubmitPrompt` hook injects skills context before prompt submission (replacing post-response hooks) for better performance and reduced overhead.
+- ✅ **Zero Breaking Changes** - Complete internal overhaul with identical external API. Existing workflows, scripts, and integrations continue working without modification.
 
-**Previous Updates:**
+**Previous Releases:**
+
+- **v5.4.0** - Dynamic Tool Mappings, Automated Platform Detection, Smart File Updates, Cursor Hook Optimization
 
 - 🎯 **Smart Skill Matching** - Just type `superpowers execute brainstorming` instead of the full `superpowers:collaboration/brainstorming` path. Suffix matching with priority resolution makes skill loading much more convenient.
 

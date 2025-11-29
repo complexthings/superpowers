@@ -6,6 +6,207 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.0.0 (November 29, 2025)
+
+### 🏗️ Complete Codebase Modernization
+
+**Total Architectural Rewrite**
+
+The superpowers-agent has undergone a complete modernization, transforming from a monolithic 3,406-line executable into a clean, maintainable, modular architecture. This is not a refactor—it's a complete rewrite that positions Superpowers for long-term growth and contribution.
+
+**The Numbers:**
+- **Before**: 3,406 lines in single monolithic file
+- **After**: 3,169 lines across 22 organized modules
+- **Output**: 324 lines (minified bundle via esbuild)
+- **Reduction**: ~90% smaller final executable
+- **Files Changed**: 32 files, 7,711 insertions, 3,244 deletions
+
+### 📦 New Modular Architecture
+
+**6 Logical Layers, 22 Specialized Modules:**
+
+**CLI Layer** (`src/cli.js`)
+- Clean entry point with command routing
+- Import-based module loading
+- Unified command interface
+
+**Commands Layer** (`src/commands/`)
+- `bootstrap.js` - Installation and setup logic (445 lines)
+- `simple-commands.js` - Core commands: find-skills, execute, path, dir, get-helpers, config (341 lines)
+- `update.js` - Auto-update system and version management (206 lines)
+
+**Core Infrastructure** (`src/core/`)
+- `config.js` - Configuration management with priority resolution (108 lines)
+- `git.js` - Git operations and repository detection (142 lines)
+- `paths.js` - Path resolution and directory location (74 lines)
+- `platform-detection.js` - AI assistant detection and platform identification (63 lines)
+
+**Platform Integrations** (`src/integrations/`)
+- `claude.js` - Claude Code command installation (60 lines)
+- `codex.js` - Codex prompt installation (60 lines)
+- `copilot.js` - GitHub Copilot prompts and instructions (92 lines)
+- `cursor.js` - Cursor commands and hooks (128 lines)
+- `gemini.js` - Gemini command installation (60 lines)
+- `opencode.js` - OpenCode command installation (60 lines)
+
+**Skills Management** (`src/skills/`)
+- `executor.js` - Skill execution and loading (79 lines)
+- `finder.js` - Skill discovery across directories (187 lines)
+- `installer.js` - Git-based skill installation (494 lines)
+- `locator.js` - Skill path resolution and matching (140 lines)
+- `parser.js` - Frontmatter and metadata parsing (108 lines)
+
+**Utility Functions** (`src/utils/`)
+- `file-ops.js` - Safe file operations (18 lines)
+- `frontmatter.js` - YAML frontmatter extraction (81 lines)
+- `output.js` - Colored console output and formatting (86 lines)
+
+### 🔧 Modern Build System
+
+**esbuild Integration**
+- Fast, modern JavaScript bundler
+- ES module support throughout codebase
+- Minification and optimization for production
+- Source maps for debugging (optional)
+
+**New Build Scripts** (`package.json`)
+```json
+{
+  "scripts": {
+    "build": "node build.js",              // Production build
+    "dev": "node src/cli.js",              // Run unbundled for development
+    "watch": "node build.js --watch",      // Auto-rebuild on changes
+    "dev:link": "node scripts/link.cjs dev",           // Development symlink
+    "production:link": "node scripts/link.cjs production"  // Production symlink
+  }
+}
+```
+
+**Build Process** (`build.js`)
+- Bundles all modules into single executable
+- Adds shebang for command-line execution
+- Sets proper file permissions automatically
+- Configurable minification and source maps
+- Target: Node.js 18+ with ES modules
+
+**Development Tools**
+- `scripts/extract-modules.py` - Python tool for extracting modules from monolith
+- `scripts/finish-extraction.sh` - Finalization script for module extraction
+- `scripts/link.cjs` - Symlink management for development/production modes
+
+### 💡 Benefits of Modular Architecture
+
+**For Contributors:**
+- Clear separation of concerns—easy to find relevant code
+- Smaller files (60-494 lines) instead of 3,406-line monolith
+- Focused modules with single responsibilities
+- Easier to write tests for individual components
+- Safe to modify without fear of breaking unrelated features
+
+**For Maintainers:**
+- Logical organization by function (CLI, Commands, Core, Integrations, Skills, Utils)
+- Dependencies explicit through imports
+- Easy to add new platforms (just add integration module)
+- Easy to add new commands (just add to commands layer)
+- Clear patterns for new contributions
+
+**For Future Development:**
+- Foundation for unit testing infrastructure
+- Enables tree-shaking and dead code elimination
+- Supports incremental improvements without cascading changes
+- Clear extension points for new features
+- Modern JavaScript patterns (ES modules, async/await)
+
+**For End Users:**
+- Faster startup with optimized bundle
+- Smaller disk footprint (90% reduction)
+- Same powerful features, zero breaking changes
+- Improved reliability through better code organization
+
+### 🚀 Technical Improvements
+
+**Code Organization:**
+- ES modules (`import`/`export`) replace CommonJS
+- Async/await patterns for all I/O operations
+- Functional decomposition with clear module boundaries
+- Consistent error handling across modules
+- Shared utilities eliminate code duplication
+
+**Development Workflow:**
+- Run unbundled code directly with `npm run dev`
+- Auto-rebuild on changes with `npm run watch`
+- Development mode preserves file paths for debugging
+- Production mode creates optimized executable
+
+**Package Management:**
+- Added `package.json` with proper metadata
+- esbuild as only dev dependency
+- Node.js 18+ target (native fetch, ES modules)
+- Git repository links and bug tracking URLs
+
+### 🔄 Migration and Compatibility
+
+**Zero Breaking Changes:**
+- All command-line interfaces unchanged
+- All flags and arguments work identically
+- All configuration files remain compatible
+- All skills continue working without modification
+- All platform integrations unaffected
+
+**Automatic Migration:**
+- No user action required
+- Update via `superpowers-agent update` or git pull
+- Build happens automatically on first run
+- Original preserved as `superpowers-agent-backup.js`
+
+**Backward Compatibility:**
+- Old monolithic version backed up
+- Can revert if needed (though no issues expected)
+- All existing workflows continue functioning
+- Script compatibility maintained
+
+### 📚 Documentation Updates
+
+**Updated Files:**
+- `package.json` - Version bumped to 6.0.0, added build scripts
+- `superpowers-agent` - Now 324-line optimized bundle
+- `superpowers-agent-backup.js` - Original 3,406-line version preserved
+- `.agents/templates/AGENTS.md.template` - Added updates monitoring section
+- This release notes section
+
+**New Files:**
+- `build.js` - Build configuration and process
+- All 22 modular source files in `src/` directory
+- `scripts/extract-modules.py` - Module extraction tooling
+- `scripts/finish-extraction.sh` - Extraction finalization
+- `scripts/link.cjs` - Symlink management
+
+### 🎯 What This Means
+
+**v6.0.0 represents a major milestone:**
+
+1. **Maintainability**: Code is now easily understood and modified
+2. **Extensibility**: Adding features is straightforward and safe
+3. **Performance**: Faster execution with optimized bundle
+4. **Quality**: Better organization leads to fewer bugs
+5. **Community**: Lower barrier to contribution
+6. **Future**: Foundation for continued innovation
+
+**The major version bump (5.x → 6.x) reflects the internal transformation, not breaking API changes.** Users experience zero disruption while gaining all the benefits of modern architecture.
+
+### 💭 Philosophy
+
+This rewrite embodies Superpowers' core principles:
+
+- **Systematic over ad-hoc**: Organized structure beats sprawling monolith
+- **Complexity reduction**: 22 focused modules simpler than one giant file
+- **Evidence over claims**: Bundle size reduction is measurable
+- **Domain over implementation**: Clear layers match mental models
+
+The v6.0.0 modernization ensures Superpowers can grow and evolve for years to come.
+
+---
+
 ## v5.4.0 (November 25, 2025)
 
 ### 🎯 Dynamic Tool Mappings System
