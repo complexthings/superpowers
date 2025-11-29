@@ -1,3 +1,27 @@
 {
-  "type": "module"
+  "type": "module",
+  "version": "6.0.0",
+  "name": "@complexthings/superpowers-agent",
+  "bugs": {
+    "url": "https://github.com/complexthings/superpowers"
+  },
+  "author": {
+    "name": "Greg Harvell",
+    "url": "https://github.com/complexthings",
+    "email": "greg.harvell@complexthings.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/complexthings/superpowers.git"
+  },
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node src/cli.js",
+    "watch": "node build.js --watch",
+    "dev:link": "node scripts/link.cjs dev",
+    "production:link": "node scripts/link.cjs production"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0"
+  }
 }
