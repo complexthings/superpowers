@@ -14,6 +14,50 @@ curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/inst
 
 Read and follow all instructions in the installation guide to set up the superpowers-agent and universal agent-agnostic skills system.
 
+### Updates Monitoring
+
+**Bootstrapped Version**: ^^SAV:{{VERSION}}^^
+
+Your superpowers-agent may have updates available. If you see a different version
+in command output (e.g., `^^SAV:5.5.0^^`) than shown above, run:
+
+```bash
+superpowers-agent update && superpowers-agent bootstrap && superpowers-agent setup-skills
+```
+
+This will update your Superpowers installation and refresh your project configuration.
+
+**How Agents Should Use This Information:**
+
+When you (the agent) start a conversation or run superpowers-agent commands:
+
+1. **Note the bootstrapped version** shown above (`^^SAV:{{VERSION}}^^`)
+2. **Check command output** - Most `superpowers-agent` commands display `^^SAV:X.Y.Z^^` at the start
+3. **Compare versions** - If the command version differs from bootstrapped version:
+   
+   Inform the user: "Your superpowers-agent may have updates available, run 
+   `superpowers-agent update && superpowers-agent bootstrap && superpowers-agent setup-skills` 
+   to update your Superpowers and Project!"
+
+4. **When to check**:
+   - At the start of new conversations
+   - When commands behave unexpectedly  
+   - When user asks about updates or capabilities
+
+**Version Detection Examples:**
+
+```
+# Outdated - needs update
+Bootstrapped: ^^SAV:5.4.0^^
+Command output: ^^SAV:5.5.0^^
+→ Notify user to update
+
+# Up to date
+Bootstrapped: ^^SAV:5.4.0^^
+Command output: ^^SAV:5.4.0^^
+→ No action needed
+```
+
 ### HOW SKILLS WORK
 
 Each Skill is a directory in `.agents/skills` that contains a `SKILL.md` file with detailed instructions. (sometimes they're in `.claude/skills`, `.gemini/skills` or other agent-specific or skill directories as well). And have pretty standard structures:

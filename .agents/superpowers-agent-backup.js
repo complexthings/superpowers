@@ -1,0 +1,3406 @@
+#!/usr/bin/env node
+
+import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs';
+import { join, parse, dirname, relative } from 'path';
+import { homedir, platform } from 'os';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Get VS Code User profile directory based on platform
+const getVSCodeUserDir = () => {
+    const home = homedir();
+    const plat = platform();
+    
+    switch (plat) {
+        case 'darwin': // macOS
+            return join(home, 'Library', 'Application Support', 'Code', 'User');
+        case 'win32': // Windows
+            return join(home, 'AppData', 'Roaming', 'Code', 'User');
+        case 'linux': // Linux
+            return join(home, '.config', 'Code', 'User');
+        default:
+            // Fallback to Linux path for unknown platforms
+            return join(home, '.config', 'Code', 'User');
+    }
+};
+
+// Detect project root (where .agents directory exists)
+const findProjectRoot = () => {
+    let currentDir = process.cwd();
+    const root = parse(currentDir).root;
+    
+    while (currentDir !== root) {
+        if (existsSync(join(currentDir, '.agents'))) {
+            return currentDir;
+        }
+        currentDir = dirname(currentDir);
+    }
+    
+    return process.cwd();
+};
+
+// Paths configuration
+const paths = {
+    home: homedir(),
+    vscodeUserDir: getVSCodeUserDir(),
+    projectRoot: findProjectRoot(),
+    get projectClaudeSkills() { return join(this.projectRoot, '.claude', 'skills'); },
+    get projectAgentsSkills() { return join(this.projectRoot, '.agents', 'skills'); },
+    get projectSkillsDir() { return join(this.projectRoot, 'skills'); }, // For superpowers repo itself
+    get homePersonalSkills() { return join(this.home, '.agents', 'skills'); },
+    get bootstrap() { return join(this.projectRoot, '.agents', 'superpowers-bootstrap.md'); },
+    get superpowersRepo() { 
+        // If running from the superpowers repo itself, use current location
+        // Otherwise use installed location
+        const currentRepoCheck = join(__dirname, '..', 'skills');
+        if (existsSync(currentRepoCheck) && existsSync(join(__dirname, '..', '.github', 'prompts'))) {
+            return join(__dirname, '..');
+        }
+        return join(this.home, '.agents', 'superpowers');
+    },
+    get homeSuperpowersSkills() { return join(this.superpowersRepo, 'skills'); },
+    get isSuperpowersRepo() {
+        // Check if we're running from within the superpowers repo
+        const currentRepoCheck = join(__dirname, '..', 'skills');
+        return existsSync(currentRepoCheck) && existsSync(join(__dirname, '..', '.github', 'prompts'));
+    }
+};
+
+// Utility functions
+const getDefaultConfig = () => ({
+    auto_update: true,
+    last_update_check: null,
+    last_updated_commit: null
+});
+
+const readConfig = () => {
+    const configPath = join(paths.superpowersRepo, '.config.json');
+    try {
+        if (!existsSync(configPath)) {
+            return getDefaultConfig();
+        }
+        const content = readFileSync(configPath, 'utf8');
+        return { ...getDefaultConfig(), ...JSON.parse(content) };
+    } catch {
+        return getDefaultConfig();
+    }
+};
+
+const writeConfig = (updates) => {
+    const configPath = join(paths.superpowersRepo, '.config.json');
+    const current = readConfig();
+    const updated = { ...current, ...updates };
+    try {
+        writeFileSync(configPath, JSON.stringify(updated, null, 2));
+    } catch (error) {
+        console.log(`Warning: couldn't save config: ${error.message}`);
+    }
+};
+
+const isRepoClean = () => {
+    try {
+        const output = execSync('git status --porcelain --untracked-files=no', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe',
+            timeout: 3000
+        });
+        return output.trim().length === 0;
+    } catch {
+        return false;
+    }
+};
+
+const isOnMainBranch = () => {
+    try {
+        const branch = execSync('git rev-parse --abbrev-ref HEAD', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe',
+            timeout: 3000
+        });
+        return branch.trim() === 'main';
+    } catch {
+        return false;
+    }
+};
+
+const checkForUpdates = () => {
+    try {
+        // Fetch latest from origin
+        execSync('git fetch origin', {
+            cwd: paths.superpowersRepo,
+            timeout: 5000,
+            stdio: 'pipe'
+        });
+
+        // Check if repo is clean
+        const hasLocalChanges = !isRepoClean();
+
+        // Get current and latest commits
+        const currentCommit = execSync('git rev-parse HEAD', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe'
+        }).trim();
+
+        const latestCommit = execSync('git rev-parse origin/main', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe'
+        }).trim();
+
+        const hasUpdates = currentCommit !== latestCommit;
+
+        if (!hasUpdates) {
+            return {
+                hasUpdates: false,
+                hasLocalChanges,
+                currentCommit,
+                latestCommit,
+                commitsBehind: 0,
+                changedFiles: []
+            };
+        }
+
+        // Count commits behind
+        const commitsBehind = parseInt(execSync('git rev-list --count HEAD..origin/main', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe'
+        }).trim(), 10);
+
+        // Get changed files
+        const changedFilesOutput = execSync('git diff --name-only HEAD origin/main', {
+            cwd: paths.superpowersRepo,
+            encoding: 'utf8',
+            stdio: 'pipe'
+        });
+
+        const changedFiles = changedFilesOutput.trim().split('\n').filter(f => f.length > 0);
+
+        return {
+            hasUpdates: true,
+            hasLocalChanges,
+            currentCommit,
+            latestCommit,
+            commitsBehind,
+            changedFiles
+        };
+    } catch {
+        return {
+            hasUpdates: false,
+            hasLocalChanges: false,
+            currentCommit: '',
+            latestCommit: '',
+            commitsBehind: 0,
+            changedFiles: [],
+            error: true
+        };
+    }
+};
+
+const determineReinstalls = (changedFiles) => {
+    const integrationMap = {
+        '.github/prompts/': 'copilot-prompts',
+        '.github/copilot-instructions.md': 'copilot-instructions',
+        '.cursor/commands/': 'cursor-commands',
+        'hooks/cursor/': 'cursor-hooks',
+        '.codex/prompts/': 'codex-prompts',
+        '.gemini/commands/': 'gemini-commands',
+        'commands/': 'claude-commands',
+        '.opencode/command/': 'opencode-commands'
+    };
+    
+    const toReinstall = new Set();
+    
+    for (const file of changedFiles) {
+        for (const [pathPrefix, integration] of Object.entries(integrationMap)) {
+            if (file.startsWith(pathPrefix)) {
+                toReinstall.add(integration);
+            }
+        }
+    }
+    
+    return Array.from(toReinstall);
+};
+
+const reinstallIntegration = (integration) => {
+    const installFunctions = {
+        'copilot-prompts': installCopilotPrompts,
+        'copilot-instructions': installCopilotInstructions,
+        'cursor-commands': installCursorCommands,
+        'cursor-hooks': installCursorHooks,
+        'codex-prompts': installCodexPrompts,
+        'gemini-commands': installGeminiCommands,
+        'claude-commands': installClaudeCommands,
+        'opencode-commands': installOpencodeCommands
+    };
+    
+    const installFn = installFunctions[integration];
+    if (installFn) {
+        try {
+            installFn();
+            return { success: true, integration };
+        } catch (error) {
+            return { success: false, integration, error: error.message };
+        }
+    }
+    return { success: false, integration, error: 'Unknown integration' };
+};
+
+const detectTool = (command) => {
+    try {
+        execSync(`which ${command}`, { 
+            stdio: 'pipe',
+            timeout: 2000 
+        });
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+const toolDetection = {
+    opencode: { 
+        check: () => detectTool('opencode'), 
+        cli: true,
+        name: 'OpenCode',
+        installUrl: 'https://opencode.ai/docs/installation',
+        bootstrapCommand: 'install-opencode-commands'
+    },
+    claude: { 
+        check: () => detectTool('claude'), 
+        cli: true,
+        name: 'Claude Code',
+        installUrl: 'https://code.claude.com/docs/en/installation',
+        bootstrapCommand: 'install-claude-commands'
+    },
+    gemini: { 
+        check: () => detectTool('gemini'), 
+        cli: true,
+        name: 'Gemini',
+        installUrl: 'https://cloud.google.com/gemini/docs/cli/install',
+        bootstrapCommand: 'install-gemini-commands'
+    },
+    codex: { 
+        check: () => detectTool('codex'), 
+        cli: true,
+        name: 'Codex',
+        installUrl: 'https://developers.openai.com/codex/docs/installation',
+        bootstrapCommand: 'install-codex-prompts'
+    },
+    cursor: { 
+        check: () => true, 
+        cli: false,
+        name: 'Cursor',
+        bootstrapCommand: 'install-cursor-commands'
+    },
+    copilot: { 
+        check: () => true, 
+        cli: false,
+        name: 'GitHub Copilot',
+        bootstrapCommand: 'install-copilot-prompts'
+    }
+};
+
+const extractFrontmatter = (filePath) => {
+    try {
+        const content = readFileSync(filePath, 'utf8');
+        const lines = content.split('\n');
+        const frontmatter = { name: '', description: '', whenToUse: '' };
+        let inFrontmatter = false;
+
+        for (const line of lines) {
+            if (line.trim() === '---') {
+                if (inFrontmatter) break;
+                inFrontmatter = true;
+                continue;
+            }
+
+            if (inFrontmatter) {
+                const match = line.match(/^(\w+):\s*(.*)$/);
+                if (match) {
+                    const [, key, value] = match;
+                    const fieldMap = {
+                        'name': 'name',
+                        'description': 'description',
+                        'when_to_use': 'whenToUse'
+                    };
+                    if (fieldMap[key]) {
+                        frontmatter[fieldMap[key]] = value.trim();
+                    }
+                }
+            }
+        }
+
+        return frontmatter;
+    } catch {
+        return { name: '', description: '', whenToUse: '' };
+    }
+};
+
+const skillTypes = {
+    claude: { dir: 'projectClaudeSkills', prefix: 'claude:' },
+    project: { dir: 'projectAgentsSkills', prefix: '' },
+    personal: { dir: 'homePersonalSkills', prefix: '' },
+    superpowers: { dir: 'homeSuperpowersSkills', prefix: 'superpowers:' }
+};
+
+const printSkill = (skillPath, sourceType) => {
+    const skillFile = join(skillPath, 'SKILL.md');
+    const { dir, prefix } = skillTypes[sourceType];
+    const relPath = relative(paths[dir], skillPath).replace(/\\/g, '/');
+    
+    console.log(`${prefix}${relPath}`);
+    
+    const { description, whenToUse } = extractFrontmatter(skillFile);
+    if (description) console.log(`  ${description}`);
+    if (whenToUse) console.log(`  When to use: ${whenToUse}`);
+    console.log('');
+};
+
+const findSkillsInDir = (dir, sourceType, maxDepth = null) => {
+    const skills = [];
+    if (!existsSync(dir)) return skills;
+
+    const searchDir = (currentDir, currentDepth) => {
+        // If maxDepth is null, recurse indefinitely; otherwise respect the limit
+        if (maxDepth !== null && currentDepth > maxDepth) return;
+
+        try {
+            const entries = readdirSync(currentDir, { withFileTypes: true });
+
+            for (const entry of entries) {
+                // Skip common directories that shouldn't contain skills
+                if (entry.name === 'node_modules' || entry.name === '.git' || entry.name.startsWith('.')) {
+                    continue;
+                }
+                
+                const skillDir = join(currentDir, entry.name);
+                
+                // Check if entry is a directory or a symlink pointing to a directory
+                let isDir = entry.isDirectory();
+                if (entry.isSymbolicLink()) {
+                    try {
+                        const stats = statSync(skillDir);
+                        isDir = stats.isDirectory();
+                    } catch {
+                        // Broken symlink, skip it
+                        continue;
+                    }
+                }
+                
+                if (!isDir) continue;
+                
+                const skillFile = join(skillDir, 'SKILL.md');
+
+                if (existsSync(skillFile)) {
+                    skills.push(skillDir);
+                }
+
+                // Always recurse into subdirectories (unless maxDepth limit reached)
+                if (maxDepth === null || currentDepth < maxDepth) {
+                    searchDir(skillDir, currentDepth + 1);
+                }
+            }
+        } catch {
+            // Ignore permission errors
+        }
+    };
+
+    searchDir(dir, 0);
+    return skills;
+};
+
+// Commands
+const runFindSkills = () => {
+    printVersion();
+    const foundSkills = new Set();
+    
+    // Skill discovery order (priority: project > claude > personal > superpowers)
+    // maxDepth: null means unlimited recursion (searches all nested directories)
+    const discoveryOrder = [
+        { type: 'project', dir: paths.projectAgentsSkills, maxDepth: null },
+        { type: 'claude', dir: paths.projectClaudeSkills, maxDepth: null },
+        { type: 'personal', dir: paths.homePersonalSkills, maxDepth: null },
+        { type: 'superpowers', dir: paths.homeSuperpowersSkills, maxDepth: null }
+    ];
+
+    for (const { type, dir, maxDepth } of discoveryOrder) {
+        const skills = findSkillsInDir(dir, type, maxDepth);
+        for (const skillPath of skills) {
+            const relPath = relative(dir, skillPath);
+            if (!foundSkills.has(relPath)) {
+                foundSkills.add(relPath);
+                printSkill(skillPath, type);
+            }
+        }
+    }
+
+    console.log(`Usage:
+  superpowers-agent use-skill <skill-name> # Load a specific skill
+
+Skill naming:
+  Project skills: skill-name (from .agents/skills/ - highest priority)
+  Claude skills: claude:skill-name (from .claude/skills/)
+  Personal skills: skill-name (from ~/.agents/skills/)
+  Superpowers skills: superpowers:skill-name (from ~/.agents/superpowers/skills/)
+
+Priority: .agents/skills > .claude/skills > ~/.agents/skills > ~/.agents/superpowers/skills
+Note: All skills are disclosed at session start via bootstrap.`);
+};
+
+const findSectionEnd = (content, sectionStart) => {
+    // Find the heading level of the section
+    const headingMatch = content.substring(sectionStart).match(/^(#+)/m);
+    if (!headingMatch) return content.length;
+    
+    const headingLevel = headingMatch[1];
+    
+    // Find next same-level or higher heading, or ---
+    const afterSection = content.substring(sectionStart + headingMatch[0].length);
+    const nextHeadingRegex = new RegExp(`^${headingLevel}+ `, 'm');
+    const hrRegex = /^---+$/m;
+    
+    const nextHeading = afterSection.match(nextHeadingRegex);
+    const nextHr = afterSection.match(hrRegex);
+    
+    if (nextHeading && nextHr) {
+        const endIndex = Math.min(nextHeading.index, nextHr.index);
+        return sectionStart + headingMatch[0].length + endIndex;
+    } else if (nextHeading) {
+        return sectionStart + headingMatch[0].length + nextHeading.index;
+    } else if (nextHr) {
+        return sectionStart + headingMatch[0].length + nextHr.index;
+    }
+    
+    return content.length;
+};
+
+const findSkillsSection = (content) => {
+    // 1. Try markers first
+    const markerRegex = /<!-- SUPERPOWERS_SKILLS_START -->([\s\S]*?)<!-- SUPERPOWERS_SKILLS_END -->/;
+    const markerMatch = content.match(markerRegex);
+    if (markerMatch) {
+        return { 
+            type: 'markers', 
+            start: markerMatch.index, 
+            end: markerMatch.index + markerMatch[0].length 
+        };
+    }
+    
+    // 2. Try pattern detection
+    const patterns = [
+        /^##\s*🎯\s*CRITICAL:\s*SKILLS.*$/im,
+        /^###\s*HOW SKILLS WORK.*$/im,
+        /^##\s*CRITICAL.*SKILLS.*$/im
+    ];
+    
+    for (const pattern of patterns) {
+        const match = content.match(pattern);
+        if (match) {
+            const sectionEnd = findSectionEnd(content, match.index);
+            return { type: 'pattern', start: match.index, end: sectionEnd };
+        }
+    }
+    
+    // 3. Fall back to after first heading
+    const firstHeadingMatch = content.match(/^#+ .+$/m);
+    if (firstHeadingMatch) {
+        const insertPoint = firstHeadingMatch.index + firstHeadingMatch[0].length;
+        return { type: 'after-intro', start: insertPoint, end: insertPoint };
+    }
+    
+    return null;
+};
+
+const extractSkillsSection = (templateContent) => {
+    // If template already has markers, extract content between them
+    const markerRegex = /<!-- SUPERPOWERS_SKILLS_START -->([\s\S]*?)<!-- SUPERPOWERS_SKILLS_END -->/;
+    const match = templateContent.match(markerRegex);
+    if (match) {
+        return match[1].trim();
+    }
+    
+    // Otherwise return the full template (it will get markers added during update)
+    return templateContent.trim();
+};
+
+const updateAgentFile = (filePath, templateContent) => {
+    // 1. Check if file exists
+    if (!existsSync(filePath)) {
+        return { skipped: true, reason: 'File does not exist' };
+    }
+    
+    // 2. Backup existing file
+    const timestamp = new Date().toISOString().split('T')[0];
+    const backupPath = `${filePath}.backup-${timestamp}`;
+    try {
+        execSync(`cp "${filePath}" "${backupPath}"`, { stdio: 'pipe' });
+    } catch (error) {
+        console.log(`⚠️  Could not create backup: ${error.message}\n  Skipping update to preserve existing content`);
+        return { error: true };
+    }
+    
+    // 3. Read current content
+    let currentContent;
+    try {
+        currentContent = readFileSync(filePath, 'utf8');
+    } catch (error) {
+        console.log(`✗ Failed to read ${parse(filePath).base}: ${error.message}`);
+        return { error: true };
+    }
+    
+    // 4. Find skills section
+    const section = findSkillsSection(currentContent);
+    
+    if (!section) {
+        console.log(`⚠️  Could not detect skills section in ${parse(filePath).base}\n  Skipping update to preserve file structure`);
+        return { error: true };
+    }
+    
+    // 5. Prepare template with markers
+    const markedTemplate = `<!-- SUPERPOWERS_SKILLS_START -->\n${templateContent}\n<!-- SUPERPOWERS_SKILLS_END -->`;
+    
+    // 6. Build new content based on detection type
+    let newContent;
+    if (section.type === 'markers' || section.type === 'pattern') {
+        // Replace detected section
+        newContent = currentContent.substring(0, section.start) + 
+                     markedTemplate + 
+                     currentContent.substring(section.end);
+    } else if (section.type === 'after-intro') {
+        // Insert after first heading
+        newContent = currentContent.substring(0, section.start) +
+                     '\n\n' + markedTemplate + '\n\n' +
+                     currentContent.substring(section.start);
+    }
+    
+    // 7. Write updated content
+    try {
+        writeFileSync(filePath, newContent, 'utf8');
+    } catch (error) {
+        console.log(`✗ Failed to write ${parse(filePath).base}: ${error.message}`);
+        return { error: true };
+    }
+    
+    return { updated: true, type: section.type, backup: parse(backupPath).base };
+};
+
+const installCopilotPrompts = () => {
+    const promptsSourceDir = join(paths.superpowersRepo, '.github', 'prompts');
+    const promptsDestDir = join(paths.vscodeUserDir, 'prompts');
+    
+    if (!existsSync(promptsSourceDir)) {
+        console.log('⚠️  No Copilot prompts to install (source directory not found).');
+        return;
+    }
+    
+    // Create destination directory
+    try {
+        if (!existsSync(promptsDestDir)) {
+            execSync(`mkdir -p "${promptsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating prompts directory: ${error.message}`);
+        return;
+    }
+    
+    // Copy all .prompt.md files
+    let promptFiles;
+    try {
+        promptFiles = readdirSync(promptsSourceDir)
+            .filter(f => f.endsWith('.prompt.md'));
+    } catch (error) {
+        console.log(`Error reading prompts directory: ${error.message}`);
+        return;
+    }
+    
+    if (promptFiles.length === 0) {
+        console.log('⚠️  No prompt files found to install.');
+        return;
+    }
+    
+    console.log('Installing GitHub Copilot prompts...');
+    let installed = 0;
+    for (const file of promptFiles) {
+        try {
+            const source = join(promptsSourceDir, file);
+            const dest = join(promptsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+    
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} prompt(s) to ${promptsDestDir}\n  Use slash commands in GitHub Copilot:\n    /brainstorm-with-superpowers - Refine ideas into designs\n    /write-a-skill - Create new skills with TDD\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
+    }
+};
+
+const installCopilotInstructions = () => {
+    const instructionsSource = join(paths.superpowersRepo, '.github', 'copilot-instructions.md');
+    const instructionsDest = join(paths.home, '.github', 'copilot-instructions.md');
+    
+    if (!existsSync(instructionsSource)) {
+        console.log('⚠️  No Copilot instructions to install (source file not found).');
+        return;
+    }
+    
+    // Create destination directory
+    const destDir = dirname(instructionsDest);
+    try {
+        if (!existsSync(destDir)) {
+            execSync(`mkdir -p "${destDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating .github directory: ${error.message}`);
+        return;
+    }
+    
+    // Copy instructions
+    try {
+        execSync(`cp "${instructionsSource}" "${instructionsDest}"`, { stdio: 'pipe' });
+        console.log(`✓ Installed GitHub Copilot universal instructions\n  Location: ${instructionsDest}\n  GitHub Copilot will now use Superpowers skills universally in all workspaces`);
+    } catch (error) {
+        console.log(`✗ Failed to install instructions: ${error.message}`);
+    }
+};
+
+const installCursorCommands = () => {
+    const commandsSourceDir = join(paths.superpowersRepo, '.cursor', 'commands');
+    const commandsDestDir = join(paths.home, '.cursor', 'commands');
+    
+    if (!existsSync(commandsSourceDir)) {
+        console.log('⚠️  No Cursor commands to install (source directory not found).');
+        return;
+    }
+    
+    // Create destination directory
+    try {
+        if (!existsSync(commandsDestDir)) {
+            execSync(`mkdir -p "${commandsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Cursor commands directory: ${error.message}`);
+        return;
+    }
+    
+    // Copy all .md files
+    let commandFiles;
+    try {
+        commandFiles = readdirSync(commandsSourceDir)
+            .filter(f => f.endsWith('.md'));
+    } catch (error) {
+        console.log(`Error reading Cursor commands directory: ${error.message}`);
+        return;
+    }
+    
+    if (commandFiles.length === 0) {
+        console.log('⚠️  No command files found to install.');
+        return;
+    }
+    
+    console.log('Installing Cursor commands...');
+    let installed = 0;
+    for (const file of commandFiles) {
+        try {
+            const source = join(commandsSourceDir, file);
+            const dest = join(commandsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+    
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}\n  Use slash commands in Cursor:\n    /brainstorm-with-superpowers - Refine ideas into designs\n    /write-a-skill - Create new skills with TDD\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
+    }
+};
+
+const installCursorHooks = () => {
+    const hooksSourceDir = join(paths.superpowersRepo, 'hooks', 'cursor');
+    const hooksDestDir = join(paths.home, '.cursor', 'hooks');
+    const hooksJsonSource = join(hooksSourceDir, 'hooks.json');
+    const hooksJsonDest = join(paths.home, '.cursor', 'hooks.json');
+
+    if (!existsSync(hooksSourceDir)) {
+        console.log('⚠️  No Cursor hooks to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(hooksDestDir)) {
+            execSync(`mkdir -p "${hooksDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Cursor hooks directory: ${error.message}`);
+        return;
+    }
+
+    // Copy hooks.json
+    try {
+        execSync(`cp "${hooksJsonSource}" "${hooksJsonDest}"`, { stdio: 'pipe' });
+        console.log('  ✓ Installed hooks.json');
+    } catch (error) {
+        console.log(`  ✗ Failed to install hooks.json: ${error.message}`);
+        return;
+    }
+
+    // Copy hook scripts
+    let hookFiles;
+    try {
+        hookFiles = readdirSync(hooksSourceDir)
+            .filter(f => f.endsWith('.sh'));
+    } catch (error) {
+        console.log(`Error reading hooks directory: ${error.message}`);
+        return;
+    }
+
+    if (hookFiles.length === 0) {
+        console.log('⚠️  No hook scripts found to install.');
+        return;
+    }
+
+    console.log('Installing Cursor hooks...');
+    let installed = 0;
+    for (const file of hookFiles) {
+        try {
+            const source = join(hooksSourceDir, file);
+            const dest = join(hooksDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            execSync(`chmod +x "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} hook(s) to ${hooksDestDir}\n  Cursor will now check for skills before each prompt submission\n  Restart Cursor for hooks to take effect`);
+    }
+};
+
+const installCodexPrompts = () => {
+    const promptsSourceDir = join(paths.superpowersRepo, '.codex', 'prompts');
+    const promptsDestDir = join(paths.home, '.codex', 'prompts');
+
+    if (!existsSync(promptsSourceDir)) {
+        console.log('⚠️  No Codex prompts to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(promptsDestDir)) {
+            execSync(`mkdir -p "${promptsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Codex prompts directory: ${error.message}`);
+        return;
+    }
+
+    // Copy all .md files
+    let promptFiles;
+    try {
+        promptFiles = readdirSync(promptsSourceDir)
+            .filter(f => f.endsWith('.md'));
+    } catch (error) {
+        console.log(`Error reading Codex prompts directory: ${error.message}`);
+        return;
+    }
+
+    if (promptFiles.length === 0) {
+        console.log('⚠️  No prompt files found to install.');
+        return;
+    }
+
+    console.log('Installing OpenAI Codex prompts...');
+    let installed = 0;
+    for (const file of promptFiles) {
+        try {
+            const source = join(promptsSourceDir, file);
+            const dest = join(promptsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} prompt(s) to ${promptsDestDir}\n  Use slash commands in OpenAI Codex:\n    /prompts:brainstorm - Refine ideas into designs\n    /prompts:write-skill - Create new skills with TDD\n    /prompts:skills - Discover available skills\n    /prompts:use-skill - Load and apply a specific skill\n  Note: Restart Codex or open a new session to reload prompts`);
+    }
+};
+
+const installGeminiCommands = () => {
+    const commandsSourceDir = join(paths.superpowersRepo, '.gemini', 'commands');
+    const commandsDestDir = join(paths.home, '.gemini', 'commands');
+
+    if (!existsSync(commandsSourceDir)) {
+        console.log('⚠️  No Gemini commands to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(commandsDestDir)) {
+            execSync(`mkdir -p "${commandsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Gemini commands directory: ${error.message}`);
+        return;
+    }
+
+    // Copy all .toml files
+    let commandFiles;
+    try {
+        commandFiles = readdirSync(commandsSourceDir)
+            .filter(f => f.endsWith('.toml'));
+    } catch (error) {
+        console.log(`Error reading Gemini commands directory: ${error.message}`);
+        return;
+    }
+
+    if (commandFiles.length === 0) {
+        console.log('⚠️  No command files found to install.');
+        return;
+    }
+
+    console.log('Installing Gemini commands...');
+    let installed = 0;
+    for (const file of commandFiles) {
+        try {
+            const source = join(commandsSourceDir, file);
+            const dest = join(commandsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}\n  Use slash commands in Gemini:\n    /brainstorm-with-superpowers - Refine ideas into designs\n    /write-a-skill - Create new skills with TDD\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
+    }
+};
+
+const installClaudeCommands = () => {
+    const commandsSourceDir = join(paths.superpowersRepo, 'commands');
+    const commandsDestDir = join(paths.home, '.claude', 'commands');
+
+    if (!existsSync(commandsSourceDir)) {
+        console.log('⚠️  No Claude commands to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(commandsDestDir)) {
+            execSync(`mkdir -p "${commandsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating Claude commands directory: ${error.message}`);
+        return;
+    }
+
+    // Copy all .md files
+    let commandFiles;
+    try {
+        commandFiles = readdirSync(commandsSourceDir)
+            .filter(f => f.endsWith('.md'));
+    } catch (error) {
+        console.log(`Error reading Claude commands directory: ${error.message}`);
+        return;
+    }
+
+    if (commandFiles.length === 0) {
+        console.log('⚠️  No command files found to install.');
+        return;
+    }
+
+    console.log('Installing Claude Code commands...');
+    let installed = 0;
+    for (const file of commandFiles) {
+        try {
+            const source = join(commandsSourceDir, file);
+            const dest = join(commandsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}\n  Use slash commands in Claude Code:\n    /brainstorm - Refine ideas into designs\n    /execute-plan - Execute plans in batches\n    /write-plan - Create implementation plans\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
+    }
+};
+
+const installOpencodeCommands = () => {
+    const commandsSourceDir = join(paths.superpowersRepo, '.opencode', 'command');
+    const commandsDestDir = join(paths.home, '.config', 'opencode', 'command');
+
+    if (!existsSync(commandsSourceDir)) {
+        console.log('⚠️  No opencode commands to install (source directory not found).');
+        return;
+    }
+
+    // Create destination directory
+    try {
+        if (!existsSync(commandsDestDir)) {
+            execSync(`mkdir -p "${commandsDestDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        console.log(`Error creating opencode commands directory: ${error.message}`);
+        return;
+    }
+
+    // Copy all .md files
+    let commandFiles;
+    try {
+        commandFiles = readdirSync(commandsSourceDir)
+            .filter(f => f.endsWith('.md'));
+    } catch (error) {
+        console.log(`Error reading opencode commands directory: ${error.message}`);
+        return;
+    }
+
+    if (commandFiles.length === 0) {
+        console.log('⚠️  No command files found to install.');
+        return;
+    }
+
+    console.log('Installing opencode commands...');
+    let installed = 0;
+    for (const file of commandFiles) {
+        try {
+            const source = join(commandsSourceDir, file);
+            const dest = join(commandsDestDir, file);
+            execSync(`cp "${source}" "${dest}"`, { stdio: 'pipe' });
+            console.log(`  ✓ Installed ${file}`);
+            installed++;
+        } catch (error) {
+            console.log(`  ✗ Failed to install ${file}: ${error.message}`);
+        }
+    }
+
+    if (installed > 0) {
+        console.log(`\n✓ Installed ${installed} command(s) to ${commandsDestDir}\n  Use slash commands in opencode:\n    /brainstorm - Refine ideas into designs\n    /execute-plan - Execute plans in batches\n    /write-plan - Create implementation plans\n    /write-skill - Create new skills with TDD\n    /skills - Discover available skills\n    /use-skill - Load and apply a specific skill`);
+    }
+};
+
+// Helper function to load tool mapping template for a platform
+const loadToolMappingTemplate = (platform) => {
+    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', `TOOLS-${platform.toUpperCase()}.md.template`);
+    try {
+        if (existsSync(templatePath)) {
+            return readFileSync(templatePath, 'utf8');
+        }
+    } catch (error) {
+        console.log(`⚠️  Warning: Could not load tool mapping for ${platform}: ${error.message}`);
+    }
+    return '';
+};
+
+// Helper function to generate tool mappings section based on detected platforms
+const generateToolMappings = (platforms) => {
+    if (!platforms || platforms.length === 0) {
+        return '';
+    }
+    
+    const mappings = platforms
+        .map(platform => loadToolMappingTemplate(platform))
+        .filter(mapping => mapping.length > 0)
+        .join('\n\n');
+    
+    return mappings ? `\n${mappings}\n` : '';
+};
+
+// Helper function to detect available platforms
+const detectPlatforms = () => {
+    const detected = [];
+    
+    if (toolDetection.copilot.check()) detected.push('github-copilot');
+    if (toolDetection.cursor.check()) detected.push('cursor');
+    if (toolDetection.claude.check()) detected.push('claude-code');
+    if (toolDetection.opencode.check()) detected.push('opencode');
+    if (toolDetection.gemini.check()) detected.push('gemini');
+    if (toolDetection.codex.check()) detected.push('codex');
+    
+    return detected;
+};
+
+// Helper function to update or create a platform-specific file with tool mappings
+const updatePlatformFile = (filePath, templateContent, platforms, createIfMissing = true) => {
+    const fileExists = existsSync(filePath);
+    
+    // If file doesn't exist and we shouldn't create it, skip
+    if (!fileExists && !createIfMissing) {
+        return { updated: false, created: false, skipped: true };
+    }
+    
+    // Generate tool mappings for the specified platforms
+    const toolMappings = generateToolMappings(platforms);
+    
+    // Replace placeholder in template
+    let content = templateContent.replace(/\{\{TOOL_MAPPINGS\}\}/g, toolMappings);
+    
+    // Replace other placeholders
+    const currentDate = new Date().toISOString().split('T')[0];
+    content = content.replace(/\{\{DATE\}\}/g, currentDate);
+    content = content.replace(/\{\{SUPERPOWERS_PATH\}\}/g, paths.superpowersRepo);
+    
+    // Wrap content in markers
+    const wrappedContent = `<!-- SUPERPOWERS_SKILLS_START -->\n${content}\n<!-- SUPERPOWERS_SKILLS_END -->`;
+    
+    if (fileExists) {
+        // Backup existing file
+        const timestamp = new Date().toISOString().split('T')[0];
+        const backupPath = `${filePath}.backup-${timestamp}`;
+        try {
+            execSync(`cp "${filePath}" "${backupPath}"`, { stdio: 'pipe' });
+        } catch (error) {
+            return { updated: false, error: true, message: `Failed to backup: ${error.message}` };
+        }
+        
+        // Read existing file
+        let existingContent;
+        try {
+            existingContent = readFileSync(filePath, 'utf8');
+        } catch (error) {
+            return { updated: false, error: true, message: `Failed to read: ${error.message}` };
+        }
+        
+        // Check if file already has SUPERPOWERS markers
+        const startMarker = '<!-- SUPERPOWERS_SKILLS_START -->';
+        const endMarker = '<!-- SUPERPOWERS_SKILLS_END -->';
+        
+        let newContent;
+        if (existingContent.includes(startMarker) && existingContent.includes(endMarker)) {
+            // Replace existing superpowers section
+            const regex = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`, 'g');
+            newContent = existingContent.replace(regex, wrappedContent);
+        } else {
+            // Find opening header or prepend to top
+            const headerMatch = existingContent.match(/^#\s+.+$/m);
+            if (headerMatch) {
+                // Insert after first header
+                const headerEndPos = existingContent.indexOf('\n', headerMatch.index) + 1;
+                newContent = existingContent.slice(0, headerEndPos) + '\n' + wrappedContent + '\n' + existingContent.slice(headerEndPos);
+            } else {
+                // No header, prepend to top
+                newContent = wrappedContent + '\n\n' + existingContent;
+            }
+        }
+        
+        // Write updated content
+        try {
+            writeFileSync(filePath, newContent, 'utf8');
+            return { updated: true, created: false, backup: backupPath };
+        } catch (error) {
+            return { updated: false, error: true, message: `Failed to write: ${error.message}` };
+        }
+    } else {
+        // Create new file
+        try {
+            // Ensure directory exists
+            const dir = dirname(filePath);
+            if (!existsSync(dir)) {
+                execSync(`mkdir -p "${dir}"`, { stdio: 'pipe' });
+            }
+            
+            // Determine heading based on filename
+            const fileName = parse(filePath).base.toUpperCase();
+            const heading = `# ${fileName}\n\n`;
+            
+            // Write file with heading + content
+            const finalContent = heading + wrappedContent;
+            writeFileSync(filePath, finalContent, 'utf8');
+            return { updated: false, created: true };
+        } catch (error) {
+            return { updated: false, created: false, error: true, message: `Failed to create: ${error.message}` };
+        }
+    }
+};
+
+const runSetupSkills = () => {
+    printVersion();
+    console.log('# Setting up Superpowers skills for this project\n');
+
+    // ALWAYS use current directory as project root for setup-skills
+    // Don't search upward - we're setting up THIS directory as a new project
+    const projectRoot = process.cwd();
+    const agentsDir = join(projectRoot, '.agents');
+    const skillsDir = join(agentsDir, 'skills');
+    const rootAgentsMdPath = join(projectRoot, 'AGENTS.md');
+    const dotAgentsAgentsMdPath = join(agentsDir, 'AGENTS.md');
+    // Prefer root AGENTS.md if it exists, otherwise use .agents/AGENTS.md
+    const agentsMdPath = existsSync(rootAgentsMdPath) ? rootAgentsMdPath : dotAgentsAgentsMdPath;
+    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'AGENTS.md.template');
+
+    // Check if template exists
+    if (!existsSync(templatePath)) {
+        console.log(`✗ Error: AGENTS.md template not found\n  Expected at: ${templatePath}\n  Please update your Superpowers installation`);
+        return;
+    }
+
+    // Create .agents directory
+    if (!existsSync(agentsDir)) {
+        try {
+            execSync(`mkdir -p "${agentsDir}"`, { stdio: 'pipe' });
+            console.log('✓ Created .agents/ directory');
+        } catch (error) {
+            console.log(`✗ Failed to create .agents/ directory: ${error.message}`);
+            return;
+        }
+    } else {
+        console.log('✓ .agents/ directory exists');
+    }
+
+    // Create skills directory
+    if (!existsSync(skillsDir)) {
+        try {
+            execSync(`mkdir -p "${skillsDir}"`, { stdio: 'pipe' });
+            execSync(`touch "${join(skillsDir, '.gitkeep')}"`, { stdio: 'pipe' });
+            console.log('✓ Created .agents/skills/ directory');
+        } catch (error) {
+            console.log(`✗ Failed to create skills directory: ${error.message}`);
+            return;
+        }
+    } else {
+        console.log('✓ .agents/skills/ directory exists');
+    }
+
+    // Handle existing AGENTS.md
+    const agentsMdExists = existsSync(agentsMdPath);
+    
+    if (agentsMdExists) {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const backupPath = `${agentsMdPath}.backup-${timestamp}`;
+        try {
+            execSync(`cp "${agentsMdPath}" "${backupPath}"`, { stdio: 'pipe' });
+            console.log(`✓ Backed up existing AGENTS.md to ${parse(backupPath).base}`);
+        } catch (error) {
+            console.log(`✗ Failed to backup AGENTS.md: ${error.message}`);
+            return;
+        }
+    }
+
+    // Read template
+    let template;
+    try {
+        template = readFileSync(templatePath, 'utf8');
+    } catch (error) {
+        console.log(`✗ Failed to read template: ${error.message}`);
+        return;
+    }
+
+    // Detect which platforms are present in the project or available globally
+    const projectPlatforms = [];
+    
+    // Check for existing platform files or detected platforms
+    const rootCopilotPath = join(projectRoot, '.github', 'copilot-instructions.md');
+    const globalCopilotPath = join(paths.home, '.github', 'copilot-instructions.md');
+    if (existsSync(rootCopilotPath) || existsSync(globalCopilotPath) || toolDetection.copilot.check()) {
+        projectPlatforms.push('github-copilot');
+    }
+    
+    const rootClaudeMdPath = join(projectRoot, 'CLAUDE.md');
+    const dotAgentsClaudeMdPath = join(agentsDir, 'CLAUDE.md');
+    if (existsSync(rootClaudeMdPath) || existsSync(dotAgentsClaudeMdPath) || toolDetection.claude.check()) {
+        projectPlatforms.push('claude-code');
+    }
+    
+    const rootGeminiMdPath = join(projectRoot, 'GEMINI.md');
+    const dotAgentsGeminiMdPath = join(agentsDir, 'GEMINI.md');
+    if (existsSync(rootGeminiMdPath) || existsSync(dotAgentsGeminiMdPath) || toolDetection.gemini.check()) {
+        projectPlatforms.push('gemini');
+    }
+    
+    // Cursor and OpenCode only go in AGENTS.md (not platform-specific files)
+    if (toolDetection.cursor.check()) {
+        projectPlatforms.push('cursor');
+    }
+    
+    if (toolDetection.opencode.check()) {
+        projectPlatforms.push('opencode');
+    }
+    
+    if (toolDetection.codex.check()) {
+        projectPlatforms.push('codex');
+    }
+    
+    console.log(`\nDetected platforms for project: ${projectPlatforms.join(', ') || 'none'}\n`);
+    
+    // Handle AGENTS.md with detected platform tool mappings
+    let agentsMdResult = { updated: false, created: false };
+    const agentsPlatforms = projectPlatforms.filter(p => ['github-copilot', 'cursor', 'opencode', 'codex'].includes(p));
+    const agentsResult = updatePlatformFile(agentsMdPath, template, agentsPlatforms, !agentsMdExists);
+    if (agentsResult.created) {
+        agentsMdResult = { updated: false, created: true };
+        const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
+        console.log(`✓ Created AGENTS.md with platform tool mappings (${agentsMdLocation})`);
+    } else if (agentsResult.updated) {
+        agentsMdResult = { updated: true, created: false };
+        const agentsMdLocation = agentsMdPath === rootAgentsMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated AGENTS.md with platform tool mappings (${agentsMdLocation})`);
+    } else if (agentsResult.error) {
+        console.log('⚠️  Failed to update AGENTS.md (continuing with other files)');
+    }
+
+    // Update GitHub Copilot instructions if it exists
+    const copilotResult = updatePlatformFile(rootCopilotPath, template, ['github-copilot'], false);
+    if (copilotResult.created) {
+        console.log(`✓ Created copilot-instructions.md with GitHub Copilot tool mappings`);
+    } else if (copilotResult.updated) {
+        console.log(`✓ Updated copilot-instructions.md with GitHub Copilot tool mappings`);
+    } else if (copilotResult.skipped) {
+        console.log('ℹ️  Skipped copilot-instructions.md (does not exist)');
+    }
+
+    // Update CLAUDE.md if it exists (prefer root, then .agents/)
+    const claudeMdPath = existsSync(rootClaudeMdPath) ? rootClaudeMdPath : dotAgentsClaudeMdPath;
+    const claudeResult = updatePlatformFile(claudeMdPath, template, ['claude-code'], false);
+    if (claudeResult.created) {
+        const claudeMdLocation = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        console.log(`✓ Created CLAUDE.md with Claude Code tool mappings (${claudeMdLocation})`);
+    } else if (claudeResult.updated) {
+        const claudeMdLocation = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated CLAUDE.md with Claude Code tool mappings (${claudeMdLocation})`);
+        if (claudeResult.backup) {
+            console.log(`  Backed up to ${parse(claudeResult.backup).base}`);
+        }
+    } else if (claudeResult.skipped) {
+        console.log('ℹ️  Skipped CLAUDE.md (does not exist)');
+    } else if (claudeResult.error) {
+        console.log('⚠️  Failed to update CLAUDE.md');
+    }
+
+    // Update GEMINI.md if it exists (prefer root, then .agents/)
+    const geminiMdPath = existsSync(rootGeminiMdPath) ? rootGeminiMdPath : dotAgentsGeminiMdPath;
+    const geminiResult = updatePlatformFile(geminiMdPath, template, ['gemini'], false);
+    if (geminiResult.created) {
+        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        console.log(`✓ Created GEMINI.md with Gemini tool mappings (${geminiMdLocation})`);
+    } else if (geminiResult.updated) {
+        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated GEMINI.md with Gemini tool mappings (${geminiMdLocation})`);
+        if (geminiResult.backup) {
+            console.log(`  Backed up to ${parse(geminiResult.backup).base}`);
+        }
+    } else if (geminiResult.skipped) {
+        console.log('ℹ️  Skipped GEMINI.md (does not exist)');
+    } else if (geminiResult.error) {
+        console.log('⚠️  Failed to update GEMINI.md');
+    }
+
+    // Build dynamic success message based on what was updated
+    let setupMessage = `\n# Setup complete!\n\nYour project now has:
+  - .agents/ directory structure`;
+    
+    if (agentsMdResult.updated || agentsMdResult.created) {
+        const action = agentsMdResult.created ? 'created with' : 'updated with';
+        const location = agentsMdPath === rootAgentsMdPath ? 'in project root' : 'in .agents/';
+        setupMessage += `\n  - AGENTS.md ${action} universal skills instructions (${location})`;
+    }
+    
+    if (claudeResult.updated) {
+        const location = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        setupMessage += `\n  - CLAUDE.md updated with latest skills content (${location})`;
+    }
+    
+    if (geminiResult.updated) {
+        const location = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        setupMessage += `\n  - GEMINI.md updated with latest skills content (${location})`;
+    }
+    
+    setupMessage += '\n  - .agents/skills/ ready for project-specific skills\n';
+    
+    // Check if any files were actually updated
+    const anyUpdated = agentsMdResult.updated || agentsMdResult.created || claudeResult.updated || geminiResult.updated;
+    if (!anyUpdated) {
+        setupMessage += '\n⚠️  No agent configuration files were found or updated.\n   Consider creating AGENTS.md, CLAUDE.md, or GEMINI.md for your project.\n';
+    }
+    
+    if (existsSync(`${agentsMdPath}.backup-${new Date().toISOString().split('T')[0]}`)) {
+        setupMessage += '\n💡 Review the backup and new AGENTS.md to merge any custom content';
+    }
+    if (claudeResult.backup || geminiResult.backup) {
+        setupMessage += '\n💡 Review backups to verify no custom content was lost';
+    }
+    if (existsSync(`${agentsMdPath}.backup-${new Date().toISOString().split('T')[0]}`) || claudeResult.backup || geminiResult.backup) {
+        setupMessage += '\n';
+    }
+    console.log(setupMessage);
+};
+
+const runUpdate = (options = {}) => {
+    const skipReinstall = options.skipReinstall || false;
+    
+    console.log('# Checking for Superpowers updates...\n');
+    
+    // 1. Check current state
+    const updateInfo = checkForUpdates();
+    
+    if (updateInfo.error) {
+        console.log('⚠️  Could not check for updates (network issue)');
+        return;
+    }
+    
+    if (!updateInfo.hasUpdates) {
+        console.log('✓ Already up to date');
+        return;
+    }
+    
+    // 2. Safety check - is repo clean?
+    if (updateInfo.hasLocalChanges) {
+        console.log(`⚠️  Cannot auto-update: local changes detected\n   Commit or stash your changes first, then run update again\n   Or manually update: cd ${paths.superpowersRepo} && git pull`);
+        return;
+    }
+    
+    // 3. Check if on main branch
+    if (!isOnMainBranch()) {
+        console.log(`⚠️  Not on main branch, skipping auto-update\n   Switch to main branch first: cd ${paths.superpowersRepo} && git checkout main`);
+        return;
+    }
+    
+    // 4. Perform git pull
+    console.log(`📦 Updating from ${updateInfo.currentCommit.substring(0,7)} to ${updateInfo.latestCommit.substring(0,7)}
+   (${updateInfo.commitsBehind} new commit${updateInfo.commitsBehind > 1 ? 's' : ''})\n`);
+    
+    try {
+        execSync('git pull origin main', { 
+            cwd: paths.superpowersRepo, 
+            stdio: 'pipe',
+            timeout: 10000
+        });
+        console.log('✓ Updated superpowers repository');
+    } catch (error) {
+        console.log(`✗ Git pull failed: ${error.message}\n   Please resolve manually and try again`);
+        return;
+    }
+    
+    console.log('');
+    
+    // 5. Update config
+    writeConfig({ 
+        last_updated_commit: updateInfo.latestCommit,
+        last_update_check: new Date().toISOString()
+    });
+    
+    // 6. Determine what needs reinstalling
+    if (skipReinstall) {
+        console.log('ℹ️  Skipping integration reinstall (--no-reinstall flag)\n\n✓ Update complete!');
+        return;
+    }
+    
+    const integrationsToReinstall = determineReinstalls(updateInfo.changedFiles);
+    
+    if (integrationsToReinstall.length === 0) {
+        console.log('ℹ️  No integration files changed, skipping reinstalls\n\n✓ Update complete!');
+        return;
+    }
+    
+    // 7. Reinstall affected integrations
+    console.log('🔄 Reinstalling updated integrations:\n');
+    
+    const results = [];
+    for (const integration of integrationsToReinstall) {
+        const result = reinstallIntegration(integration);
+        results.push(result);
+        if (result.success) {
+            console.log(`  ✓ ${integration}`);
+        } else {
+            console.log(`  ✗ ${integration} (${result.error})`);
+        }
+    }
+    
+    console.log('');
+    
+    // 8. Reinstall aliases in case paths changed
+    console.log('\n---\n');
+    installAliases();
+    
+    // 9. Show summary
+    const failures = results.filter(r => !r.success);
+    if (failures.length > 0) {
+        console.log('⚠️  Update completed with errors:');
+        for (const failure of failures) {
+            console.log(`  - ${failure.integration} failed to install`);
+            const commandName = `install-${failure.integration}`;
+            console.log(`    Run manually: superpowers-agent ${commandName}`);
+        }
+    } else {
+        console.log('✓ Update complete!');
+    }
+};
+
+const runBootstrap = () => {
+    printVersion();
+    console.log('# Superpowers Bootstrap for Agents\n# ==================================\n');
+
+    // Check for --no-update flag
+    const noUpdate = process.argv.includes('--no-update');
+
+    // Auto-update check
+    if (!noUpdate) {
+        const config = readConfig();
+        const updateInfo = checkForUpdates();
+        
+        if (updateInfo.error) {
+            console.log('## Update Check\n\n⚠️  Could not check for updates (network issue)\n\n---\n');
+        } else if (updateInfo.hasUpdates) {
+            if (config.auto_update && !updateInfo.hasLocalChanges && isOnMainBranch()) {
+                console.log('## Auto-Update\n');
+                runUpdate();
+                console.log('\n---\n');
+            } else {
+                console.log('## Update Available');
+                console.log('');
+                if (updateInfo.hasLocalChanges) {
+                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: local changes detected\n    To update, commit/stash changes then run: `superpowers-agent update`');
+                } else if (!isOnMainBranch()) {
+                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: not on main branch\n    To update, switch to main then run: `superpowers-agent update`');
+                } else {
+                    console.log(`⚠️  Your superpowers installation is behind the latest version.\n    To update, run: \`superpowers-agent update\`\n    Or enable auto-update: \`superpowers-agent config-set auto_update true\``);
+                }
+                console.log('\n---\n');
+            }
+        }
+    }
+
+    // Install universal aliases
+    installAliases();
+    console.log('---\n');
+
+    // Install GitHub Copilot integration (always, it's IDE-based)
+    console.log('## GitHub Copilot Integration\n');
+    installCopilotPrompts();
+    console.log('');
+    installCopilotInstructions();
+    console.log('\n---\n');
+
+    // Install Cursor integration (always, it's IDE-based)
+    console.log('## Cursor Integration\n');
+    installCursorCommands();
+    console.log('');
+    installCursorHooks();
+    console.log('\n---\n');
+
+    // Install OpenAI Codex integration
+    console.log('## OpenAI Codex Integration\n');
+    const codexDetected = toolDetection.codex.check();
+    if (codexDetected) {
+        installCodexPrompts();
+    } else {
+        console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)\n💡 To enable Codex integration:\n   1. Install Codex: ${toolDetection.codex.installUrl}\n   2. Run: superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
+    }
+    console.log('\n---\n');
+
+    // Install Gemini integration
+    console.log('## Gemini Integration\n');
+    const geminiDetected = toolDetection.gemini.check();
+    if (geminiDetected) {
+        installGeminiCommands();
+    } else {
+        console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)\n💡 To enable Gemini integration:\n   1. Install Gemini: ${toolDetection.gemini.installUrl}\n   2. Run: superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
+    }
+    console.log('\n---\n');
+
+    // Install Claude Code integration
+    console.log('## Claude Code Integration\n');
+    const claudeDetected = toolDetection.claude.check();
+    if (claudeDetected) {
+        installClaudeCommands();
+    } else {
+        console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
+    }
+    console.log('\n---\n');
+
+    // Install opencode integration
+    console.log('## opencode Integration\n');
+    const opencodeDetected = toolDetection.opencode.check();
+    if (opencodeDetected) {
+        installOpencodeCommands();
+    } else {
+        console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
+    }
+    console.log('\n---\n');
+
+    // Generate platform-specific AGENTS.md files with tool mappings
+    console.log('## Generating Platform-Specific Files\n');
+    
+    const detectedPlatforms = detectPlatforms();
+    console.log(`Detected platforms: ${detectedPlatforms.join(', ') || 'none'}\n`);
+    
+    // Read the base template
+    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'AGENTS.md.template');
+    let baseTemplate = '';
+    try {
+        baseTemplate = readFileSync(templatePath, 'utf8');
+    } catch (error) {
+        console.log(`⚠️  Could not read AGENTS.md template: ${error.message}\n`);
+    }
+    
+    if (baseTemplate) {
+        // Update ~/.agents/AGENTS.md with all detected platforms
+        const globalAgentsPath = join(paths.home, '.agents', 'AGENTS.md');
+        const globalResult = updatePlatformFile(globalAgentsPath, baseTemplate, detectedPlatforms, true);
+        if (globalResult.created) {
+            console.log(`✓ Created ${globalAgentsPath} with all detected platforms`);
+        } else if (globalResult.updated) {
+            console.log(`✓ Updated ${globalAgentsPath} with all detected platforms`);
+        } else if (globalResult.error) {
+            console.log(`⚠️  Failed to update ${globalAgentsPath}`);
+        }
+        
+        // Update platform-specific files
+        if (detectedPlatforms.includes('github-copilot')) {
+            const copilotPath = join(paths.home, '.github', 'copilot-instructions.md');
+            const copilotResult = updatePlatformFile(copilotPath, baseTemplate, ['github-copilot'], true);
+            if (copilotResult.created) {
+                console.log(`✓ Created ${copilotPath}`);
+            } else if (copilotResult.updated) {
+                console.log(`✓ Updated ${copilotPath}`);
+            }
+        }
+        
+        if (detectedPlatforms.includes('claude-code')) {
+            const claudePath = join(paths.home, '.claude', 'CLAUDE.md');
+            const claudeResult = updatePlatformFile(claudePath, baseTemplate, ['claude-code'], true);
+            if (claudeResult.created) {
+                console.log(`✓ Created ${claudePath}`);
+            } else if (claudeResult.updated) {
+                console.log(`✓ Updated ${claudePath}`);
+            }
+        }
+        
+        if (detectedPlatforms.includes('gemini')) {
+            const geminiPath = join(paths.home, '.gemini', 'GEMINI.md');
+            const geminiResult = updatePlatformFile(geminiPath, baseTemplate, ['gemini'], true);
+            if (geminiResult.created) {
+                console.log(`✓ Created ${geminiPath}`);
+            } else if (geminiResult.updated) {
+                console.log(`✓ Updated ${geminiPath}`);
+            }
+        }
+        
+        if (detectedPlatforms.includes('opencode')) {
+            const opencodePath = join(paths.home, '.config', 'opencode', 'AGENTS.md');
+            const opencodeResult = updatePlatformFile(opencodePath, baseTemplate, ['opencode'], true);
+            if (opencodeResult.created) {
+                console.log(`✓ Created ${opencodePath}`);
+            } else if (opencodeResult.updated) {
+                console.log(`✓ Updated ${opencodePath}`);
+            }
+        }
+        
+        if (detectedPlatforms.includes('codex')) {
+            const codexPath = join(paths.home, '.codex', 'AGENTS.md');
+            const codexResult = updatePlatformFile(codexPath, baseTemplate, ['codex'], true);
+            if (codexResult.created) {
+                console.log(`✓ Created ${codexPath}`);
+            } else if (codexResult.updated) {
+                console.log(`✓ Updated ${codexPath}`);
+            }
+        }
+        
+        console.log('');
+    }
+    
+    console.log('---\n');
+
+    // Show bootstrap instructions
+    if (existsSync(paths.bootstrap)) {
+        console.log('## Bootstrap Instructions:\n');
+        try {
+            const content = readFileSync(paths.bootstrap, 'utf8');
+            console.log(content);
+        } catch (error) {
+            console.log(`Error reading bootstrap file: ${error.message}`);
+        }
+        console.log('\n---\n');
+    }
+
+    // Show available skills
+    console.log('## Available Skills:\n');
+    runFindSkills();
+    console.log('\n---\n');
+
+    // Auto-load using-superpowers skill if it exists
+    const usingSuperpowersPath = join(paths.homeSuperpowersSkills, 'using-superpowers', 'SKILL.md');
+    if (existsSync(usingSuperpowersPath)) {
+        console.log('## Auto-loading superpowers:using-superpowers skill:\n');
+        runUseSkill('superpowers:using-superpowers');
+        console.log('\n---\n');
+    }
+
+    console.log('# Bootstrap Complete!\n# You now have access to all skills.\n# Use ".agents/superpowers-agent use-skill <skill>" to load and apply skills.\n# Remember: If a skill applies to your task, you MUST use it!');
+};
+
+const parseSkillName = (skillName) => {
+    if (skillName.startsWith('superpowers:')) {
+        return { type: 'superpowers', path: skillName.substring(12).replace(/^skills\//, '') };
+    }
+    if (skillName.startsWith('claude:')) {
+        return { type: 'claude', path: skillName.substring(7).replace(/^skills\//, '') };
+    }
+    return { type: null, path: skillName.replace(/^skills\//, '') };
+};
+
+const findSkillFile = (searchPath) => {
+    const skillMdPath = join(searchPath, 'SKILL.md');
+    if (existsSync(skillMdPath)) return skillMdPath;
+    if (searchPath.endsWith('SKILL.md') && existsSync(searchPath)) return searchPath;
+    return null;
+};
+
+// Find all skills in a directory that match the given suffix
+const findMatchingSkills = (baseDir, skillPath) => {
+    if (!existsSync(baseDir)) return [];
+    
+    const matches = [];
+    const normalizedInput = skillPath.toLowerCase().replace(/\\/g, '/');
+    
+    // Recursively scan directory for SKILL.md files
+    const scanDirectory = (dir, relativePath = '') => {
+        try {
+            const entries = readdirSync(dir, { withFileTypes: true });
+            
+            for (const entry of entries) {
+                const fullPath = join(dir, entry.name);
+                const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+                
+                // Check if entry is a directory or a symlink pointing to a directory
+                let isDir = entry.isDirectory();
+                if (entry.isSymbolicLink()) {
+                    try {
+                        const stats = statSync(fullPath);
+                        isDir = stats.isDirectory();
+                    } catch {
+                        // Broken symlink, skip it
+                        continue;
+                    }
+                }
+                
+                // Skip common directories that shouldn't contain skills
+                if (isDir && (entry.name === 'node_modules' || entry.name === '.git' || entry.name.startsWith('.'))) {
+                    continue;
+                }
+                
+                if (isDir) {
+                    scanDirectory(fullPath, relPath);
+                } else if (entry.name === 'SKILL.md') {
+                    // The skill path is the parent directory path (relativePath)
+                    const skillRelPath = relativePath.toLowerCase().replace(/\\/g, '/');
+                    
+                    // Match if:
+                    // 1. Exact match: "brainstorming" === "brainstorming"
+                    // 2. Suffix match: "collaboration/brainstorming".endsWith("brainstorming")
+                    // 3. Suffix match: "collaboration/brainstorming".endsWith("collaboration/brainstorming")
+                    if (skillRelPath === normalizedInput || 
+                        skillRelPath.endsWith('/' + normalizedInput) ||
+                        skillRelPath.endsWith(normalizedInput)) {
+                        matches.push({
+                            file: fullPath,
+                            path: relativePath
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            // Ignore directories we can't read
+        }
+    };
+    
+    scanDirectory(baseDir);
+    return matches;
+};
+
+// Display error when multiple skills match at the same priority level
+const throwAmbiguousError = (skillPath, matches, sourceType) => {
+    const sourceLabel = {
+        'project': 'project skills (.agents/skills/)',
+        'claude': 'claude skills (.claude/skills/)',
+        'personal': 'personal skills (~/.agents/skills/)',
+        'superpowers': 'superpowers skills (~/.agents/superpowers/skills/)'
+    }[sourceType];
+    
+    console.log(`Error: Multiple skills match "${skillPath}" in ${sourceLabel}:\n`);
+    
+    // Load and display each match with its description
+    for (const match of matches) {
+        const prefix = skillTypes[sourceType].prefix;
+        const fullName = prefix + match.path;
+        
+        try {
+            const frontmatter = extractFrontmatter(match.file);
+            const description = frontmatter.description || frontmatter.whenToUse || '(no description)';
+            console.log(`  ${fullName}`);
+            console.log(`    ${description}\n`);
+        } catch (error) {
+            console.log(`  ${fullName}`);
+            console.log(`    (unable to read description)\n`);
+        }
+    }
+    
+    console.log(`Please be more specific. Examples:`);
+    for (const match of matches.slice(0, 2)) {
+        const prefix = skillTypes[sourceType].prefix;
+        console.log(`  superpowers-agent use-skill ${prefix}${match.path}`);
+    }
+    
+    process.exit(1);
+};
+
+const locateSkill = (skillName) => {
+    const { type, path: actualSkillPath } = parseSkillName(skillName);
+    
+    // Map type to directory path
+    const typeToDirMap = {
+        'superpowers': paths.homeSuperpowersSkills,
+        'claude': paths.projectClaudeSkills,
+        'project': paths.projectAgentsSkills,
+        'personal': paths.homePersonalSkills
+    };
+    
+    // Build search order
+    let searchOrder;
+    if (type) {
+        searchOrder = [{ type, dir: typeToDirMap[type] }];
+    } else {
+        // Default search order - check if we're in superpowers repo
+        if (paths.isSuperpowersRepo && existsSync(paths.projectSkillsDir)) {
+            // When in superpowers repo, treat skills/ as highest priority "project" source
+            searchOrder = [
+                { type: 'project', dir: paths.projectSkillsDir },
+                { type: 'project', dir: paths.projectAgentsSkills },
+                { type: 'claude', dir: paths.projectClaudeSkills },
+                { type: 'personal', dir: paths.homePersonalSkills },
+                { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+            ];
+        } else {
+            searchOrder = [
+                { type: 'project', dir: paths.projectAgentsSkills },
+                { type: 'claude', dir: paths.projectClaudeSkills },
+                { type: 'personal', dir: paths.homePersonalSkills },
+                { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+            ];
+        }
+    }
+
+    // For each priority level, find all matching skills
+    for (const { type: sourceType, dir } of searchOrder) {
+        const matches = findMatchingSkills(dir, actualSkillPath);
+        
+        if (matches.length === 1) {
+            // Unique match found - return it
+            return { 
+                skillFile: matches[0].file, 
+                sourceType, 
+                actualSkillPath: matches[0].path 
+            };
+        }
+        
+        if (matches.length > 1) {
+            // Multiple matches at same priority level - error
+            throwAmbiguousError(actualSkillPath, matches, sourceType);
+        }
+        
+        // No matches at this level - continue to next priority
+    }
+
+    return null;
+};
+
+const extractSkillContent = (skillFile) => {
+    try {
+        const fullContent = readFileSync(skillFile, 'utf8');
+        const frontmatter = extractFrontmatter(skillFile);
+        
+        const lines = fullContent.split('\n');
+        let inFrontmatter = false;
+        let frontmatterEnded = false;
+        const contentLines = [];
+
+        for (const line of lines) {
+            if (line.trim() === '---') {
+                if (inFrontmatter) {
+                    frontmatterEnded = true;
+                    continue;
+                }
+                inFrontmatter = true;
+                continue;
+            }
+
+            if (frontmatterEnded || !inFrontmatter) {
+                contentLines.push(line);
+            }
+        }
+
+        return {
+            content: contentLines.join('\n').trim(),
+            frontmatter
+        };
+    } catch (error) {
+        throw new Error(`Error reading skill file: ${error.message}`);
+    }
+};
+
+const readSkillJson = (skillDir) => {
+    const skillJsonPath = join(skillDir, 'skill.json');
+    if (!existsSync(skillJsonPath)) {
+        return null;
+    }
+    
+    try {
+        const content = readFileSync(skillJsonPath, 'utf8');
+        return JSON.parse(content);
+    } catch (error) {
+        return null;
+    }
+};
+
+const findHelperInSkill = (skillDir, helperSearchTerm) => {
+    const skillJson = readSkillJson(skillDir);
+    
+    if (!skillJson || !skillJson.helpers || !Array.isArray(skillJson.helpers)) {
+        return null;
+    }
+    
+    const helpers = skillJson.helpers;
+    const normalizedSearchTerm = helperSearchTerm.toLowerCase();
+    
+    // Try to find best match using substring matching
+    let bestMatch = null;
+    let bestScore = 0;
+    
+    for (const helper of helpers) {
+        const helperLower = helper.toLowerCase();
+        
+        // Exact match (highest priority)
+        if (helperLower === normalizedSearchTerm) {
+            bestMatch = helper;
+            break;
+        }
+        
+        // Helper contains search term
+        if (helperLower.includes(normalizedSearchTerm)) {
+            const score = normalizedSearchTerm.length / helperLower.length;
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = helper;
+            }
+        }
+        
+        // Search term contains helper basename
+        const helperBasename = parse(helper).name.toLowerCase();
+        if (normalizedSearchTerm.includes(helperBasename)) {
+            const score = helperBasename.length / normalizedSearchTerm.length;
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = helper;
+            }
+        }
+    }
+    
+    return bestMatch ? join(skillDir, bestMatch) : null;
+};
+
+const locateSkillByNameOrAlias = (skillIdentifier) => {
+    // First try normal skill location
+    const location = locateSkill(skillIdentifier);
+    if (location) {
+        return location;
+    }
+    
+    // If not found, search for aliases in skill.json files
+    const { type, path: actualSkillPath } = parseSkillName(skillIdentifier);
+    
+    // Build search order
+    let searchOrder;
+    if (type) {
+        searchOrder = [{ type, dir: {
+            'superpowers': paths.homeSuperpowersSkills,
+            'claude': paths.projectClaudeSkills,
+            'project': paths.projectAgentsSkills,
+            'personal': paths.homePersonalSkills
+        }[type] }];
+    } else {
+        // Default search order - check if we're in superpowers repo
+        if (paths.isSuperpowersRepo && existsSync(paths.projectSkillsDir)) {
+            searchOrder = [
+                { type: 'project', dir: paths.projectSkillsDir },
+                { type: 'project', dir: paths.projectAgentsSkills },
+                { type: 'claude', dir: paths.projectClaudeSkills },
+                { type: 'personal', dir: paths.homePersonalSkills },
+                { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+            ];
+        } else {
+            searchOrder = [
+                { type: 'project', dir: paths.projectAgentsSkills },
+                { type: 'claude', dir: paths.projectClaudeSkills },
+                { type: 'personal', dir: paths.homePersonalSkills },
+                { type: 'superpowers', dir: paths.homeSuperpowersSkills }
+            ];
+        }
+    }
+    
+    // Search through all skill directories for matching aliases
+    for (const { type: sourceType, dir } of searchOrder) {
+        if (!existsSync(dir)) continue;
+        
+        const skills = findSkillsInDir(dir, sourceType, null);
+        
+        for (const skillPath of skills) {
+            const skillJson = readSkillJson(skillPath);
+            
+            if (skillJson && skillJson.aliases && Array.isArray(skillJson.aliases)) {
+                const normalizedIdentifier = actualSkillPath.toLowerCase();
+                
+                for (const alias of skillJson.aliases) {
+                    if (alias.toLowerCase() === normalizedIdentifier) {
+                        const skillFile = join(skillPath, 'SKILL.md');
+                        const relPath = relative(dir, skillPath);
+                        return {
+                            skillFile,
+                            sourceType,
+                            actualSkillPath: relPath
+                        };
+                    }
+                }
+            }
+        }
+    }
+    
+    return null;
+};
+
+// ============================================================================
+// SKILL INSTALLATION FUNCTIONS
+// ============================================================================
+
+const parseGitUrl = (url) => {
+    // Check if it's a GitHub tree URL
+    const treeMatch = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/tree\/([^/]+)\/(.+)$/);
+    if (treeMatch) {
+        const [, org, repo, branch, path] = treeMatch;
+        return {
+            type: 'git-tree',
+            repoUrl: `https://github.com/${org}/${repo}.git`,
+            branch,
+            path,
+            original: url
+        };
+    }
+    
+    // Check if it's a standard git URL
+    const gitMatch = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)(?:\.git)?$/);
+    if (gitMatch) {
+        const [, org, repo] = gitMatch;
+        return {
+            type: 'git-repo',
+            repoUrl: `https://github.com/${org}/${repo}.git`,
+            branch: null,
+            path: null,
+            original: url
+        };
+    }
+    
+    // Check if it's a local path
+    if (existsSync(url)) {
+        return {
+            type: 'local',
+            path: url,
+            original: url
+        };
+    }
+    
+    return null;
+};
+
+const getInstallLocation = (flags) => {
+    const hasGlobalFlag = flags.includes('--global') || flags.includes('-g');
+    const hasProjectFlag = flags.includes('--project') || flags.includes('-p');
+    
+    // Flags override config
+    if (hasGlobalFlag) {
+        return join(homedir(), '.agents', 'skills');
+    }
+    
+    if (hasProjectFlag) {
+        return join(process.cwd(), '.agents', 'skills');
+    }
+    
+    // Check config files for default
+    const projectConfigPath = join(process.cwd(), '.agents', 'config.json');
+    const globalConfigPath = join(homedir(), '.agents', 'config.json');
+    
+    // Project config takes precedence
+    for (const configPath of [projectConfigPath, globalConfigPath]) {
+        if (existsSync(configPath)) {
+            try {
+                const config = JSON.parse(readFileSync(configPath, 'utf8'));
+                if (config.installLocation === 'project') {
+                    return join(process.cwd(), '.agents', 'skills');
+                }
+            } catch (error) {
+                // Ignore parse errors
+            }
+        }
+    }
+    
+    // Default to global
+    return join(homedir(), '.agents', 'skills');
+};
+
+const cloneRepository = (repoUrl, branch) => {
+    const tmpDir = join(homedir(), '.agents', 'tmp', `skill-install-${Date.now()}`);
+    
+    try {
+        execSync(`mkdir -p "${tmpDir}"`, { stdio: 'pipe' });
+        
+        if (branch) {
+            execSync(`git clone --branch ${branch} --depth 1 "${repoUrl}" "${tmpDir}"`, { 
+                stdio: 'pipe',
+                timeout: 30000 
+            });
+        } else {
+            execSync(`git clone --depth 1 "${repoUrl}" "${tmpDir}"`, { 
+                stdio: 'pipe',
+                timeout: 30000 
+            });
+        }
+        
+        return tmpDir;
+    } catch (error) {
+        // Clean up on error
+        try {
+            execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+        } catch {}
+        throw new Error(`Failed to clone repository: ${error.message}`);
+    }
+};
+
+const readSkillJsonFromPath = (path) => {
+    const skillJsonPath = join(path, 'skill.json');
+    if (!existsSync(skillJsonPath)) {
+        return null;
+    }
+    
+    try {
+        const content = readFileSync(skillJsonPath, 'utf8');
+        return JSON.parse(content);
+    } catch (error) {
+        throw new Error(`Failed to read skill.json: ${error.message}`);
+    }
+};
+
+const installSingleSkill = (sourcePath, skillName, installBase, results) => {
+    const skillSourcePath = join(sourcePath, skillName);
+    
+    if (!existsSync(skillSourcePath)) {
+        results.errors.push(`Skill directory not found: ${skillName}`);
+        return;
+    }
+    
+    const skillJson = readSkillJsonFromPath(skillSourcePath);
+    if (!skillJson) {
+        results.errors.push(`No skill.json found in: ${skillName}`);
+        return;
+    }
+    
+    const targetName = skillJson.name || skillName;
+    const targetPath = join(installBase, targetName);
+    
+    // Create parent directory if needed
+    const targetParent = dirname(targetPath);
+    try {
+        execSync(`mkdir -p "${targetParent}"`, { stdio: 'pipe' });
+    } catch (error) {
+        results.errors.push(`Failed to create directory ${targetParent}: ${error.message}`);
+        return;
+    }
+    
+    // Copy skill files
+    try {
+        // Remove existing skill if present
+        if (existsSync(targetPath)) {
+            execSync(`rm -rf "${targetPath}"`, { stdio: 'pipe' });
+        }
+        
+        execSync(`cp -R "${skillSourcePath}" "${targetPath}"`, { stdio: 'pipe' });
+        
+        results.installed.push({
+            name: targetName,
+            path: targetPath,
+            title: skillJson.title || skillJson.description || targetName
+        });
+    } catch (error) {
+        results.errors.push(`Failed to install ${skillName}: ${error.message}`);
+    }
+};
+
+const runAdd = () => {
+    const args = process.argv.slice(3);
+    let urlOrPath = args.find(arg => !arg.startsWith('-'));
+    const flags = args.filter(arg => arg.startsWith('-'));
+    
+    if (!urlOrPath) {
+        console.log(`Usage: superpowers-agent add <url-or-path|@alias> [skill-path] [options]
+
+Options:
+  --global, -g   Install skills globally in ~/.agents/skills/ (default)
+  --project, -p  Install skills in current project's .agents/skills/
+
+Examples:
+  superpowers-agent add https://github.com/example/skills
+  superpowers-agent add https://github.com/example/repo/tree/main/skills
+  superpowers-agent add ~/my-local-skills
+  superpowers-agent add https://github.com/example/skills --project
+  superpowers-agent add ~/my-local-skills --global
+  superpowers-agent add @myrepo path/to/skill
+  superpowers-agent add @myrepo path/to/skills --project
+
+Description:
+  Installs skill(s) from a Git repository, local directory, or repository alias.
+  Supports repositories with single or multiple skills.
+  Reads skill.json to determine skill names and installation paths.
+  
+  Repository aliases can be added using:
+    superpowers-agent add-repository <git-url> [--as=@alias]`);
+        return;
+    }
+    
+    console.log('Installing skill(s)...\n');
+    
+    // Check if urlOrPath is a repository alias
+    let repoUrl = null;
+    let skillPath = null;
+    
+    if (urlOrPath.startsWith('@')) {
+        // It's a repository alias
+        const alias = urlOrPath;
+        skillPath = args.find((arg, i) => i > 0 && !arg.startsWith('-') && arg !== alias);
+        
+        // Look for alias in config (project first, then global)
+        const projectRepos = getRepositories(false);
+        const globalRepos = getRepositories(true);
+        
+        if (projectRepos[alias]) {
+            repoUrl = projectRepos[alias];
+            console.log(`Using project repository alias: ${alias}`);
+        } else if (globalRepos[alias]) {
+            repoUrl = globalRepos[alias];
+            console.log(`Using global repository alias: ${alias}`);
+        } else {
+            console.log(`Error: Repository alias not found: ${alias}`);
+            console.log(`\nAvailable aliases:`);
+            
+            const allRepos = { ...globalRepos, ...projectRepos };
+            if (Object.keys(allRepos).length === 0) {
+                console.log(`  (none)`);
+                console.log(`\nAdd a repository using:`);
+                console.log(`  superpowers-agent add-repository <git-url>`);
+            } else {
+                for (const [name, url] of Object.entries(allRepos)) {
+                    console.log(`  ${name} -> ${url}`);
+                }
+            }
+            return;
+        }
+        
+        // Check if repoUrl is a local path or Git URL
+        const isLocalPath = existsSync(repoUrl);
+        
+        if (skillPath) {
+            if (isLocalPath) {
+                // Local path - just append the skill path
+                urlOrPath = join(repoUrl, skillPath);
+                console.log(`Repository path: ${repoUrl}`);
+                console.log(`Skill path: ${skillPath}\n`);
+            } else {
+                // Git URL - construct tree URL
+                urlOrPath = `${repoUrl}/tree/main/${skillPath}`;
+                console.log(`Repository URL: ${repoUrl}`);
+                console.log(`Skill path: ${skillPath}\n`);
+            }
+        } else {
+            urlOrPath = repoUrl;
+            if (isLocalPath) {
+                console.log(`Repository path: ${repoUrl}\n`);
+            } else {
+                console.log(`Repository URL: ${repoUrl}\n`);
+            }
+        }
+    }
+    
+    // Parse URL/path
+    const parsed = parseGitUrl(urlOrPath);
+    if (!parsed) {
+        console.log(`Error: Invalid URL or path not found: ${urlOrPath}`);
+        return;
+    }
+    
+    // Determine installation location
+    const installBase = getInstallLocation(flags);
+    console.log(`Install location: ${installBase}\n`);
+    
+    let sourcePath;
+    let cleanup = false;
+    
+    try {
+        // Get source path based on type
+        if (parsed.type === 'git-repo' || parsed.type === 'git-tree') {
+            console.log(`Cloning repository: ${parsed.repoUrl}`);
+            if (parsed.branch) {
+                console.log(`Branch: ${parsed.branch}`);
+            }
+            sourcePath = cloneRepository(parsed.repoUrl, parsed.branch);
+            cleanup = true;
+            
+            if (parsed.path) {
+                sourcePath = join(sourcePath, parsed.path);
+                if (!existsSync(sourcePath)) {
+                    throw new Error(`Path not found in repository: ${parsed.path}`);
+                }
+            }
+            console.log('');
+        } else {
+            sourcePath = parsed.path;
+        }
+        
+        // Read skill.json from source
+        const rootSkillJson = readSkillJsonFromPath(sourcePath);
+        if (!rootSkillJson) {
+            throw new Error('No skill.json found in source directory');
+        }
+        
+        // Install skills
+        const results = {
+            installed: [],
+            errors: [],
+            source: parsed.original
+        };
+        
+        if (rootSkillJson.skills && Array.isArray(rootSkillJson.skills)) {
+            // Multiple skills
+            console.log(`Found ${rootSkillJson.skills.length} skill(s) to install\n`);
+            for (const skillName of rootSkillJson.skills) {
+                installSingleSkill(sourcePath, skillName, installBase, results);
+            }
+        } else {
+            // Single skill
+            const skillName = rootSkillJson.name || parse(sourcePath).base;
+            installSingleSkill(dirname(sourcePath), parse(sourcePath).base, installBase, results);
+        }
+        
+        // Clean up temporary clone
+        if (cleanup && sourcePath) {
+            try {
+                // Get the tmp directory (parent of the actual source in case of tree URLs)
+                const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' + 
+                               sourcePath.split('/.agents/tmp/')[1].split('/')[0];
+                execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+            } catch {}
+        }
+        
+        // Report results
+        console.log('\n**Successfully installed skills:**');
+        console.log(`- Source: ${results.source}`);
+        
+        if (results.installed.length > 0) {
+            for (const skill of results.installed) {
+                console.log(`  - Installed: ${skill.name} at ${skill.path}`);
+                console.log(`    ${skill.title}`);
+            }
+        }
+        
+        if (results.errors.length > 0) {
+            console.log('\n**Errors:**');
+            for (const error of results.errors) {
+                console.log(`  - ${error}`);
+            }
+        }
+        
+        if (results.installed.length === 0 && results.errors.length === 0) {
+            console.log('  No skills were installed');
+        }
+        
+    } catch (error) {
+        // Clean up on error
+        if (cleanup && sourcePath) {
+            try {
+                const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' + 
+                               sourcePath.split('/.agents/tmp/')[1].split('/')[0];
+                execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+            } catch {}
+        }
+        
+        console.log(`\nError: ${error.message}`);
+    }
+};
+
+const runDir = () => {
+    const skillName = process.argv[3];
+    
+    if (!skillName) {
+        console.log(`Usage: superpowers-agent dir <skill-name>
+
+Examples:
+  superpowers-agent dir brainstorming
+  superpowers-agent dir aem/block-collection-and-party
+  superpowers-agent dir block-collection  # Using alias
+  superpowers-agent dir superpowers:testing/test-driven-development
+
+Description:
+  Returns the directory path where the specified skill is located.
+  Supports skill aliases defined in skill.json files.`);
+        return;
+    }
+    
+    // Locate the skill (supporting aliases)
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+    
+    const { skillFile } = location;
+    const skillDir = dirname(skillFile);
+    
+    // Output the directory path
+    console.log(skillDir);
+};
+
+const runPath = () => {
+    const skillName = process.argv[3];
+    
+    if (!skillName) {
+        console.log(`Usage: superpowers-agent path <skill-name-or-alias>
+
+Examples:
+  superpowers-agent path brainstorming
+  superpowers-agent path superpowers:collaboration/brainstorming
+  superpowers-agent path aem/block-collection-and-party
+  superpowers-agent path block-collection  # Using alias
+
+Description:
+  Outputs the file system path of the specified SKILL.md file.
+  Supports skill aliases defined in skill.json files.`);
+        return;
+    }
+    
+    // Locate the skill (supporting aliases)
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+    
+    const { skillFile } = location;
+    
+    // Output the SKILL.md file path
+    console.log(skillFile);
+};
+
+const runExecute = () => {
+    printVersion();
+    const skillName = process.argv[3];
+    
+    if (!skillName) {
+        console.log(`Usage: superpowers-agent execute <skill-name-or-alias>
+
+Examples:
+  superpowers-agent execute brainstorming
+  superpowers-agent execute superpowers:collaboration/brainstorming
+  superpowers-agent execute aem/block-collection-and-party
+  superpowers-agent execute block-collection  # Using alias
+
+Description:
+  Instructs the agent to execute the specified skill.
+  Supports skill aliases defined in skill.json files.`);
+        return;
+    }
+    
+    // Locate the skill (supporting aliases)
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+    
+    const { skillFile, sourceType } = location;
+    
+    // Determine if skill is workspace-accessible
+    const cwd = process.cwd();
+    const isWorkspaceRelative = skillFile.startsWith(cwd);
+    
+    // Check if we're in a workspace context with project skills
+    const hasProjectSkills = existsSync(paths.projectAgentsSkills) || existsSync(paths.projectClaudeSkills);
+    
+    // Output instruction based on accessibility
+    if (isWorkspaceRelative) {
+        // Skill is in workspace - all Read tools should work
+        console.log(`Open this file with your Read Tool: ${skillFile}
+
+<IMPORTANT>
+USE YOUR Read Tool to process this file. DO NOT use \`cat\` or print commands.
+</IMPORTANT>`);
+    } else if (hasProjectSkills && sourceType !== 'project') {
+        // Workspace has project skills but we're using a global skill
+        // Suggest using workspace copy if available
+        console.log(`Open this file with your Read Tool: ${skillFile}
+
+<IMPORTANT>
+1. Try using your Read Tool first
+2. If your Read tool fails (file outside workspace), use: cat "${skillFile}"
+3. Consider using workspace-local skills for better tool compatibility
+   Run: superpowers-agent setup-skills
+</IMPORTANT>`);
+    } else {
+        // Global skill and no project alternative
+        console.log(`Open this file with your Read Tool: ${skillFile}
+
+<IMPORTANT>
+1. Try using your Read Tool first
+2. If your Read tool fails (file outside workspace), use: cat "${skillFile}"
+3. NEVER skip loading the skill content
+</IMPORTANT>`);
+    }
+};
+
+const runGetHelpers = () => {
+    printVersion();
+    const skillName = process.argv[3];
+    const helperSearchTerm = process.argv[4];
+    
+    if (!skillName || !helperSearchTerm) {
+        console.log(`Usage: superpowers-agent get-helpers <skill-name> <helper-search-term>
+
+Examples:
+  superpowers-agent get-helpers block-collection search-block
+  superpowers-agent get-helpers aem/block-collection-and-party get-block-structure
+  superpowers-agent get-helpers superpowers:testing/test-driven-development example
+
+Description:
+  Searches for helper files within a skill's skill.json configuration.
+  Returns the full path to the best matching helper file.
+  
+  The command uses the skill's aliases if available, so you can use
+  short names like "block-collection" instead of the full path.`);
+        return;
+    }
+    
+    // Locate the skill (supporting aliases)
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+    
+    const { skillFile } = location;
+    const skillDir = dirname(skillFile);
+    
+    // Check if skill.json exists
+    const skillJson = readSkillJson(skillDir);
+    
+    if (!skillJson) {
+        console.log(`Error: No skill.json found for skill: ${skillName}\n  Location: ${skillDir}`);
+        return;
+    }
+    
+    if (!skillJson.helpers || !Array.isArray(skillJson.helpers) || skillJson.helpers.length === 0) {
+        console.log(`Error: No helpers defined in skill.json for skill: ${skillName}\n  Location: ${skillDir}`);
+        return;
+    }
+    
+    // Find the best matching helper
+    const helperPath = findHelperInSkill(skillDir, helperSearchTerm);
+    
+    if (!helperPath) {
+        console.log(`Error: No helper found matching "${helperSearchTerm}" in skill: ${skillName}`);
+        console.log(`\nAvailable helpers:`);
+        for (const helper of skillJson.helpers) {
+            console.log(`  - ${helper}`);
+        }
+        return;
+    }
+    
+    // Verify the helper file exists
+    if (!existsSync(helperPath)) {
+        console.log(`Error: Helper file not found: ${helperPath}\n  Defined in skill.json but missing from filesystem`);
+        return;
+    }
+    
+    // Output the full path
+    console.log(helperPath);
+};
+
+const runUseSkill = (skillName) => {
+    if (!skillName) {
+        console.log(`Usage: superpowers-agent use-skill <skill-name>
+
+Examples (smart matching):
+  superpowers-agent use-skill brainstorming              # Matches superpowers:collaboration/brainstorming
+  superpowers-agent use-skill collaboration/brainstorming # More specific suffix
+  superpowers-agent use-skill test-driven-development    # Matches superpowers:testing/test-driven-development
+
+Examples (explicit paths):
+  superpowers-agent use-skill superpowers:collaboration/brainstorming  # Full superpowers skill path
+  superpowers-agent use-skill claude:email-assistant                   # Full claude skill path
+  superpowers-agent use-skill my-custom-skill                          # Project skill
+
+Smart matching:
+  - Type just the skill name or any suffix of the path
+  - Priority: .agents/skills/ > .claude/skills/ > ~/.agents/skills/ > ~/.agents/superpowers/skills/
+  - If multiple skills match at same priority, you'll see them with descriptions`);
+        return;
+    }
+
+    const location = locateSkillByNameOrAlias(skillName);
+    
+    if (!location) {
+        console.log(`Error: Skill not found: ${skillName}\n\nAvailable skills:`);
+        runFindSkills();
+        return;
+    }
+
+    const { skillFile, sourceType, actualSkillPath } = location;
+    
+    try {
+        const { content, frontmatter } = extractSkillContent(skillFile);
+        const displayName = skillTypes[sourceType].prefix + actualSkillPath;
+        const skillDirectory = dirname(skillFile);
+
+        // Display skill header
+        let header = `# ${frontmatter.name || displayName}`;
+        if (frontmatter.description) header += `\n# ${frontmatter.description}`;
+        if (frontmatter.whenToUse) header += `\n# When to use: ${frontmatter.whenToUse}`;
+        header += `\n# Supporting tools and docs are in ${skillDirectory}\n# ============================================\n\n${content}`;
+        console.log(header);
+    } catch (error) {
+        console.log(error.message);
+    }
+};
+
+const updateReadmeWithAutoUpdateDocs = () => {
+    const readmePath = join(paths.superpowersRepo, 'README.md');
+    
+    if (!existsSync(readmePath)) {
+        console.log('⚠️  README.md not found');
+        return;
+    }
+    
+    const content = readFileSync(readmePath, 'utf8');
+    
+    // Find the "## Updating" section
+    const updatingMatch = content.match(/^## Updating$/m);
+    
+    if (!updatingMatch) {
+        console.log('⚠️  Could not find "## Updating" section in README.md');
+        return;
+    }
+    
+    // Find section boundaries
+    const sectionStart = updatingMatch.index + updatingMatch[0].length;
+    const afterSection = content.substring(sectionStart);
+    const nextSectionMatch = afterSection.match(/^## /m);
+    const sectionEnd = nextSectionMatch 
+        ? sectionStart + nextSectionMatch.index 
+        : content.length;
+    
+    // Build new section content
+    const newSectionContent = `
+
+### Automatic Updates (Default)
+
+Superpowers automatically checks for and applies updates during bootstrap by default:
+
+\`\`\`bash
+superpowers-agent bootstrap
+\`\`\`
+
+**Auto-update behavior:**
+- ✓ Fetches latest changes from GitHub main branch
+- ✓ Only updates if repository is clean (no local modifications)
+- ✓ Intelligently reinstalls only changed integrations (cursor, copilot, etc.)
+- ✓ Skips update if not on main branch or network unavailable
+
+**Skip auto-update for a single run:**
+\`\`\`bash
+superpowers-agent bootstrap --no-update
+\`\`\`
+
+### Manual Updates
+
+Update anytime with the dedicated update command:
+
+\`\`\`bash
+superpowers-agent update
+\`\`\`
+
+This command:
+- Pulls latest changes from GitHub
+- Detects which integration files changed
+- Reinstalls only affected integrations
+- Shows summary of what was updated
+
+**Update without reinstalling integrations:**
+\`\`\`bash
+superpowers-agent update --no-reinstall
+\`\`\`
+
+### Configuration
+
+**Disable auto-update permanently:**
+\`\`\`bash
+superpowers-agent config-set auto_update false
+\`\`\`
+
+When disabled, bootstrap will show an "Update Available" message instead of auto-updating.
+
+**Re-enable auto-update:**
+\`\`\`bash
+superpowers-agent config-set auto_update true
+\`\`\`
+
+**View current configuration:**
+\`\`\`bash
+superpowers-agent config-get
+\`\`\`
+
+Configuration is stored in \`~/.agents/superpowers/.config.json\` and persists across updates.
+
+### Claude Code Plugin
+
+For Claude Code plugin users:
+\`\`\`bash
+/plugin update superpowers
+\`\`\`
+
+`;
+    
+    // Replace section
+    const newContent = content.substring(0, sectionStart) + 
+                       newSectionContent + 
+                       content.substring(sectionEnd);
+    
+    // Backup
+    const timestamp = new Date().toISOString().split('T')[0];
+    const backupPath = `${readmePath}.backup-${timestamp}`;
+    try {
+        execSync(`cp "${readmePath}" "${backupPath}"`, { stdio: 'pipe' });
+    } catch (error) {
+        console.log(`⚠️  Could not create backup: ${error.message}`);
+        return;
+    }
+    
+    // Write
+    try {
+        writeFileSync(readmePath, newContent, 'utf8');
+    } catch (error) {
+        console.log(`✗ Failed to write README.md: ${error.message}`);
+        return;
+    }
+    
+    console.log('✓ Updated README.md with auto-update documentation');
+    console.log(`  Backed up to ${parse(backupPath).base}`);
+    console.log('  See "## Updating" section for new auto-update details');
+};
+
+// ============================================================================
+// ALIAS INSTALLATION FUNCTIONS
+// ============================================================================
+
+const detectShellProfile = (shell, home) => {
+    // 1. Check for user override
+    if (process.env.PROFILE === '/dev/null') {
+        return null; // User opted out
+    }
+    
+    if (process.env.PROFILE && existsSync(process.env.PROFILE)) {
+        return process.env.PROFILE;
+    }
+    
+    // 2. Shell-specific detection
+    if (shell === 'bash') {
+        const bashrc = join(home, '.bashrc');
+        const bashProfile = join(home, '.bash_profile');
+        if (existsSync(bashrc)) return bashrc;
+        if (existsSync(bashProfile)) return bashProfile;
+    }
+    
+    if (shell === 'zsh') {
+        const zshrc = join(home, '.zshrc');
+        const zprofile = join(home, '.zprofile');
+        if (existsSync(zshrc)) return zshrc;
+        if (existsSync(zprofile)) return zprofile;
+    }
+    
+    if (shell === 'fish') {
+        const fishConfig = join(home, '.config', 'fish', 'config.fish');
+        if (existsSync(fishConfig)) return fishConfig;
+        // Return path anyway, we'll create it
+        return fishConfig;
+    }
+    
+    // 3. Fallback chain
+    const fallbacks = ['.profile', '.bashrc', '.bash_profile', '.zshrc'];
+    for (const file of fallbacks) {
+        const fullPath = join(home, file);
+        if (existsSync(fullPath)) return fullPath;
+    }
+    
+    // 4. Default to .profile (will be created)
+    return join(home, '.profile');
+};
+
+const installViaRCFile = (binDir = null) => {
+    const home = homedir();
+    const shell = (process.env.SHELL || '').split('/').pop();
+    
+    // Detect RC file
+    const profileFile = detectShellProfile(shell, home);
+    
+    if (!profileFile) {
+        console.log('⚠️  Could not detect shell configuration file.\n');
+        console.log('Please add manually to your shell RC file:\n');
+        if (binDir) {
+            console.log(`  export PATH="${binDir}:$PATH"\n`);
+        } else {
+            console.log(`  export PATH="$HOME/.agents/superpowers/.agents:$PATH"\n`);
+        }
+        return { success: false, method: 'manual' };
+    }
+    
+    // Check if already installed
+    try {
+        const content = readFileSync(profileFile, 'utf8');
+        if (content.includes('superpowers')) {
+            console.log(`✅ Aliases already configured in ${profileFile}\n`);
+            return { success: true, method: 'rc-existing' };
+        }
+    } catch (err) {
+        // File doesn't exist, will create
+    }
+    
+    // Determine content to append based on shell
+    const pathToAdd = binDir || '$HOME/.agents/superpowers/.agents';
+    let content;
+    
+    if (shell === 'fish') {
+        content = `\n# Added by Superpowers\nfish_add_path ${pathToAdd}\n`;
+    } else {
+        // bash, zsh, or generic
+        content = `\n# Added by Superpowers\nexport PATH="${pathToAdd}:$PATH"\n`;
+    }
+    
+    // Append to RC file
+    try {
+        const dir = dirname(profileFile);
+        if (!existsSync(dir)) {
+            execSync(`mkdir -p "${dir}"`, { stdio: 'pipe' });
+        }
+        
+        // Append content
+        const existingContent = existsSync(profileFile) ? readFileSync(profileFile, 'utf8') : '';
+        writeFileSync(profileFile, existingContent + content, 'utf8');
+        
+        console.log(`✅ Aliases configured in ${profileFile}\n`);
+        console.log('To use immediately, run:\n');
+        console.log(`  source ${profileFile}\n`);
+        console.log('Or restart your terminal.\n');
+        
+        return { success: true, method: 'rc-file', file: profileFile };
+    } catch (err) {
+        console.log(`⚠️  Could not write to ${profileFile}: ${err.message}\n`);
+        console.log('Please add manually:\n');
+        console.log(content);
+        return { success: false, method: 'manual' };
+    }
+};
+
+const installUnixAliases = () => {
+    const home = homedir();
+    const target = join(home, '.agents', 'superpowers', '.agents', 'superpowers-agent');
+    
+    // Verify target exists
+    if (!existsSync(target)) {
+        console.log('⚠️  Superpowers not installed. Run bootstrap first.\n');
+        return { success: false, method: 'not-installed' };
+    }
+    
+    // ATTEMPT 1: /usr/local/bin
+    try {
+        const binDir = '/usr/local/bin';
+        if (existsSync(binDir)) {
+            execSync(`ln -sf "${target}" "${binDir}/superpowers"`, { stdio: 'pipe' });
+            execSync(`ln -sf "${target}" "${binDir}/superpowers-agent"`, { stdio: 'pipe' });
+            console.log('✅ Aliases installed via symlink in /usr/local/bin\n');
+            console.log('Test with: superpowers find-skills\n');
+            return { success: true, method: 'symlink-system' };
+        }
+    } catch (err) {
+        // Permission denied or directory doesn't exist, try next method
+    }
+    
+    // ATTEMPT 2: ~/.local/bin
+    try {
+        const binDir = join(home, '.local', 'bin');
+        execSync(`mkdir -p "${binDir}"`, { stdio: 'pipe' });
+        execSync(`ln -sf "${target}" "${binDir}/superpowers"`, { stdio: 'pipe' });
+        execSync(`ln -sf "${target}" "${binDir}/superpowers-agent"`, { stdio: 'pipe' });
+        
+        // Check if ~/.local/bin is in PATH
+        const pathDirs = process.env.PATH.split(':');
+        if (pathDirs.includes(binDir)) {
+            console.log('✅ Aliases installed via symlink in ~/.local/bin\n');
+            console.log('Test with: superpowers find-skills\n');
+            return { success: true, method: 'symlink-user' };
+        } else {
+            // Need to add to PATH via RC file
+            console.log('✅ Symlinks created in ~/.local/bin\n');
+            console.log('Adding ~/.local/bin to PATH...\n');
+            return installViaRCFile(binDir);
+        }
+    } catch (err) {
+        // Symlink failed, fall back to RC file
+        console.log('⚠️  Could not create symlinks, using RC file method...\n');
+        return installViaRCFile(null);
+    }
+};
+
+const installWindowsAliases = () => {
+    const home = homedir();
+    const binDir = join(home, '.agents', 'bin');
+    const target = join(home, '.agents', 'superpowers', '.agents', 'superpowers-agent');
+    
+    // Verify target exists
+    if (!existsSync(target)) {
+        console.log('⚠️  Superpowers not installed. Run bootstrap first.\n');
+        return { success: false, method: 'not-installed' };
+    }
+    
+    // Create bin directory
+    try {
+        if (!existsSync(binDir)) {
+            execSync(`mkdir "${binDir}"`, { stdio: 'pipe' });
+        }
+    } catch (err) {
+        console.log(`⚠️  Could not create bin directory: ${err.message}\n`);
+        return { success: false, method: 'failed' };
+    }
+    
+    // Create batch file wrappers
+    const batchContent = `@echo off\nnode "${target}" %*\n`;
+    
+    try {
+        writeFileSync(join(binDir, 'superpowers.bat'), batchContent);
+        writeFileSync(join(binDir, 'superpowers-agent.bat'), batchContent);
+        console.log('✅ Batch file wrappers created\n');
+    } catch (err) {
+        console.log(`⚠️  Could not create batch files: ${err.message}\n`);
+        return { success: false, method: 'failed' };
+    }
+    
+    // Check if bin directory is in PATH
+    const pathDirs = process.env.PATH.split(';');
+    const binDirNormalized = binDir.toLowerCase();
+    const inPath = pathDirs.some(dir => dir.toLowerCase() === binDirNormalized);
+    
+    if (inPath) {
+        console.log('✅ Aliases ready (bin directory already in PATH)\n');
+        console.log('Test with: superpowers find-skills\n');
+        return { success: true, method: 'windows-existing-path' };
+    }
+    
+    // Add to PATH
+    try {
+        execSync(`setx PATH "%PATH%;${binDir}"`, { stdio: 'pipe' });
+        console.log('✅ Added to PATH\n');
+        console.log('Please restart your terminal to use the aliases.\n');
+        console.log('Test with: superpowers find-skills\n');
+        return { success: true, method: 'windows-path-added' };
+    } catch (err) {
+        console.log('⚠️  Could not automatically add to PATH.\n');
+        console.log('Please add manually:\n');
+        console.log(`  1. Open System Properties > Environment Variables\n`);
+        console.log(`  2. Edit user PATH variable\n`);
+        console.log(`  3. Add: ${binDir}\n`);
+        return { success: false, method: 'manual' };
+    }
+};
+
+const installAliases = () => {
+    const plat = platform();
+    
+    console.log('## Installing Universal Aliases\n');
+    
+    if (plat === 'win32') {
+        return installWindowsAliases();
+    } else {
+        return installUnixAliases();
+    }
+};
+
+// ============================================================================
+// CONFIG MANAGEMENT
+// ============================================================================
+
+// Get configuration value with priority: project > global > default
+const getConfig = (key) => {
+    // Default values
+    const defaults = {
+        prompts_dir: '.agents/prompts',
+        plans_dir: '.agents/plans',
+        skills_dir: '.agents/skills'
+    };
+    
+    if (!defaults.hasOwnProperty(key)) {
+        console.error(`Unknown config key: ${key}`);
+        process.exit(1);
+    }
+    
+    let value = defaults[key];
+    
+    // Check global config
+    const globalConfigPath = join(homedir(), '.agents', 'config.json');
+    if (existsSync(globalConfigPath)) {
+        try {
+            const globalConfig = JSON.parse(readFileSync(globalConfigPath, 'utf8'));
+            if (globalConfig[key]) {
+                value = globalConfig[key];
+            }
+        } catch (error) {
+            // Ignore parse errors, use default
+        }
+    }
+    
+    // Check project config (highest priority)
+    const projectConfigPath = join(process.cwd(), '.agents', 'config.json');
+    if (existsSync(projectConfigPath)) {
+        try {
+            const projectConfig = JSON.parse(readFileSync(projectConfigPath, 'utf8'));
+            if (projectConfig[key]) {
+                value = projectConfig[key];
+            }
+        } catch (error) {
+            // Ignore parse errors, use current value
+        }
+    }
+    
+    return value;
+};
+
+const runGetConfig = () => {
+    const key = process.argv[3];
+    
+    if (!key) {
+        console.log(`Usage: .agents/superpowers-agent get-config <key>
+
+Available keys:
+  prompts_dir - Directory for prompts (default: .agents/prompts)
+  plans_dir   - Directory for plans (default: .agents/plans)
+  skills_dir  - Directory for skills (default: .agents/skills)
+
+Examples:
+  .agents/superpowers-agent get-config prompts_dir
+  .agents/superpowers-agent get-config plans_dir`);
+        return;
+    }
+    
+    const value = getConfig(key);
+    console.log(value);
+};
+
+const runConfigGet = () => {
+    const config = readConfig();
+    console.log('Current configuration:');
+    console.log(JSON.stringify(config, null, 2));
+};
+
+const runConfigSet = () => {
+    const key = process.argv[3];
+    const value = process.argv[4];
+    
+    if (!key || value === undefined) {
+        console.log(`Usage: .agents/superpowers-agent config-set <key> <value>
+
+Available keys:
+  auto_update (true/false) - Enable/disable automatic updates during bootstrap
+
+Examples:
+  .agents/superpowers-agent config-set auto_update false
+  .agents/superpowers-agent config-set auto_update true`);
+        return;
+    }
+    
+    // Parse boolean strings
+    let parsedValue = value;
+    if (value === 'true') parsedValue = true;
+    else if (value === 'false') parsedValue = false;
+    
+    const updates = {};
+    updates[key] = parsedValue;
+    writeConfig(updates);
+    
+    console.log(`✓ Set ${key} = ${parsedValue}`);
+};
+
+// Read config from specified location (global or project)
+const readConfigFile = (isGlobal) => {
+    const configPath = isGlobal 
+        ? join(homedir(), '.agents', 'config.json')
+        : join(process.cwd(), '.agents', 'config.json');
+    
+    if (!existsSync(configPath)) {
+        return {};
+    }
+    
+    try {
+        const content = readFileSync(configPath, 'utf8');
+        return JSON.parse(content);
+    } catch (error) {
+        return {};
+    }
+};
+
+// Write config to specified location (global or project)
+const writeConfigFile = (config, isGlobal) => {
+    const configDir = isGlobal 
+        ? join(homedir(), '.agents')
+        : join(process.cwd(), '.agents');
+    
+    const configPath = join(configDir, 'config.json');
+    
+    try {
+        // Create directory if it doesn't exist
+        if (!existsSync(configDir)) {
+            execSync(`mkdir -p "${configDir}"`, { stdio: 'pipe' });
+        }
+        
+        writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+        return true;
+    } catch (error) {
+        throw new Error(`Failed to write config: ${error.message}`);
+    }
+};
+
+// Get repositories from config
+const getRepositories = (isGlobal) => {
+    const config = readConfigFile(isGlobal);
+    return config.repositories || {};
+};
+
+// Add repository to config
+const addRepositoryToConfig = (alias, url, isGlobal) => {
+    const config = readConfigFile(isGlobal);
+    
+    if (!config.repositories) {
+        config.repositories = {};
+    }
+    
+    config.repositories[alias] = url;
+    writeConfigFile(config, isGlobal);
+};
+
+const runAddRepository = () => {
+    const args = process.argv.slice(3);
+    const url = args.find(arg => !arg.startsWith('-'));
+    const flags = args.filter(arg => arg.startsWith('-'));
+    
+    if (!url) {
+        console.log(`Usage: superpowers-agent add-repository <git-url> [options]
+
+Options:
+  --global, -g        Add repository globally in ~/.agents/config.json (default)
+  --project, -p       Add repository in current project's .agents/config.json
+  --as=<alias>        Specify custom alias for the repository
+
+Examples:
+  superpowers-agent add-repository https://github.com/example/skills.git
+  superpowers-agent add-repository https://github.com/example/skills.git --as=@myskills
+  superpowers-agent add-repository https://github.com/example/skills.git --project
+  superpowers-agent add-repository https://github.com/example/skills.git --as=@custom --global
+
+Description:
+  Adds a skill repository alias to your configuration.
+  The repository's skill.json will be read to determine the default alias.
+  Use --as to specify a custom alias.
+  After adding, you can install skills using: superpowers-agent add @alias path/to/skill`);
+        return;
+    }
+    
+    console.log('Adding repository...\n');
+    
+    // Parse flags
+    const hasGlobalFlag = flags.some(f => f === '--global' || f === '-g');
+    const hasProjectFlag = flags.some(f => f === '--project' || f === '-p');
+    const asFlag = flags.find(f => f.startsWith('--as='));
+    const customAlias = asFlag ? asFlag.split('=')[1] : null;
+    
+    // Determine if global or project
+    const isGlobal = hasProjectFlag ? false : true; // Default to global unless --project specified
+    
+    let tmpDir;
+    try {
+        // Clone repository to temp location
+        console.log(`Cloning repository: ${url}`);
+        tmpDir = join(homedir(), '.agents', 'tmp', `repo-add-${Date.now()}`);
+        execSync(`mkdir -p "${tmpDir}"`, { stdio: 'pipe' });
+        execSync(`git clone --depth 1 "${url}" "${tmpDir}"`, { 
+            stdio: 'pipe',
+            timeout: 30000 
+        });
+        console.log('');
+        
+        // Read skill.json
+        const skillJson = readSkillJsonFromPath(tmpDir);
+        if (!skillJson) {
+            throw new Error('No skill.json found in repository');
+        }
+        
+        // Determine alias
+        let alias;
+        if (customAlias) {
+            alias = customAlias;
+        } else if (skillJson.repository) {
+            alias = skillJson.repository;
+        } else {
+            // Derive from repository name
+            const match = url.match(/\/([^/]+?)(?:\.git)?$/);
+            if (match) {
+                alias = '@' + match[1];
+            } else {
+                throw new Error('Could not determine repository alias. Use --as=@alias to specify manually.');
+            }
+        }
+        
+        // Add to config
+        addRepositoryToConfig(alias, url, isGlobal);
+        
+        // Clean up
+        execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+        
+        // Report success
+        const location = isGlobal ? 'globally' : 'in project';
+        const configPath = isGlobal 
+            ? join(homedir(), '.agents', 'config.json')
+            : join(process.cwd(), '.agents', 'config.json');
+        
+        console.log(`✓ Repository added ${location}`);
+        console.log(`  Alias: ${alias}`);
+        console.log(`  URL: ${url}`);
+        console.log(`  Config: ${configPath}`);
+        console.log(`\nYou can now install skills using:`);
+        console.log(`  superpowers-agent add ${alias} <path-to-skill>`);
+        
+    } catch (error) {
+        // Clean up on error
+        if (tmpDir) {
+            try {
+                execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+            } catch {}
+        }
+        
+        console.log(`\nError: ${error.message}`);
+    }
+};
+
+// ============================================================================
+// VERSION MANAGEMENT FUNCTIONS
+// ============================================================================
+
+const getLocalVersion = () => {
+    try {
+        const packagePath = join(__dirname, 'package.json');
+        const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+        return pkg.version;
+    } catch (error) {
+        return '0.0.0';
+    }
+};
+
+const printVersion = () => {
+    const version = getLocalVersion();
+    console.log(`^^SAV:${version}^^`);
+};
+
+const getRemoteVersion = async () => {
+    try {
+        const url = 'https://raw.githubusercontent.com/complexthings/superpowers/main/.agents/package.json';
+        
+        // Use execSync with curl as a fallback for older Node versions
+        const response = execSync(`curl -sS "${url}"`, {
+            encoding: 'utf8',
+            timeout: 10000
+        });
+        
+        const pkg = JSON.parse(response);
+        
+        // If version field doesn't exist, return current version (no update available)
+        if (!pkg.version) {
+            return getLocalVersion();
+        }
+        
+        return pkg.version;
+    } catch (error) {
+        throw new Error(`Failed to fetch remote version: ${error.message}`);
+    }
+};
+
+const isNewerVersion = (remote, local) => {
+    const remoteParts = remote.split('.').map(Number);
+    const localParts = local.split('.').map(Number);
+    
+    for (let i = 0; i < 3; i++) {
+        const r = remoteParts[i] || 0;
+        const l = localParts[i] || 0;
+        
+        if (r > l) return true;
+        if (r < l) return false;
+    }
+    
+    return false;
+};
+
+const runVersion = () => {
+    const version = getLocalVersion();
+    console.log(version);
+};
+
+const runCheckUpdates = async () => {
+    printVersion();
+    const localVersion = getLocalVersion();
+    console.log(`Current version: ${localVersion}`);
+    
+    try {
+        const remoteVersion = await getRemoteVersion();
+        console.log(`Latest version: ${remoteVersion}`);
+        
+        if (isNewerVersion(remoteVersion, localVersion)) {
+            console.log('Update available: Yes');
+            process.exit(1);
+        } else {
+            console.log('You are up to date');
+            process.exit(0);
+        }
+    } catch (error) {
+        console.log(`Error checking for updates: ${error.message}`);
+        process.exit(1);
+    }
+};
+
+// Command dispatcher
+const commands = {
+    bootstrap: runBootstrap,
+    version: runVersion,
+    'check-updates': () => {
+        runCheckUpdates().catch(err => {
+            console.error(err.message);
+            process.exit(1);
+        });
+    },
+    update: () => {
+        const skipReinstall = process.argv.includes('--no-reinstall');
+        runUpdate({ skipReinstall });
+    },
+    'get-config': runGetConfig,
+    'config-get': runConfigGet,
+    'config-set': runConfigSet,
+    'setup-skills': runSetupSkills,
+    'use-skill': () => runUseSkill(process.argv[3]),
+    execute: runExecute,
+    'find-skills': runFindSkills,
+    'add': runAdd,
+    'add-repository': runAddRepository,
+    'dir': runDir,
+    'path': runPath,
+    'execute': runExecute,
+    'get-helpers': runGetHelpers,
+    'install-copilot-prompts': installCopilotPrompts,
+    'install-copilot-instructions': installCopilotInstructions,
+    'install-cursor-commands': installCursorCommands,
+    'install-cursor-hooks': installCursorHooks,
+    'install-codex-prompts': installCodexPrompts,
+    'install-gemini-commands': installGeminiCommands,
+    'install-claude-commands': installClaudeCommands,
+    'install-opencode-commands': installOpencodeCommands,
+    'install-aliases': installAliases,
+    default: () => {
+        console.log(`Superpowers for Agents
+Usage:
+  .agents/superpowers-agent bootstrap [--no-update]                         # Run complete bootstrap with all skills
+  .agents/superpowers-agent version                                         # Show current version
+  .agents/superpowers-agent check-updates                                   # Check for available updates
+  .agents/superpowers-agent update [--no-reinstall]                         # Update to latest version from GitHub
+  .agents/superpowers-agent get-config <key>                                # Get configuration value
+  .agents/superpowers-agent config-get                                      # Show current configuration
+  .agents/superpowers-agent config-set <key> <value>                        # Update configuration
+  .agents/superpowers-agent setup-skills                                    # Initialize project with skills documentation
+  .agents/superpowers-agent use-skill <skill-name>                          # Load a specific skill
+  .agents/superpowers-agent find-skills                                     # List all available skills
+  .agents/superpowers-agent add <url-or-path|@alias> [path] [options]      # Install skill(s) from Git, local, or alias
+  .agents/superpowers-agent add-repository <git-url> [--as=@alias] [opts]  # Add repository alias for easy access
+  .agents/superpowers-agent dir <skill-name>                                # Get skill directory path
+  .agents/superpowers-agent path <skill-name>                               # Get skill SKILL.md file path
+  .agents/superpowers-agent execute <skill-name>                            # Get instruction to execute a skill
+  .agents/superpowers-agent get-helpers <skill> <search-term>               # Get helper file path from skill.json
+  .agents/superpowers-agent install-copilot-prompts                         # Install GitHub Copilot prompts only
+  .agents/superpowers-agent install-copilot-instructions                    # Install universal instructions only
+  .agents/superpowers-agent install-cursor-commands                         # Install Cursor commands only
+  .agents/superpowers-agent install-cursor-hooks                            # Install Cursor hooks only
+  .agents/superpowers-agent install-codex-prompts                           # Install OpenAI Codex prompts only
+  .agents/superpowers-agent install-gemini-commands                         # Install Gemini commands only
+  .agents/superpowers-agent install-claude-commands                         # Install Claude Code commands only
+  .agents/superpowers-agent install-opencode-commands                       # Install opencode commands only
+  .agents/superpowers-agent install-aliases                                 # Install universal aliases (superpowers, superpowers-agent)
+
+Examples:
+  .agents/superpowers-agent bootstrap                                       # Auto-update then bootstrap
+  .agents/superpowers-agent bootstrap --no-update                           # Skip update, just bootstrap
+  .agents/superpowers-agent update                                          # Update and reinstall changed integrations
+  .agents/superpowers-agent config-set auto_update false                    # Disable auto-update
+  .agents/superpowers-agent use-skill superpowers:brainstorming
+  .agents/superpowers-agent use-skill claude:persistent-planning
+  .agents/superpowers-agent use-skill my-custom-skill
+  .agents/superpowers-agent add https://github.com/example/skills
+  .agents/superpowers-agent add ~/my-local-skills --project
+  .agents/superpowers-agent add-repository https://github.com/example/skills.git
+  .agents/superpowers-agent add-repository https://github.com/example/skills.git --as=@myskills
+  .agents/superpowers-agent add @myskills path/to/skill
+  .agents/superpowers-agent dir brainstorming
+  .agents/superpowers-agent path brainstorming
+  .agents/superpowers-agent execute brainstorming
+  .agents/superpowers-agent get-helpers block-collection search-block`);
+    }
+};
+
+// Main execution
+const command = process.argv[2];
+const handler = commands[command] || commands.default;
+handler();
+
