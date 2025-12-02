@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, parse } from 'path';
 import { execSync } from 'child_process';
 import { homedir } from 'os';
+import { getRepositories, addRepositoryToConfig, readConfigFile, writeConfigFile } from '../core/config.js';
 
 /**
  * Parse a Git URL or local path
@@ -184,7 +185,6 @@ export const installSingleSkill = (sourcePath, skillName, installBase, results) 
  * Install skills from repository or local path
  */
 export const runAdd = () => {
-    const { getRepositories, addRepositoryToConfig } = require('../core/config.js');
     const args = process.argv.slice(3);
     let urlOrPath = args.find(arg => !arg.startsWith('-'));
     const flags = args.filter(arg => arg.startsWith('-'));
@@ -389,8 +389,6 @@ Description:
  * Add a repository alias for easier skill installation
  */
 export const runAddRepository = () => {
-    const { readConfigFile, writeConfigFile, addRepositoryToConfig } = require('../core/config.js');
-    const { homedir } = require('os');
     const args = process.argv.slice(3);
     const url = args.find(arg => !arg.startsWith('-'));
     const flags = args.filter(arg => arg.startsWith('-'));

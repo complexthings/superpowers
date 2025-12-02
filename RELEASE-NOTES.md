@@ -6,6 +6,28 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.0.1 (December 2, 2025)
+
+### 🐛 Bug Fixes
+
+**Fixed Dynamic Require Error in add-repository Command**
+
+Fixed critical bug where `superpowers add-repository` command would fail with error: `Error: Dynamic require of "os" is not supported`
+
+**Root Cause:**
+- The `src/skills/installer.js` file used `require()` calls for importing modules instead of ES6 imports
+- When esbuild bundles the code with `format: 'esm'`, it cannot handle dynamic `require()` calls for built-in Node.js modules
+
+**Changes:**
+- Converted all `require()` statements to ES6 `import` statements at the top of the file
+- Moved imports for `os`, `path.parse()`, and `config.js` to static imports
+- Affected functions: `runAdd()` and `runAddRepository()`
+
+**Files Modified:**
+- `.agents/src/skills/installer.js` - Fixed imports on lines 1-5, 187, 392-393
+
+---
+
 ## v6.0.0 (November 29, 2025)
 
 ### 🏗️ Complete Codebase Modernization
