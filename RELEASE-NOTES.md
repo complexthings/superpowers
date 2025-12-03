@@ -6,6 +6,59 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.1.0 (December 3, 2025)
+
+### ✨ New Features
+
+**Added `superpowers pull` Command**
+
+Implemented a new `pull` command that updates or adds skills from remote Git repositories or local file paths, providing a semantic way to refresh existing skills.
+
+**Key Features:**
+- Update existing skills or add new skills from any source
+- Full URL support: HTTPS, SSH, GitHub tree URLs, and local paths
+- Repository alias support with `@alias` syntax
+- Installation flags: `--global`, `--project`
+- Comprehensive progress messages and error handling
+- Automatic cleanup of temporary directories
+
+**Usage Examples:**
+```bash
+# Update from repository alias
+superpowers pull @baici
+
+# Update from HTTPS URL
+superpowers pull https://github.com/example/skills.git
+
+# Update from SSH URL
+superpowers pull git@github.com:example/skills.git
+
+# Update with flags
+superpowers pull @myrepo path/to/skill --project
+superpowers pull ~/my-local-skills --global
+```
+
+**Implementation Details:**
+- Reuses 100% of existing helper functions for consistency
+- Minimal code changes: ~210 lines added (207 in installer.js, 3 in cli.js)
+- Update behavior achieved through skill replacement
+- Follows same patterns as `add` command for maintainability
+
+**Semantic Difference from `add`:**
+- `add`: Emphasizes installation of new skills
+- `pull`: Emphasizes updating/refreshing existing skills
+- Functionally identical (both update if exists, add if doesn't)
+- Different messaging ("Updating" vs "Installing", "Updated" vs "Installed")
+
+**Files Modified:**
+- `.agents/src/skills/installer.js` - Added `runPull()` function
+- `.agents/src/cli.js` - Imported and registered pull command, updated help text
+
+**Created with Superpowers:**
+This feature was implemented using the `superpowers:creating-prompts` skill, demonstrating the meta-prompt workflow for structured development.
+
+---
+
 ## v6.0.2 (December 3, 2025)
 
 ### 🐛 Bug Fixes
