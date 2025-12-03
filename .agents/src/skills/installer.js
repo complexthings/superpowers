@@ -8,7 +8,7 @@ import { getRepositories, addRepositoryToConfig, readConfigFile, writeConfigFile
  * Parse a Git URL or local path
  */
 export const parseGitUrl = (url) => {
-    // Check if it's a GitHub tree URL
+    // Check if it's a GitHub tree URL (HTTPS)
     const treeMatch = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/tree\/([^/]+)\/(.+)$/);
     if (treeMatch) {
         const [, org, repo, branch, path] = treeMatch;
@@ -21,7 +21,20 @@ export const parseGitUrl = (url) => {
         };
     }
     
-    // Check if it's a standard git URL
+    // Check if it's an SSH Git URL (git@github.com:org/repo.git)
+    const sshMatch = url.match(/^git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/);
+    if (sshMatch) {
+        const [, org, repo] = sshMatch;
+        return {
+            type: 'git-repo',
+            repoUrl: `git@github.com:${org}/${repo}.git`,
+            branch: null,
+            path: null,
+            original: url
+        };
+    }
+    
+    // Check if it's a standard HTTPS git URL
     const gitMatch = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)(?:\.git)?$/);
     if (gitMatch) {
         const [, org, repo] = gitMatch;
