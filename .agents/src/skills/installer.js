@@ -398,6 +398,213 @@ Description:
 };
 
 /**
+ * Command: pull <url-or-path>
+ * Update or add skills from repository or local path
+ */
+export const runPull = () => {
+    const args = process.argv.slice(3);
+    let urlOrPath = args.find(arg => !arg.startsWith('-'));
+    const flags = args.filter(arg => arg.startsWith('-'));
+    
+    if (!urlOrPath) {
+        console.log(`Usage: superpowers-agent pull <url-or-path|@alias> [skill-path] [options]
+
+Options:
+  --global, -g   Update skills globally in ~/.agents/skills/ (default)
+  --project, -p  Update skills in current project's .agents/skills/
+
+Examples:
+  superpowers-agent pull https://github.com/example/skills
+  superpowers-agent pull https://github.com/example/repo/tree/main/skills
+  superpowers-agent pull ~/my-local-skills
+  superpowers-agent pull https://github.com/example/skills --project
+  superpowers-agent pull ~/my-local-skills --global
+  superpowers-agent pull @myrepo
+  superpowers-agent pull @myrepo path/to/skill
+  superpowers-agent pull @myrepo path/to/skills --project
+
+Description:
+  Updates or adds skill(s) from a Git repository, local directory, or repository alias.
+  If skills already exist, they will be updated (replaced).
+  If skills don't exist, they will be added.
+  Supports repositories with single or multiple skills.
+  Reads skill.json to determine skill names and installation paths.
+  
+  Repository aliases can be added using:
+    superpowers-agent add-repository <git-url> [--as=@alias]`);
+        return;
+    }
+    
+    console.log('Updating skill(s)...\n');
+    
+    // Check if urlOrPath is a repository alias
+    let repoUrl = null;
+    let skillPath = null;
+    
+    if (urlOrPath.startsWith('@')) {
+        // It's a repository alias
+        const alias = urlOrPath;
+        skillPath = args.find((arg, i) => i > 0 && !arg.startsWith('-') && arg !== alias);
+        
+        // Look for alias in config (project first, then global)
+        const projectRepos = getRepositories(false);
+        const globalRepos = getRepositories(true);
+        
+        if (projectRepos[alias]) {
+            repoUrl = projectRepos[alias];
+            console.log(`Using project repository alias: ${alias}`);
+        } else if (globalRepos[alias]) {
+            repoUrl = globalRepos[alias];
+            console.log(`Using global repository alias: ${alias}`);
+        } else {
+            console.log(`Error: Repository alias not found: ${alias}`);
+            console.log(`\nAvailable aliases:`);
+            
+            const allRepos = { ...globalRepos, ...projectRepos };
+            if (Object.keys(allRepos).length === 0) {
+                console.log(`  (none)`);
+                console.log(`\nAdd a repository using:`);
+                console.log(`  superpowers-agent add-repository <git-url>`);
+            } else {
+                for (const [name, url] of Object.entries(allRepos)) {
+                    console.log(`  ${name} -> ${url}`);
+                }
+            }
+            return;
+        }
+        
+        // Check if repoUrl is a local path or Git URL
+        const isLocalPath = existsSync(repoUrl);
+        
+        if (skillPath) {
+            if (isLocalPath) {
+                // Local path - just append the skill path
+                urlOrPath = join(repoUrl, skillPath);
+                console.log(`Repository path: ${repoUrl}`);
+                console.log(`Skill path: ${skillPath}\n`);
+            } else {
+                // Git URL - construct tree URL
+                urlOrPath = `${repoUrl}/tree/main/${skillPath}`;
+                console.log(`Repository URL: ${repoUrl}`);
+                console.log(`Skill path: ${skillPath}\n`);
+            }
+        } else {
+            urlOrPath = repoUrl;
+            if (isLocalPath) {
+                console.log(`Repository path: ${repoUrl}\n`);
+            } else {
+                console.log(`Repository URL: ${repoUrl}\n`);
+            }
+        }
+    }
+    
+    // Parse URL/path
+    const parsed = parseGitUrl(urlOrPath);
+    if (!parsed) {
+        console.log(`Error: Invalid URL or path not found: ${urlOrPath}`);
+        return;
+    }
+    
+    // Determine installation location
+    const installBase = getInstallLocation(flags);
+    console.log(`Install location: ${installBase}\n`);
+    
+    let sourcePath;
+    let cleanup = false;
+    
+    try {
+        // Get source path based on type
+        if (parsed.type === 'git-repo' || parsed.type === 'git-tree') {
+            console.log(`Cloning repository: ${parsed.repoUrl}`);
+            if (parsed.branch) {
+                console.log(`Branch: ${parsed.branch}`);
+            }
+            sourcePath = cloneRepository(parsed.repoUrl, parsed.branch);
+            cleanup = true;
+            
+            if (parsed.path) {
+                sourcePath = join(sourcePath, parsed.path);
+                if (!existsSync(sourcePath)) {
+                    throw new Error(`Path not found in repository: ${parsed.path}`);
+                }
+            }
+            console.log('');
+        } else {
+            sourcePath = parsed.path;
+        }
+        
+        // Read skill.json from source
+        const rootSkillJson = readSkillJsonFromPath(sourcePath);
+        if (!rootSkillJson) {
+            throw new Error('No skill.json found in source directory');
+        }
+        
+        // Install/update skills
+        const results = {
+            installed: [],
+            errors: [],
+            source: parsed.original
+        };
+        
+        if (rootSkillJson.skills && Array.isArray(rootSkillJson.skills)) {
+            // Multiple skills
+            console.log(`Found ${rootSkillJson.skills.length} skill(s) to update\n`);
+            for (const skillName of rootSkillJson.skills) {
+                installSingleSkill(sourcePath, skillName, installBase, results);
+            }
+        } else {
+            // Single skill
+            const skillName = rootSkillJson.name || parse(sourcePath).base;
+            installSingleSkill(dirname(sourcePath), parse(sourcePath).base, installBase, results);
+        }
+        
+        // Clean up temporary clone
+        if (cleanup && sourcePath) {
+            try {
+                // Get the tmp directory (parent of the actual source in case of tree URLs)
+                const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' + 
+                               sourcePath.split('/.agents/tmp/')[1].split('/')[0];
+                execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+            } catch {}
+        }
+        
+        // Report results
+        console.log('\n**Successfully updated skills:**');
+        console.log(`- Source: ${results.source}`);
+        
+        if (results.installed.length > 0) {
+            for (const skill of results.installed) {
+                console.log(`  - Updated: ${skill.name} at ${skill.path}`);
+                console.log(`    ${skill.title}`);
+            }
+        }
+        
+        if (results.errors.length > 0) {
+            console.log('\n**Errors:**');
+            for (const error of results.errors) {
+                console.log(`  - ${error}`);
+            }
+        }
+        
+        if (results.installed.length === 0 && results.errors.length === 0) {
+            console.log('  No skills were updated');
+        }
+        
+    } catch (error) {
+        // Clean up on error
+        if (cleanup && sourcePath) {
+            try {
+                const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' + 
+                               sourcePath.split('/.agents/tmp/')[1].split('/')[0];
+                execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+            } catch {}
+        }
+        
+        console.log(`\nError: ${error.message}`);
+    }
+};
+
+/**
  * Command: add-repository <git-url>
  * Add a repository alias for easier skill installation
  */

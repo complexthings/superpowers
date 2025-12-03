@@ -28,7 +28,8 @@ import {
 
 import { 
     runAdd, 
-    runAddRepository 
+    runAddRepository,
+    runPull
 } from './skills/installer.js';
 
 // Import integration installers
@@ -79,6 +80,7 @@ const commands = {
     'find-skills': runFindSkills,
     'add': runAdd,
     'add-repository': runAddRepository,
+    'pull': runPull,
     'dir': runDir,
     'path': runPath,
     'get-helpers': runGetHelpers,
@@ -108,6 +110,7 @@ Usage:
   superpowers-agent find-skills                                     # List available skills
   superpowers-agent add <url-or-path|@alias> [path] [options]      # Install skills
   superpowers-agent add-repository <git-url> [--as=@alias] [opts]  # Add repository alias
+  superpowers-agent pull <url-or-path|@alias> [path] [options]     # Update skills
   superpowers-agent dir <skill-name>                                # Get skill directory
   superpowers-agent path <skill-name>                               # Get skill file path
   superpowers-agent execute <skill-name>                            # Execute a skill
