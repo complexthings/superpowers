@@ -6,6 +6,28 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.0.2 (December 3, 2025)
+
+### 🐛 Bug Fixes
+
+**Added Support for SSH Git URLs in add Command**
+
+Fixed bug where `superpowers add @alias` would fail when the repository was configured with an SSH URL (e.g., `git@github.com:org/repo.git`).
+
+**Root Cause:**
+- The `parseGitUrl()` function only recognized HTTPS GitHub URLs
+- SSH-style Git URLs would return null, causing "Invalid URL or path not found" error
+
+**Changes:**
+- Added SSH Git URL pattern matching to `parseGitUrl()` function
+- Now supports both HTTPS (`https://github.com/org/repo.git`) and SSH (`git@github.com:org/repo.git`) formats
+- SSH URLs are preserved in their original format for cloning
+
+**Files Modified:**
+- `.agents/src/skills/installer.js` - Added SSH URL regex pattern on line 16-25
+
+---
+
 ## v6.0.1 (December 2, 2025)
 
 ### 🐛 Bug Fixes
