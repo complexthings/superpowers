@@ -23,7 +23,8 @@ import {
 
 import { 
     runBootstrap, 
-    runSetupSkills 
+    runSetupSkills,
+    installAliases
 } from './commands/bootstrap.js';
 
 import { 
@@ -94,6 +95,7 @@ const commands = {
     'install-gemini-commands': installGeminiCommands,
     'install-claude-commands': installClaudeCommands,
     'install-opencode-commands': installOpencodeCommands,
+    'install-aliases': installAliases,
     
     // Default help
     'default': () => {
@@ -123,6 +125,7 @@ Usage:
   superpowers-agent install-gemini-commands                         # Install Gemini commands
   superpowers-agent install-claude-commands                         # Install Claude commands
   superpowers-agent install-opencode-commands                       # Install OpenCode commands
+  superpowers-agent install-aliases                                 # Install universal aliases (superpowers, superpowers-agent)
 
 Documentation: https://github.com/complexthings/superpowers
 `);
