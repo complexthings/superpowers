@@ -6,6 +6,40 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.1.1 (December 9, 2024)
+
+### 🐛 Bug Fixes
+
+**Fixed installUnixAliases Not Creating Symlinks**
+
+Fixed critical bug where the installation script would not create the required symlinks for `superpowers` and `superpowers-agent` commands, preventing global access to the tools.
+
+**Root Cause:**
+- The `installUnixAliases()` function was only checking if the executable existed but wasn't actually creating the symlinks in `~/.local/bin/`
+- Users running the install script would complete successfully but the commands wouldn't be available globally
+
+**Changes:**
+- Updated `installUnixAliases()` to create `~/.local/bin` directory if it doesn't exist
+- Creates symlinks for both `superpowers` and `superpowers-agent` commands pointing to `~/.agents/superpowers/.agents/superpowers-agent`
+- Properly handles existing symlinks by removing them before creating new ones
+- Added PATH check with warning and instructions if `~/.local/bin` is not in PATH
+- Added new `install-aliases` command for users to manually recreate symlinks if needed
+
+**Usage:**
+```bash
+# Automatically runs during bootstrap
+superpowers-agent bootstrap
+
+# Or manually install/repair symlinks
+superpowers-agent install-aliases
+```
+
+**Files Modified:**
+- `.agents/src/commands/bootstrap.js` - Rewrote `installUnixAliases()` function (lines 148-208)
+- `.agents/src/cli.js` - Added `install-aliases` command to CLI router
+
+---
+
 ## v6.1.0 (December 3, 2025)
 
 ### ✨ New Features

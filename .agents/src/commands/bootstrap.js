@@ -147,12 +147,58 @@ const updatePlatformFile = (filePath, templateContent, platforms, createIfMissin
  */
 const installUnixAliases = () => {
     console.log('Installing Unix aliases...');
-    const aliasPath = join(paths.superpowersRepo, '.agents', 'superpowers-agent');
+    const sourceAgentPath = join(paths.superpowersRepo, '.agents', 'superpowers-agent');
+    const binDir = join(paths.home, '.local', 'bin');
+    const agentLinkPath = join(binDir, 'superpowers-agent');
+    const superpowersLinkPath = join(binDir, 'superpowers');
     
-    if (existsSync(aliasPath)) {
-        console.log(`✓ Alias available at: ${aliasPath}`);
-    } else {
+    // Check if source executable exists
+    if (!existsSync(sourceAgentPath)) {
         console.log('⚠️  superpowers-agent executable not found');
+        return;
+    }
+    
+    // Create ~/.local/bin directory if it doesn't exist
+    if (!existsSync(binDir)) {
+        try {
+            execSync(`mkdir -p "${binDir}"`, { stdio: 'pipe' });
+            console.log(`✓ Created ${binDir}`);
+        } catch (error) {
+            console.log(`⚠️  Failed to create ${binDir}: ${error.message}`);
+            return;
+        }
+    }
+    
+    // Create or update superpowers-agent symlink
+    try {
+        if (existsSync(agentLinkPath)) {
+            // Remove existing symlink
+            execSync(`rm "${agentLinkPath}"`, { stdio: 'pipe' });
+        }
+        execSync(`ln -s "${sourceAgentPath}" "${agentLinkPath}"`, { stdio: 'pipe' });
+        console.log(`✓ Created symlink: superpowers-agent -> ${sourceAgentPath}`);
+    } catch (error) {
+        console.log(`⚠️  Failed to create superpowers-agent symlink: ${error.message}`);
+    }
+    
+    // Create or update superpowers symlink
+    try {
+        if (existsSync(superpowersLinkPath)) {
+            // Remove existing symlink
+            execSync(`rm "${superpowersLinkPath}"`, { stdio: 'pipe' });
+        }
+        execSync(`ln -s "${sourceAgentPath}" "${superpowersLinkPath}"`, { stdio: 'pipe' });
+        console.log(`✓ Created symlink: superpowers -> ${sourceAgentPath}`);
+    } catch (error) {
+        console.log(`⚠️  Failed to create superpowers symlink: ${error.message}`);
+    }
+    
+    // Check if ~/.local/bin is in PATH
+    const pathEnv = process.env.PATH || '';
+    if (!pathEnv.includes(binDir)) {
+        console.log(`\n⚠️  Warning: ${binDir} is not in your PATH`);
+        console.log('   Add this to your shell profile (~/.bashrc, ~/.zshrc, etc.):');
+        console.log(`   export PATH="$HOME/.local/bin:$PATH"\n`);
     }
 };
 
