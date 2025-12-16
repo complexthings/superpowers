@@ -30,21 +30,47 @@ import { installOpencodeCommands } from '../integrations/opencode.js';
 import { runUpdate } from './update.js';
 
 /**
- * Generate tool mappings for specified platforms
+ * Generate tool mappings for specified platforms by reading from template files
  */
 const generateToolMappings = (platforms) => {
-    // This is a simplified version - full implementation would read from templates
-    const mappings = {
-        'github-copilot': 'GitHub Copilot',
-        'cursor': 'Cursor',
-        'claude-code': 'Claude Code',
-        'opencode': 'OpenCode',
-        'gemini': 'Gemini',
-        'codex': 'Codex'
+    // Map platform identifiers to template file names
+    const templateFiles = {
+        'github-copilot': 'TOOLS-GITHUB-COPILOT.md.template',
+        'cursor': 'TOOLS-CURSOR.md.template',
+        'claude-code': 'TOOLS-CLAUDE-CODE.md.template',
+        'gemini': 'TOOLS-GEMINI.md.template',
+        'opencode': 'TOOLS-OPENCODE.md.template',
+        'codex': 'TOOLS-CODEX.md.template'
     };
     
-    const lines = platforms.map(p => `**Tool Mapping for ${mappings[p]}:**`);
-    return lines.join('\n');
+    const templatesDir = join(paths.superpowersRepo, '.agents', 'templates');
+    const mappings = [];
+    
+    for (const platform of platforms) {
+        const templateFile = templateFiles[platform];
+        if (!templateFile) continue;
+        
+        const templatePath = join(templatesDir, templateFile);
+        if (existsSync(templatePath)) {
+            try {
+                const content = readFileSync(templatePath, 'utf8').trim();
+                mappings.push(content);
+            } catch (error) {
+                // Fallback to simple header if template can't be read
+                const displayNames = {
+                    'github-copilot': 'GitHub Copilot',
+                    'cursor': 'Cursor',
+                    'claude-code': 'Claude Code',
+                    'opencode': 'OpenCode',
+                    'gemini': 'Gemini',
+                    'codex': 'Codex'
+                };
+                mappings.push(`**Tool Mapping for ${displayNames[platform]}:**`);
+            }
+        }
+    }
+    
+    return mappings.join('\n');
 };
 
 /**
@@ -344,10 +370,82 @@ const runSetupSkills = () => {
         console.log('⚠️  Failed to update AGENTS.md');
     }
 
-    console.log(`\n# Setup complete!\n\nYour project now has:
-  - .agents/ directory structure
-  - AGENTS.md with universal skills instructions
-  - .agents/skills/ ready for project-specific skills\n`);
+    // Update CLAUDE.md if it exists (prefer root, then .agents/)
+    const claudeMdPath = existsSync(rootClaudeMdPath) ? rootClaudeMdPath : dotAgentsClaudeMdPath;
+    const claudeResult = updatePlatformFile(claudeMdPath, template, ['claude-code'], false);
+    if (claudeResult.created) {
+        const claudeMdLocation = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        console.log(`✓ Created CLAUDE.md with Claude Code tool mappings (${claudeMdLocation})`);
+    } else if (claudeResult.updated) {
+        const claudeMdLocation = claudeMdPath === rootClaudeMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated CLAUDE.md with Claude Code tool mappings (${claudeMdLocation})`);
+        if (claudeResult.backup) {
+            console.log(`  Backed up to ${parse(claudeResult.backup).base}`);
+        }
+    } else if (claudeResult.skipped) {
+        console.log('ℹ️  Skipped CLAUDE.md (does not exist)');
+    } else if (claudeResult.error) {
+        console.log('⚠️  Failed to update CLAUDE.md');
+    }
+
+    // Update GEMINI.md if it exists (prefer root, then .agents/)
+    const geminiMdPath = existsSync(rootGeminiMdPath) ? rootGeminiMdPath : dotAgentsGeminiMdPath;
+    const geminiResult = updatePlatformFile(geminiMdPath, template, ['gemini'], false);
+    if (geminiResult.created) {
+        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        console.log(`✓ Created GEMINI.md with Gemini tool mappings (${geminiMdLocation})`);
+    } else if (geminiResult.updated) {
+        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
+        console.log(`✓ Updated GEMINI.md with Gemini tool mappings (${geminiMdLocation})`);
+        if (geminiResult.backup) {
+            console.log(`  Backed up to ${parse(geminiResult.backup).base}`);
+        }
+    } else if (geminiResult.skipped) {
+        console.log('ℹ️  Skipped GEMINI.md (does not exist)');
+    } else if (geminiResult.error) {
+        console.log('⚠️  Failed to update GEMINI.md');
+    }
+
+    // Update .github/copilot-instructions.md if it exists AND AGENTS.md does NOT exist
+    const copilotInstructionsPath = join(projectRoot, '.github', 'copilot-instructions.md');
+    const agentsMdDoesNotExist = !existsSync(rootAgentsMdPath) && !existsSync(dotAgentsAgentsMdPath);
+    let copilotResult = { skipped: true };
+    
+    if (existsSync(copilotInstructionsPath) && agentsMdDoesNotExist) {
+        copilotResult = updatePlatformFile(copilotInstructionsPath, template, ['github-copilot'], false);
+        if (copilotResult.updated) {
+            console.log('✓ Updated .github/copilot-instructions.md with GitHub Copilot tool mappings');
+            if (copilotResult.backup) {
+                console.log(`  Backed up to ${parse(copilotResult.backup).base}`);
+            }
+        } else if (copilotResult.error) {
+            console.log('⚠️  Failed to update .github/copilot-instructions.md');
+        }
+    } else if (existsSync(copilotInstructionsPath) && !agentsMdDoesNotExist) {
+        console.log('ℹ️  Skipped .github/copilot-instructions.md (AGENTS.md exists, using that instead)');
+    } else {
+        console.log('ℹ️  Skipped .github/copilot-instructions.md (does not exist)');
+    }
+
+    // Build dynamic success message based on what was updated
+    let setupMessage = `\n# Setup complete!\n\nYour project now has:
+  - .agents/ directory structure`;
+    
+    if (agentsResult.updated || agentsResult.created) {
+        setupMessage += '\n  - AGENTS.md with universal skills instructions';
+    }
+    if (claudeResult.updated || claudeResult.created) {
+        setupMessage += '\n  - CLAUDE.md with Claude Code skills instructions';
+    }
+    if (geminiResult.updated || geminiResult.created) {
+        setupMessage += '\n  - GEMINI.md with Gemini skills instructions';
+    }
+    if (copilotResult.updated) {
+        setupMessage += '\n  - .github/copilot-instructions.md with GitHub Copilot skills instructions';
+    }
+    setupMessage += '\n  - .agents/skills/ ready for project-specific skills\n';
+    
+    console.log(setupMessage);
 };
 
 /**
