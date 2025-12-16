@@ -6,6 +6,52 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.2.0 (December 16, 2025)
+
+### ✨ New Features
+
+**Enhanced Setup-Skills Tool Mappings**
+
+The `superpowers-agent setup-skills` command now properly populates tool mappings from platform-specific template files, ensuring each agent instruction file gets the correct tool mappings for its platform.
+
+**Key Changes:**
+- `generateToolMappings()` function now reads actual content from `.agents/templates/TOOLS-*.md.template` files instead of generating stub headers
+- Added conditional update logic for `.github/copilot-instructions.md`
+
+**File Update Logic:**
+| File | Tool Mappings | Condition |
+|------|---------------|-----------|
+| `AGENTS.md` | GitHub Copilot, Cursor, OpenCode, Codex | Always updated |
+| `CLAUDE.md` | Claude Code | Only if file exists |
+| `GEMINI.md` | Gemini | Only if file exists |
+| `.github/copilot-instructions.md` | GitHub Copilot | Only if file exists AND AGENTS.md does NOT exist |
+
+**Template File Mapping:**
+- `github-copilot` → `TOOLS-GITHUB-COPILOT.md.template`
+- `cursor` → `TOOLS-CURSOR.md.template`
+- `claude-code` → `TOOLS-CLAUDE-CODE.md.template`
+- `gemini` → `TOOLS-GEMINI.md.template`
+- `opencode` → `TOOLS-OPENCODE.md.template`
+- `codex` → `TOOLS-CODEX.md.template`
+
+**Usage:**
+```bash
+superpowers-agent setup-skills
+```
+
+**Output:**
+```
+✓ Updated AGENTS.md with platform tool mappings (root)
+✓ Updated CLAUDE.md with Claude Code tool mappings (root)
+✓ Updated GEMINI.md with Gemini tool mappings (root)
+ℹ️  Skipped .github/copilot-instructions.md (AGENTS.md exists, using that instead)
+```
+
+**Files Modified:**
+- `.agents/src/commands/bootstrap.js` - Updated `generateToolMappings()` to read template files, added `.github/copilot-instructions.md` conditional logic
+
+---
+
 ## v6.1.1 (December 9, 2024)
 
 ### 🐛 Bug Fixes
