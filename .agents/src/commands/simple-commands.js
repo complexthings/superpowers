@@ -9,14 +9,21 @@ import { extractFrontmatter } from '../utils/frontmatter.js';
 import { findSkillsInDir } from '../skills/finder.js';
 import { locateSkillByNameOrAlias } from '../skills/locator.js';
 import { readSkillJson, findHelperInSkill } from '../skills/parser.js';
-import { readConfig, writeConfig } from '../core/config.js';
+import { readConfig, writeConfig, getRepositories } from '../core/config.js';
 import { printVersion } from '../utils/output.js';
 
 // Skill type definitions for display
 const skillTypes = {
     project: { dir: 'projectAgentsSkills', prefix: '' },
     claude: { dir: 'projectClaudeSkills', prefix: 'claude:' },
+    copilot: { dir: 'projectCopilotSkills', prefix: 'copilot:' },
+    opencode: { dir: 'projectOpencodeSkills', prefix: 'opencode:' },
+    gemini: { dir: 'projectGeminiSkills', prefix: 'gemini:' },
     personal: { dir: 'homePersonalSkills', prefix: '' },
+    personalClaude: { dir: 'homeClaudeSkills', prefix: 'claude:' },
+    personalCopilot: { dir: 'homeCopilotSkills', prefix: 'copilot:' },
+    personalOpencode: { dir: 'homeOpencodeSkills', prefix: 'opencode:' },
+    personalGemini: { dir: 'homeGeminiSkills', prefix: 'gemini:' },
     superpowers: { dir: 'homeSuperpowersSkills', prefix: 'superpowers:' }
 };
 
@@ -44,12 +51,22 @@ const runFindSkills = () => {
     printVersion();
     const foundSkills = new Set();
     
-    // Skill discovery order (priority: project > claude > personal > superpowers)
-    // maxDepth: null means unlimited recursion (searches all nested directories)
+    // Skill discovery order (priority: project tier > personal tier > superpowers)
+    // Within each tier, first directory wins. maxDepth: null means unlimited recursion.
     const discoveryOrder = [
+        // Project tier
         { type: 'project', dir: paths.projectAgentsSkills, maxDepth: null },
         { type: 'claude', dir: paths.projectClaudeSkills, maxDepth: null },
+        { type: 'copilot', dir: paths.projectCopilotSkills, maxDepth: null },
+        { type: 'opencode', dir: paths.projectOpencodeSkills, maxDepth: null },
+        { type: 'gemini', dir: paths.projectGeminiSkills, maxDepth: null },
+        // Personal tier
         { type: 'personal', dir: paths.homePersonalSkills, maxDepth: null },
+        { type: 'personalClaude', dir: paths.homeClaudeSkills, maxDepth: null },
+        { type: 'personalCopilot', dir: paths.homeCopilotSkills, maxDepth: null },
+        { type: 'personalOpencode', dir: paths.homeOpencodeSkills, maxDepth: null },
+        { type: 'personalGemini', dir: paths.homeGeminiSkills, maxDepth: null },
+        // Superpowers tier
         { type: 'superpowers', dir: paths.homeSuperpowersSkills, maxDepth: null }
     ];
 
@@ -330,6 +347,55 @@ Examples:
     console.log(`✓ Set ${key} = ${parsedValue}`);
 };
 
+/**
+ * Command: list-repositories
+ * Display all configured repository aliases
+ */
+const runListRepositories = () => {
+    printVersion();
+    
+    const globalRepos = getRepositories(true);
+    const projectRepos = getRepositories(false);
+    
+    // Combine with source labels
+    const allRepos = [];
+    
+    for (const [alias, url] of Object.entries(globalRepos)) {
+        allRepos.push({ alias, url, source: 'global' });
+    }
+    
+    for (const [alias, url] of Object.entries(projectRepos)) {
+        // Project repos override global if same alias
+        const existing = allRepos.findIndex(r => r.alias === alias);
+        if (existing >= 0) {
+            allRepos[existing] = { alias, url, source: 'project' };
+        } else {
+            allRepos.push({ alias, url, source: 'project' });
+        }
+    }
+    
+    if (allRepos.length === 0) {
+        console.log(`No repository aliases configured.
+
+Add a repository using:
+  superpowers-agent add-repository <git-url> [--as=@alias]`);
+        return;
+    }
+    
+    // Calculate column widths for alignment
+    const aliasWidth = Math.max(5, ...allRepos.map(r => r.alias.length));
+    const urlWidth = Math.max(3, ...allRepos.map(r => r.url.length));
+    
+    console.log('Repositories:\n');
+    console.log(`${'Alias'.padEnd(aliasWidth)}  ${'URL'.padEnd(urlWidth)}  Source`);
+    
+    for (const repo of allRepos) {
+        console.log(`${repo.alias.padEnd(aliasWidth)}  ${repo.url.padEnd(urlWidth)}  (${repo.source})`);
+    }
+    
+    console.log(`\nTotal: ${allRepos.length} repository alias(es)`);
+};
+
 export {
     runFindSkills,
     runExecute,
@@ -337,5 +403,6 @@ export {
     runDir,
     runGetHelpers,
     runConfigGet,
-    runConfigSet
+    runConfigSet,
+    runListRepositories
 };

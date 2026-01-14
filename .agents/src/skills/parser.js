@@ -45,6 +45,15 @@ export const parseSkillName = (skillName) => {
     if (skillName.startsWith('claude:')) {
         return { type: 'claude', path: skillName.substring(7).replace(/^skills\//, '') };
     }
+    if (skillName.startsWith('copilot:')) {
+        return { type: 'copilot', path: skillName.substring(8).replace(/^skills\//, '') };
+    }
+    if (skillName.startsWith('opencode:')) {
+        return { type: 'opencode', path: skillName.substring(9).replace(/^skills\//, '') };
+    }
+    if (skillName.startsWith('gemini:')) {
+        return { type: 'gemini', path: skillName.substring(7).replace(/^skills\//, '') };
+    }
     return { type: null, path: skillName.replace(/^skills\//, '') };
 };
 
@@ -101,8 +110,15 @@ export const findHelperInSkill = (skillDir, helperSearchTerm) => {
  * Skill types configuration
  */
 export const skillTypes = {
-    claude: { dir: 'projectClaudeSkills', prefix: 'claude:' },
     project: { dir: 'projectAgentsSkills', prefix: '' },
+    claude: { dir: 'projectClaudeSkills', prefix: 'claude:' },
+    copilot: { dir: 'projectCopilotSkills', prefix: 'copilot:' },
+    opencode: { dir: 'projectOpencodeSkills', prefix: 'opencode:' },
+    gemini: { dir: 'projectGeminiSkills', prefix: 'gemini:' },
     personal: { dir: 'homePersonalSkills', prefix: '' },
+    personalClaude: { dir: 'homeClaudeSkills', prefix: 'claude:' },
+    personalCopilot: { dir: 'homeCopilotSkills', prefix: 'copilot:' },
+    personalOpencode: { dir: 'homeOpencodeSkills', prefix: 'opencode:' },
+    personalGemini: { dir: 'homeGeminiSkills', prefix: 'gemini:' },
     superpowers: { dir: 'homeSuperpowersSkills', prefix: 'superpowers:' }
 };
