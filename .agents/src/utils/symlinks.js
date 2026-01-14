@@ -26,6 +26,24 @@ const SKILL_PLATFORMS = [
         parentDir: () => join(homedir(), '.copilot'),
         skillsDir: () => join(homedir(), '.copilot', 'skills'),
         superpowersTarget: 'superpowers'
+    },
+    {
+        name: 'opencode',
+        parentDir: () => join(homedir(), '.config', 'opencode'),
+        skillsDir: () => join(homedir(), '.config', 'opencode', 'skill'),
+        superpowersTarget: 'superpowers'
+    },
+    {
+        name: 'cursor',
+        parentDir: () => join(homedir(), '.cursor'),
+        skillsDir: () => join(homedir(), '.cursor', 'skills'),
+        superpowersTarget: 'superpowers'
+    },
+    {
+        name: 'gemini',
+        parentDir: () => join(homedir(), '.gemini'),
+        skillsDir: () => join(homedir(), '.gemini', 'skills'),
+        superpowersTarget: 'superpowers'
     }
 ];
 

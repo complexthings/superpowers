@@ -51,6 +51,9 @@ export const parseSkillName = (skillName) => {
     if (skillName.startsWith('opencode:')) {
         return { type: 'opencode', path: skillName.substring(9).replace(/^skills\//, '') };
     }
+    if (skillName.startsWith('cursor:')) {
+        return { type: 'cursor', path: skillName.substring(7).replace(/^skills\//, '') };
+    }
     if (skillName.startsWith('gemini:')) {
         return { type: 'gemini', path: skillName.substring(7).replace(/^skills\//, '') };
     }
@@ -114,11 +117,13 @@ export const skillTypes = {
     claude: { dir: 'projectClaudeSkills', prefix: 'claude:' },
     copilot: { dir: 'projectCopilotSkills', prefix: 'copilot:' },
     opencode: { dir: 'projectOpencodeSkills', prefix: 'opencode:' },
+    cursor: { dir: 'projectCursorSkills', prefix: 'cursor:' },
     gemini: { dir: 'projectGeminiSkills', prefix: 'gemini:' },
     personal: { dir: 'homePersonalSkills', prefix: '' },
     personalClaude: { dir: 'homeClaudeSkills', prefix: 'claude:' },
     personalCopilot: { dir: 'homeCopilotSkills', prefix: 'copilot:' },
     personalOpencode: { dir: 'homeOpencodeSkills', prefix: 'opencode:' },
+    personalCursor: { dir: 'homeCursorSkills', prefix: 'cursor:' },
     personalGemini: { dir: 'homeGeminiSkills', prefix: 'gemini:' },
     superpowers: { dir: 'homeSuperpowersSkills', prefix: 'superpowers:' }
 };
