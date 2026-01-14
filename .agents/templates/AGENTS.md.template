@@ -113,16 +113,18 @@ Reject these rationalizations:
 {{TOOL_MAPPINGS}}
 
 **Skill Locations:**
-- Project: `.agents/skills/` (highest priority)
-- Claude: `.claude/skills/`
-- Personal: `~/.agents/skills/`
+- Project: `.agents/skills/` > `.claude/skills/` > `.copilot/skills/` > `.opencode/skills/` > `.gemini/skills/`
+- Personal: `~/.agents/skills/` > `~/.claude/skills/` > `~/.copilot/skills/` > `~/.opencode/skills/` > `~/.gemini/skills/`
 - Superpowers: `~/.agents/superpowers/skills/`
 
-Priority: Project > Claude > Personal > Superpowers (when names match)
+Priority: Project > Personal > Superpowers (when names match)
 
 **Skill Naming:**
 - Project skills: `skill-name`
 - Claude skills: `claude:skill-name`
+- Copilot skills: `copilot:skill-name`
+- OpenCode skills: `opencode:skill-name`
+- Gemini skills: `gemini:skill-name`
 - Personal skills: `skill-name`
 - Superpowers skills: `superpowers:skill-name`
 

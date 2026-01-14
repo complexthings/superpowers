@@ -6,11 +6,68 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.3.1 (January 14, 2026)
+
+### Multi-Agent Skill Discovery
+
+Extended `superpowers-agent find-skills` and `execute` commands to discover skills from multiple agent-specific directories at both project and user-home levels.
+
+**New Skill Locations:**
+
+| Level | Directories Added |
+|-------|-------------------|
+| Project | `.copilot/skills/`, `.opencode/skills/`, `.gemini/skills/` |
+| Personal | `~/.claude/skills/`, `~/.copilot/skills/`, `~/.opencode/skills/`, `~/.gemini/skills/` |
+
+**New Prefixes:**
+- `copilot:skill-name` - Target Copilot skill directories
+- `opencode:skill-name` - Target OpenCode skill directories  
+- `gemini:skill-name` - Target Gemini skill directories
+
+**Priority Order:**
+```
+Project Tier (highest):
+  .agents/skills/ > .claude/skills/ > .copilot/skills/ > .opencode/skills/ > .gemini/skills/
+
+Personal Tier:
+  ~/.agents/skills/ > ~/.claude/skills/ > ~/.copilot/skills/ > ~/.opencode/skills/ > ~/.gemini/skills/
+
+Superpowers Tier (lowest):
+  ~/.agents/superpowers/skills/
+```
+
+**Key Features:**
+- Flat priority within tiers - first match wins
+- Symlinks resolved to targets automatically
+- Duplicates shown only once (highest priority wins)
+- Same prefix for project and personal levels (`claude:foo` finds project first, falls back to personal)
+
+**Files Modified:**
+- `.agents/src/core/paths.js` - Added 7 new path getters
+- `.agents/src/skills/parser.js` - Added new prefixes and expanded skillTypes
+- `.agents/src/skills/locator.js` - Updated search order in both locate functions
+- `.agents/src/commands/simple-commands.js` - Updated discovery order
+- `.agents/src/skills/finder.js` - Added source labels for error messages
+- `.agents/templates/AGENTS.md.template` - Updated Skill Locations and Skill Naming sections
+
+**Usage:**
+```bash
+# Find all skills across all agent directories
+superpowers-agent find-skills
+
+# Execute skill from specific agent directory
+superpowers-agent execute copilot:my-skill
+superpowers-agent execute opencode:my-skill
+
+# Priority-based resolution (no prefix needed)
+superpowers-agent execute my-skill  # Finds highest priority match
+```
+
+---
+
 ## v6.3.0 (January 14, 2026)
 
-### ✨ New Features
-
-**Automatic Skill Symlinks for Claude Code and GitHub Copilot**
+### Automatic Skill Symlinks for Claude Code and GitHub Copilot
 
 Superpowers now automatically creates symlinks to make skills available in Claude Code's `~/.claude/skills/` and GitHub Copilot's `~/.copilot/skills/` directories, enabling native skill discovery in both IDEs.
 

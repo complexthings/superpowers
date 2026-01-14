@@ -508,6 +508,11 @@ superpowers-agent get-helpers <skill> <term>  # Find helper files in skill
 ```bash
 superpowers-agent add <url-or-path>        # Install skill(s) from Git or local
 superpowers-agent add @alias path/to/skill # Install from repository alias
+```
+
+**Repository Management:**
+```bash
+superpowers-agent list-repositories        # List all configured repository aliases
 superpowers-agent add-repository <git-url> # Add repository alias
 ```
 

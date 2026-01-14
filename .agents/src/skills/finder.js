@@ -157,7 +157,14 @@ export const throwAmbiguousError = (skillPath, matches, sourceType) => {
     const sourceLabel = {
         'project': 'project skills (.agents/skills/)',
         'claude': 'claude skills (.claude/skills/)',
+        'copilot': 'copilot skills (.copilot/skills/)',
+        'opencode': 'opencode skills (.opencode/skills/)',
+        'gemini': 'gemini skills (.gemini/skills/)',
         'personal': 'personal skills (~/.agents/skills/)',
+        'personalClaude': 'personal claude skills (~/.claude/skills/)',
+        'personalCopilot': 'personal copilot skills (~/.copilot/skills/)',
+        'personalOpencode': 'personal opencode skills (~/.opencode/skills/)',
+        'personalGemini': 'personal gemini skills (~/.gemini/skills/)',
         'superpowers': 'superpowers skills (~/.agents/superpowers/skills/)'
     }[sourceType];
     

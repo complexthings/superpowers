@@ -12,7 +12,8 @@ import {
     runDir, 
     runGetHelpers,
     runConfigGet,
-    runConfigSet
+    runConfigSet,
+    runListRepositories
 } from './commands/simple-commands.js';
 
 import { 
@@ -81,6 +82,7 @@ const commands = {
     'find-skills': runFindSkills,
     'add': runAdd,
     'add-repository': runAddRepository,
+    'list-repositories': runListRepositories,
     'pull': runPull,
     'dir': runDir,
     'path': runPath,
@@ -112,6 +114,7 @@ Usage:
   superpowers-agent find-skills                                     # List available skills
   superpowers-agent add <url-or-path|@alias> [path] [options]      # Install skills
   superpowers-agent add-repository <git-url> [--as=@alias] [opts]  # Add repository alias
+  superpowers-agent list-repositories                              # List configured repository aliases
   superpowers-agent pull <url-or-path|@alias> [path] [options]     # Update skills
   superpowers-agent dir <skill-name>                                # Get skill directory
   superpowers-agent path <skill-name>                               # Get skill file path
