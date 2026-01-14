@@ -17,7 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/inst
 
 ### Updates Monitoring
 
-**Bootstrapped Version**: ^^SAV:6.3.2^^
+**Bootstrapped Version**: ^^SAV:6.3.3^^
 
 Your superpowers-agent may have updates available. If you see a different version
 in command output (e.g., `^^SAV:5.5.0^^`) than shown above, run:
@@ -32,7 +32,7 @@ This will update your Superpowers installation and refresh your project configur
 
 When you (the agent) start a conversation or run superpowers-agent commands:
 
-1. **Note the bootstrapped version** shown above (`^^SAV:6.3.2^^`)
+1. **Note the bootstrapped version** shown above (`^^SAV:6.3.3^^`)
 2. **Check command output** - Most `superpowers-agent` commands display `^^SAV:X.Y.Z^^` at the start
 3. **Compare versions** - If the command version differs from bootstrapped version:
    
@@ -59,39 +59,28 @@ Command output: ^^SAV:5.4.0^^
 → No action needed
 ```
 
-### REQUIRED WORKFLOW
+### HOW TO USE SKILLS
 
 <CRITICAL>
-**Do not read skill files upfront. Load them just-in-time when you're about to use them.**
+**Load skills just-in-time — only when you're about to use them, not upfront.**
 </CRITICAL>
 
-**Discover available skills:**
-```bash
-superpowers-agent find-skills [PATTERN]
-```
-This shows skill names and descriptions. Use descriptions to decide which skill applies.
+#### Step 1: Discover Skills
 
-**When ready to use a skill:**
-```bash
-superpowers-agent execute {Skill Name}
-```
-This shows the skill path and tells you to read it. Use your `Read` tool (or `cat` if `Read` doesn't work for external paths), then follow the instructions exactly.
+| If you have... | Then... |
+|----------------|---------|
+| Native skill tool (see table below) | Skills in your platform directories are auto-discovered |
+| No native tool OR need superpowers skills | Run `superpowers-agent find-skills [PATTERN]` |
 
----
+#### Step 2: Load & Execute
 
-**JIT Rules:**
-- Only run `execute` + `Read` when you're about to use a skill, not before
-- If given a sequence of skills, load each one immediately before that step
-- If you already read a skill earlier in this session and it's in context, don't re-read
+| Skill Location | How to Load |
+|----------------|-------------|
+| Your platform's directory (`.claude/`, `.cursor/`, etc.) | Use your native skill tool |
+| `.agents/skills/` or `superpowers:` prefixed | Use `superpowers-agent execute {name}` then Read |
+| Native tool fails or skill not found | Fall back to `superpowers-agent execute` |
 
-**When to look for skills:**
-- Before starting any non-trivial task
-- When unsure how to approach something
-- When the task matches a skill description you saw in `find-skills`
-
-### NATIVE SKILL TOOLS
-
-Many AI agents have built-in skill tools that provide better integration than CLI commands. **Always attempt to use your native tool first:**
+#### Native Skill Tools
 
 | Agent | Native Tool | Skill Locations |
 |-------|-------------|-----------------|
@@ -100,12 +89,19 @@ Many AI agents have built-in skill tools that provide better integration than CL
 | OpenCode | `skill` tool | `.opencode/skill/`, `~/.config/opencode/skill/` |
 | Cursor | Automatic discovery | `.cursor/skills/`, `~/.cursor/skills/` |
 | Gemini | `activate_skill` tool | `.gemini/skills/`, `~/.gemini/skills/` |
+| Codex | $skill-name | `.codex/skills/`, `~/.codex/skills/` |
 
-**Tool Selection:**
-1. **First**: Attempt your native skill tool if available
-2. **Fallback**: If native tool fails or skill not found, use `superpowers-agent execute`
+#### JIT Rules
 
-Native tools provide automatic discovery, progressive disclosure, and better context management. Skills are symlinked across platforms for universal access.
+- Load skills only when you're about to use them, not before
+- If given a sequence of skills, load each one immediately before that step
+- If you already loaded a skill earlier in this session and it's in context, don't re-load
+
+#### When to Look for Skills
+
+- Before starting any task
+- When unsure how to approach something
+- When the task matches a skill description you've seen
 
 ### WHY THIS MATTERS
 
@@ -131,34 +127,65 @@ Reject these rationalizations:
 
 **Tool Mappings:**
 
-**Tool Mapping for GitHub Copilot:**
+#### Tool Mapping for GitHub Copilot
+
 When skills reference tools you don't have, substitute your equivalent tools:
-- `TodoWrite` → `manage_todo_list` (create and manage task lists with status tracking: not-started, in-progress, completed)
-- `TodoRead` → Check todo list via `manage_todo_list` with `read` operation (view current task states)
-- `Task` tool with subagents → `runSubagent` (dispatch autonomous agents for complex multi-step tasks; agent returns single final message)
-- `Skill` tool → `superpowers-agent execute` command (load and execute skills via CLI)
-- `Read` → `read_file` (read file contents with optional offset/limit for large files; max 2000 lines per call)
-- `Write` → `create_file` (create new files with content; automatically creates parent directories)
-- `Edit` → `replace_string_in_file` or `multi_replace_string_in_file` (exact string replacements; include 3-5 lines context before/after)
-- `Bash` → `run_in_terminal` (execute zsh commands; supports background processes with isBackground flag)
-- `List` → `list_dir` (list directory contents; returns names with trailing / for folders)
-- `Grep` → `grep_search` (search file contents with text or regex patterns; supports includePattern for file filtering)
-- `Glob` → `file_search` (find files by glob pattern; returns matching file paths)
-- `WebFetch` → `fetch_webpage` (fetch and extract main content from web pages for summarization)
-- `CodebaseSearch` → `semantic_search` (natural language search for relevant code in workspace; fallback to `grep_search` for exact matches)
-- `NotebookEdit` → `edit_notebook_file` (edit Jupyter notebooks: insert, edit, or delete cells by cellId)
-- `ReadLints` → `get_errors` (retrieve compile/lint errors for specific files or entire workspace)
-- `DeleteFile` → `run_in_terminal` with `rm` command (no dedicated delete tool; use shell command)
-- `GetTerminalOutput` → `get_terminal_output` (retrieve output from background terminal processes)
-- `Git` → `get_changed_files` (get git diffs of staged/unstaged changes; fallback to `run_in_terminal` for other git operations)
-- `NotebookSummary` → `copilot_getNotebookSummary` (get cell metadata: ids, types, languages, execution info, outputs)
-- `NotebookRun` → `run_notebook_cell` (execute code cells in Jupyter notebooks by cellId)
-**Tool Mapping for Cursor:**
+- `TodoWrite` → `#todos` (track implementation and progress of a chat request with a todo list)
+- `TodoRead` → Check todo list via `#todos` output (no dedicated read tool)
+- `Task` tool with subagents → `#runSubagent` (run a task in an isolated subagent context; helps improve context management)
+- `Skill` → `Skill` tool (native) or `superpowers-agent execute` command (for .agents/ skills)
+- `Read` → `#readFile` (read the content of a file in the workspace)
+- `Write` → `#createFile` (create a new file in the workspace)
+- `Edit` → `#editFiles` (apply edits to files in the workspace)
+- `Bash` → `#runInTerminal` (run a shell command in the integrated terminal)
+- `List` → `#listDirectory` (list files in a directory in the workspace)
+- `Grep` → `#textSearch` (find text in files)
+- `Glob` → `#fileSearch` (search for files in the workspace by using glob patterns)
+- `WebFetch` → `#fetch` (fetch the content from a given web page)
+- `CodebaseSearch` → `#codebase` (perform a code search in the current workspace to find relevant context)
+- `NotebookEdit` → `#editNotebook` (make edits to a notebook)
+- `NotebookSummary` → `#getNotebookSummary` (get the list of notebook cells and their details)
+- `NotebookRun` → `#runCell` (run a notebook cell)
+- `ReadNotebookOutput` → `#readNotebookCellOutput` (read the output from a notebook cell execution)
+- `GetTerminalOutput` → `#getTerminalOutput` (get the output from running a terminal command)
+- `TerminalLastCommand` → `#terminalLastCommand` (get the last run terminal command and its output)
+- `TerminalSelection` → `#terminalSelection` (get the current terminal selection)
+- `Selection` → `#selection` (get the current editor selection)
+- `Changes` → `#changes` (list of source control changes)
+- `Problems` → `#problems` (add workspace issues from the Problems panel as context)
+- `TestFailure` → `#testFailure` (get unit test failure information)
+- `RunTests` → `#runTests` (run unit tests in the workspace)
+- `CreateDirectory` → `#createDirectory` (create a new directory in the workspace)
+- `RunTask` → `#runTask` (run an existing task in the workspace)
+- `CreateAndRunTask` → `#createAndRunTask` (create and run a new task in the workspace)
+- `GetTaskOutput` → `#getTaskOutput` (get the output from running a task)
+- `Usages` → `#usages` (combination of Find All References, Find Implementation, and Go to Definition)
+- `SearchResults` → `#searchResults` (get the search results from the Search view)
+- `Extensions` → `#extensions` (search for and ask about VS Code extensions)
+- `InstallExtension` → `#installExtension` (install a VS Code extension)
+- `RunVscodeCommand` → `#runVscodeCommand` (run a VS Code command)
+- `VSCodeAPI` → `#VSCodeAPI` (ask about VS Code functionality and extension development)
+- `GitHubRepo` → `#githubRepo` (perform a code search in a GitHub repo)
+- `OpenSimpleBrowser` → `#openSimpleBrowser` (open the Simple Browser and preview a locally-deployed web app)
+- `New` → `#new` (scaffold a new VS Code workspace, preconfigured with debug and run configurations)
+- `NewWorkspace` → `#newWorkspace` (create a new workspace)
+- `NewJupyterNotebook` → `#newJupyterNotebook` (scaffold a new Jupyter notebook given a description)
+- `GetProjectSetupInfo` → `#getProjectSetupInfo` (provide instructions and configuration for scaffolding projects)
+
+##### Native Skill Tool
+
+You have a `Skill` tool for loading skills. **Use it by default** for skills in your platform directories:
+- Project: `.github/skills/`
+- Personal: `~/.copilot/skills/`
+
+Skills are symlinked across platforms, so superpowers skills are accessible at `~/.copilot/skills/superpowers/`.
+#### Tool Mapping for Cursor
+
 When skills reference tools you don't have, substitute your equivalent tools:
 - `TodoWrite` → `todo_write` (manage task lists with status tracking: pending, in_progress, completed, cancelled)
 - `TodoRead` → Check todo list via system context (automatically tracked)
 - `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
-- `Skill` tool → `superpowers-agent execute` command (already available)
+- `Skill` → Automatic discovery (native) or `superpowers-agent execute` command (for .agents/ skills)
 - `Read` → `read_file` (read file contents with optional offset/limit for large files; supports images)
 - `Write` → `write` (create/overwrite files; requires prior read_file for existing files)
 - `Edit` → `search_replace` (exact string replacements; supports replace_all for renaming across file)
@@ -168,59 +195,98 @@ When skills reference tools you don't have, substitute your equivalent tools:
 - `Glob` → `glob_file_search` (find files by glob pattern, sorted by modification time)
 - `CodebaseSearch` → `codebase_search` (semantic search to find code by meaning, not exact text)
 - `WebFetch` → `web_search` (search the web for real-time information)
+- `FetchRules` → `fetch_rules` (retrieve specific rules based on type and description)
+- `Browser` → `browser` (control browser for screenshots, testing, and visual verification)
 - `NotebookEdit` → `edit_notebook` (edit Jupyter notebook cells: create, edit, or clear cell content)
 - `ReadLints` → `read_lints` (read linter/diagnostic errors from workspace files)
 - `DeleteFile` → `delete_file` (delete files at specified path)
 - MCP Tools → Various MCP server tools available (Playwright browser automation, Context7 docs, etc.)
-**Tool Mapping for OpenCode:**
+
+##### Native Skill Tool
+
+Cursor has automatic skill discovery for skills in your platform directories:
+- Project: `.cursor/skills/`
+- Personal: `~/.cursor/skills/`
+
+Skills are symlinked across platforms, so superpowers skills are accessible at `~/.cursor/skills/superpowers/`.
+#### Tool Mapping for OpenCode
+
 When skills reference tools you don't have, substitute your equivalent tools:
-- `TodoWrite` → `todowrite` (manage todo lists with status tracking)
+- `TodoWrite` → `todowrite` (manage todo lists with status tracking: pending, in_progress, completed, cancelled)
 - `TodoRead` → `todoread` (read current todo list state)
-- `Task` → `task` (dispatch specialized subagents for complex multi-step tasks)
-- `Skill` → `superpowers-agent execute` command (already available)
-- `Read` → `read` (read file contents with line numbers, supports offset/limit)
-- `Write` → `write` (create/overwrite files, requires prior read for existing files)
-- `Edit` → `edit` (make exact string replacements in files)
-- `Bash` → `bash` (execute shell commands with timeout support)
-- `List` → `list` (list directory contents with optional ignore patterns)
-- `Grep` → `grep` (search file contents using regex, supports file patterns)
-- `Glob` → `glob` (find files by glob pattern, sorted by modification time)
+- `Task` → `task` (dispatch specialized subagents: general, explore, or custom agents for complex multi-step tasks)
+- `Skill` → `skill` tool (native) or `superpowers-agent execute` command (for .agents/ skills)
+- `Read` → `read` (read file contents with line numbers; supports offset/limit for large files)
+- `Write` → `write` (create new files or overwrite existing ones)
+- `Edit` → `edit` (modify existing files using exact string replacements)
+- `Patch` → `patch` (apply patches/diffs to files)
+- `Bash` → `bash` (execute shell commands in project environment)
+- `List` → `list` (list files and directories; accepts glob patterns to filter)
+- `Grep` → `grep` (search file contents using regex; supports file pattern filtering)
+- `Glob` → `glob` (find files by glob pattern like `**/*.js`; sorted by modification time)
 - `WebFetch` → `webfetch` (fetch web content in text, markdown, or html format)
-**Tool Mapping for Codex:**
+- `AskUserQuestion` → `question` (ask user questions during execution with multiple choice options)
+- `LSP` → `lsp` (experimental: goToDefinition, findReferences, hover, documentSymbol, workspaceSymbol, goToImplementation, prepareCallHierarchy, incomingCalls, outgoingCalls)
+
+##### Native Skill Tool
+
+You have a `skill` tool for loading skills. **Use it by default** for skills in your platform directories:
+- Project: `.opencode/skill/`
+- Personal: `~/.config/opencode/skill/`
+- Claude-compatible: `.claude/skills/` and `~/.claude/skills/`
+
+Skills are symlinked across platforms, so superpowers skills are accessible at `~/.config/opencode/skill/superpowers/`.
+#### Tool Mapping for Codex
+
 When skills reference tools you don't have, substitute your equivalent tools:
 - `TodoWrite` → `update_plan` (simple step tracker; no full todo manager)
+- `TodoRead` → Check plan via `update_plan` output (no dedicated read tool)
 - `Task` tool with subagents → Execute the work yourself (no subagent tool)
-- `Skill` tool → `superpowers-agent execute` command (already available)
-- `Read` → `shell_command` with `cat`/`sed` (no dedicated read tool)
+- `Skill` → `$skill-name` prefix (native) or `superpowers-agent execute` command (for .agents/ skills)
+- `Read` → `shell_command` with `cat`/`head`/`tail` (no dedicated read tool)
 - `Write` → `apply_patch` (create/edit files) or `shell_command` with redirection for new files
-- `Edit` → `apply_patch` (targeted edits)
+- `Edit` → `apply_patch` (targeted edits using unified diff format)
 - `Bash` → `shell_command` (execute shell commands)
-- `List` → `shell_command` (`ls`, `find`)
-- `Grep` → `shell_command` (`rg`)
-- `Glob` → `shell_command` (`rg --files`, `find`)
-- `WebFetch` → `features.web_search_request, web_search_request` (fetch web content)
+- `List` → `shell_command` with `ls` or `find` commands
+- `Grep` → `shell_command` with `rg` (ripgrep) or `grep` commands
+- `Glob` → `shell_command` with `rg --files` or `find` commands
+- `WebFetch` → `web_search_request` (fetch web content and search results)
 
-**Skill Locations:**
-- Project: `.agents/skills/` > `.claude/skills/` > `.copilot/skills/` > `.opencode/skill/` > `.cursor/skills/` > `.gemini/skills/`
-- Personal: `~/.agents/skills/` > `~/.claude/skills/` > `~/.copilot/skills/` > `~/.config/opencode/skill/` > `~/.cursor/skills/` > `~/.gemini/skills/`
+##### Native Skill Tool
+
+Codex has native skill support using the `$skill-name` prefix or `/skills` slash command. **Use it by default** for skills in your platform directories:
+- Project: `.codex/skills/` (current working directory)
+- Personal: `~/.codex/skills/` (user home directory)
+- System: `/etc/codex/skills/` (admin-deployed skills)
+
+Skills are symlinked across platforms, so superpowers skills are accessible at `~/.codex/skills/superpowers/`.
+
+#### Skill Locations
+
+- Project: `.agents/skills/` > `.claude/skills/` > `.copilot/skills/` > `.opencode/skill/` > `.cursor/skills/` > `.gemini/skills/` > `.codex/skills/`
+- Personal: `~/.agents/skills/` > `~/.claude/skills/` > `~/.copilot/skills/` > `~/.config/opencode/skill/` > `~/.cursor/skills/` > `~/.gemini/skills/` > `~/.codex/skills/`
 - Superpowers: `~/.agents/superpowers/skills/`
 
 Priority: Project > Personal > Superpowers (when names match)
 
-**Skill Naming:**
+#### Skill Naming
+
 - Project skills: `skill-name`
 - Claude skills: `claude:skill-name`
 - Copilot skills: `copilot:skill-name`
 - OpenCode skills: `opencode:skill-name`
 - Cursor skills: `cursor:skill-name`
 - Gemini skills: `gemini:skill-name`
+- Codex skills: `codex:skill-name`
 - Personal skills: `skill-name`
 - Superpowers skills: `superpowers:skill-name`
 
-**Skills with Checklists:**
+#### Skills with Checklists
+
 If a skill has a checklist, create todos for EACH item. Mental tracking = steps get skipped.
 
-**Creating New Skills:**
+#### Creating New Skills
+
 Use the `writing-skills` skill. Brainstorm first with `brainstorming`, then test with `testing-skills-with-subagents`.
 
 ---
