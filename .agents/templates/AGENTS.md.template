@@ -56,39 +56,28 @@ Command output: ^^SAV:5.4.0^^
 → No action needed
 ```
 
-### REQUIRED WORKFLOW
+### HOW TO USE SKILLS
 
 <CRITICAL>
-**Do not read skill files upfront. Load them just-in-time when you're about to use them.**
+**Load skills just-in-time — only when you're about to use them, not upfront.**
 </CRITICAL>
 
-**Discover available skills:**
-```bash
-superpowers-agent find-skills [PATTERN]
-```
-This shows skill names and descriptions. Use descriptions to decide which skill applies.
+#### Step 1: Discover Skills
 
-**When ready to use a skill:**
-```bash
-superpowers-agent execute {Skill Name}
-```
-This shows the skill path and tells you to read it. Use your `Read` tool (or `cat` if `Read` doesn't work for external paths), then follow the instructions exactly.
+| If you have... | Then... |
+|----------------|---------|
+| Native skill tool (see table below) | Skills in your platform directories are auto-discovered |
+| No native tool OR need superpowers skills | Run `superpowers-agent find-skills [PATTERN]` |
 
----
+#### Step 2: Load & Execute
 
-**JIT Rules:**
-- Only run `execute` + `Read` when you're about to use a skill, not before
-- If given a sequence of skills, load each one immediately before that step
-- If you already read a skill earlier in this session and it's in context, don't re-read
+| Skill Location | How to Load |
+|----------------|-------------|
+| Your platform's directory (`.claude/`, `.cursor/`, etc.) | Use your native skill tool |
+| `.agents/skills/` or `superpowers:` prefixed | Use `superpowers-agent execute {name}` then Read |
+| Native tool fails or skill not found | Fall back to `superpowers-agent execute` |
 
-**When to look for skills:**
-- Before starting any non-trivial task
-- When unsure how to approach something
-- When the task matches a skill description you saw in `find-skills`
-
-### NATIVE SKILL TOOLS
-
-Many AI agents have built-in skill tools that provide better integration than CLI commands. **Always attempt to use your native tool first:**
+#### Native Skill Tools
 
 | Agent | Native Tool | Skill Locations |
 |-------|-------------|-----------------|
@@ -97,12 +86,19 @@ Many AI agents have built-in skill tools that provide better integration than CL
 | OpenCode | `skill` tool | `.opencode/skill/`, `~/.config/opencode/skill/` |
 | Cursor | Automatic discovery | `.cursor/skills/`, `~/.cursor/skills/` |
 | Gemini | `activate_skill` tool | `.gemini/skills/`, `~/.gemini/skills/` |
+| Codex | $skill-name | `.codex/skills/`, `~/.codex/skills/` |
 
-**Tool Selection:**
-1. **First**: Attempt your native skill tool if available
-2. **Fallback**: If native tool fails or skill not found, use `superpowers-agent execute`
+#### JIT Rules
 
-Native tools provide automatic discovery, progressive disclosure, and better context management. Skills are symlinked across platforms for universal access.
+- Load skills only when you're about to use them, not before
+- If given a sequence of skills, load each one immediately before that step
+- If you already loaded a skill earlier in this session and it's in context, don't re-load
+
+#### When to Look for Skills
+
+- Before starting any task
+- When unsure how to approach something
+- When the task matches a skill description you've seen
 
 ### WHY THIS MATTERS
 
@@ -130,27 +126,32 @@ Reject these rationalizations:
 
 {{TOOL_MAPPINGS}}
 
-**Skill Locations:**
-- Project: `.agents/skills/` > `.claude/skills/` > `.copilot/skills/` > `.opencode/skill/` > `.cursor/skills/` > `.gemini/skills/`
-- Personal: `~/.agents/skills/` > `~/.claude/skills/` > `~/.copilot/skills/` > `~/.config/opencode/skill/` > `~/.cursor/skills/` > `~/.gemini/skills/`
+#### Skill Locations
+
+- Project: `.agents/skills/` > `.claude/skills/` > `.copilot/skills/` > `.opencode/skill/` > `.cursor/skills/` > `.gemini/skills/` > `.codex/skills/`
+- Personal: `~/.agents/skills/` > `~/.claude/skills/` > `~/.copilot/skills/` > `~/.config/opencode/skill/` > `~/.cursor/skills/` > `~/.gemini/skills/` > `~/.codex/skills/`
 - Superpowers: `~/.agents/superpowers/skills/`
 
 Priority: Project > Personal > Superpowers (when names match)
 
-**Skill Naming:**
+#### Skill Naming
+
 - Project skills: `skill-name`
 - Claude skills: `claude:skill-name`
 - Copilot skills: `copilot:skill-name`
 - OpenCode skills: `opencode:skill-name`
 - Cursor skills: `cursor:skill-name`
 - Gemini skills: `gemini:skill-name`
+- Codex skills: `codex:skill-name`
 - Personal skills: `skill-name`
 - Superpowers skills: `superpowers:skill-name`
 
-**Skills with Checklists:**
+#### Skills with Checklists
+
 If a skill has a checklist, create todos for EACH item. Mental tracking = steps get skipped.
 
-**Creating New Skills:**
+#### Creating New Skills
+
 Use the `writing-skills` skill. Brainstorm first with `brainstorming`, then test with `testing-skills-with-subagents`.
 
 ---

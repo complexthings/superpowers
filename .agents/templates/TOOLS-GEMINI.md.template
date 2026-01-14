@@ -1,13 +1,26 @@
-**Tool Mapping for Gemini:**
+#### Tool Mapping for Gemini CLI
+
 When skills reference tools you don't have, substitute your equivalent tools:
 - `TodoWrite` → `write_todos` (create and manage task lists)
+- `TodoRead` → Check todos via `write_todos` output (no dedicated read tool)
 - `Task` tool with subagents → Execute the work yourself, as subagent dispatch isn't available
-- `Skill` tool → `superpowers-agent execute` command (already available)
-- `Read` → `read_file` (read file contents)
+- `Skill` → `activate_skill` tool (native) or `superpowers-agent execute` command (for .agents/ skills)
+- `Read` → `read_file` (read file contents) or `read_many_files` (read multiple files or glob patterns)
 - `Write` → `write_file` (create/overwrite files)
-- `Edit` → `replace` (make targeted edits to files)
-- `Bash` → `run_shell_command` (execute shell commands)
-- `List` → `list_directory` (read directory structure)
-- `Grep` → `search_file_content` (search file contents)
-- `Glob` → `glob` (find files by pattern)
-- `WebFetch` → `web_fetch` (fetch web content)
+- `Edit` → `edit` (in-place modifications to files; may require confirmation)
+- `Bash` → `shell` (execute shell commands; requires sandboxing and user confirmation)
+- `List` → `ls` (list directory contents)
+- `Grep` → `grep` (search for patterns in files)
+- `Glob` → `glob` (find files matching glob patterns)
+- `WebFetch` → `web_fetch` (fetch content from a URL)
+- `WebSearch` → `web_search` (perform web searches)
+- `Memory` → `memory` (interact with AI's memory for context persistence)
+
+##### Native Skill Tool
+
+You have an `activate_skill` tool for loading skills. **Use it by default** for skills in your platform directories:
+- Project: `.gemini/skills/`
+- Personal: `~/.gemini/skills/`
+- Extension: Skills bundled within installed extensions
+
+Skills are symlinked across platforms, so superpowers skills are accessible at `~/.gemini/skills/superpowers/`.

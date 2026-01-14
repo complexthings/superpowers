@@ -1,10 +1,11 @@
-**Tool Mapping for Claude Code:**
+#### Tool Mapping for Claude Code
+
 When skills reference tools you don't have, substitute your equivalent tools:
 - `TodoWrite` → `TodoWrite` (create and manage task lists with status tracking)
 - `TodoRead` → Check todo list via system reminders (automatically provided)
-- `Task` → `Task` (dispatch specialized subagents: general-purpose, Explore, Plan, claude-code-guide, code-reviewer, etc.)
-- `Skill` → `Skill` tool or `superpowers-agent execute` command (both available)
-- `SlashCommand` → `SlashCommand` tool (execute custom slash commands from .claude/commands/)
+- `Task` → `Task` (dispatch specialized subagents: general-purpose, Explore, Plan, claude-code-guide, code-reviewer, or custom agents)
+- `Skill` → `Skill` tool (native) or `superpowers-agent execute` command (both available)
+- `SlashCommand` → Use `/command-name` syntax (execute custom slash commands from .claude/commands/)
 - `Read` → `Read` tool (read files including images, PDFs, Jupyter notebooks; supports offset/limit for large files)
 - `Write` → `Write` tool (create/overwrite files; requires prior Read for existing files)
 - `Edit` → `Edit` tool (exact string replacements; supports replace_all for renaming)
@@ -18,5 +19,16 @@ When skills reference tools you don't have, substitute your equivalent tools:
 - `BashOutput` → `BashOutput` tool (retrieve output from background shells)
 - `KillShell` → `KillShell` tool (terminate background shells)
 - `AskUserQuestion` → `AskUserQuestion` tool (ask questions with multiple choice options during execution)
+- `ExitPlanMode` → `ExitPlanMode` tool (prompt user to exit plan mode and start coding)
 - `GetDiagnostics` → `mcp__ide__getDiagnostics` (get VS Code language diagnostics)
 - `ExecuteCode` → `mcp__ide__executeCode` (execute code in Jupyter kernel)
+
+##### Native Skill Tool
+
+You have a `Skill` tool for loading skills. **Use it by default** for skills in your platform directories:
+- Project: `.claude/skills/`
+- Personal: `~/.claude/skills/`
+- Enterprise: Managed settings (deployed by administrators)
+- Plugin: Skills bundled with installed plugins
+
+Skills are symlinked across platforms, so superpowers skills are accessible at `~/.claude/skills/superpowers/`.

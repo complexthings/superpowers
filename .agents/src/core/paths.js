@@ -56,6 +56,7 @@ export const paths = {
     get projectOpencodeSkills() { return join(this.projectRoot, '.opencode', 'skill'); },
     get projectCursorSkills() { return join(this.projectRoot, '.cursor', 'skills'); },
     get projectGeminiSkills() { return join(this.projectRoot, '.gemini', 'skills'); },
+    get projectCodexSkills() { return join(this.projectRoot, '.codex', 'skills'); },
     get projectSkillsDir() { return join(this.projectRoot, 'skills'); }, // For superpowers repo itself
     get homePersonalSkills() { return join(this.home, '.agents', 'skills'); },
     get homeClaudeSkills() { return join(this.home, '.claude', 'skills'); },
@@ -63,6 +64,7 @@ export const paths = {
     get homeOpencodeSkills() { return join(this.home, '.config', 'opencode', 'skill'); },
     get homeCursorSkills() { return join(this.home, '.cursor', 'skills'); },
     get homeGeminiSkills() { return join(this.home, '.gemini', 'skills'); },
+    get homeCodexSkills() { return join(this.home, '.codex', 'skills'); },
     get bootstrap() { return join(this.projectRoot, '.agents', 'superpowers-bootstrap.md'); },
     get superpowersRepo() { 
         // If running from the superpowers repo itself, use current location
