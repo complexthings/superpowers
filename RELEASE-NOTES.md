@@ -6,6 +6,58 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.3.2 (January 14, 2026)
+
+### Native Skill Tools & Extended Platform Symlinks
+
+Enhanced agent instructions to leverage native skill tools and extended symlink support to all major AI coding platforms.
+
+**Native Skill Tools Section:**
+- Added new "NATIVE SKILL TOOLS" section to `AGENTS.md.template`
+- Instructs agents to attempt native skill tools first, fallback to `superpowers-agent execute`
+- Documents native tool names for each platform:
+  - GitHub Copilot: `Skill` tool
+  - Claude Code: `Skill` tool
+  - OpenCode: `skill` tool
+  - Cursor: Automatic discovery
+  - Gemini: `activate_skill` tool
+
+**Extended Symlink Support:**
+- Added OpenCode, Cursor, and Gemini to automatic skill symlink sync
+- Skills from `~/.agents/skills/` and `~/.agents/superpowers/skills/` now symlinked to:
+  - `~/.config/opencode/skill/` (OpenCode)
+  - `~/.cursor/skills/` (Cursor)
+  - `~/.gemini/skills/` (Gemini)
+- Follows existing behavior: only creates symlinks if parent directory exists
+- Use `--force` flag to create directories if needed
+
+**OpenCode Path Corrections:**
+- Fixed OpenCode skill paths to match OpenCode conventions:
+  - Project: `.opencode/skill/` (singular)
+  - Personal: `~/.config/opencode/skill/` (under `.config`, singular)
+- Updated all references in paths.js, finder.js, parser.js, and AGENTS.md.template
+
+**Added Full Cursor Support:**
+- Added `cursor:` prefix for Cursor-specific skills
+- Added Cursor to skillTypes in parser.js
+- Added Cursor paths to paths.js
+- Added Cursor source labels to finder.js
+
+**Files Modified:**
+- `.agents/templates/AGENTS.md.template` - Native skill tools section, fixed paths, added Cursor
+- `.agents/src/utils/symlinks.js` - Added OpenCode, Cursor, Gemini platforms
+- `.agents/src/core/paths.js` - Fixed OpenCode paths, added Cursor paths
+- `.agents/src/skills/finder.js` - Updated source labels
+- `.agents/src/skills/parser.js` - Added Cursor prefix and skillTypes
+
+**Symlink Mapping (after bootstrap):**
+| Source | OpenCode Target | Cursor Target | Gemini Target |
+|--------|-----------------|---------------|---------------|
+| `~/.agents/superpowers/skills/` | `~/.config/opencode/skill/superpowers` | `~/.cursor/skills/superpowers` | `~/.gemini/skills/superpowers` |
+| `~/.agents/skills/<name>` | `~/.config/opencode/skill/<name>` | `~/.cursor/skills/<name>` | `~/.gemini/skills/<name>` |
+
+---
+
 ## v6.3.1 (January 14, 2026)
 
 ### Multi-Agent Skill Discovery
