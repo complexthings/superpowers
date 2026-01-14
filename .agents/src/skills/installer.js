@@ -3,6 +3,7 @@ import { join, dirname, parse } from 'path';
 import { execSync } from 'child_process';
 import { homedir } from 'os';
 import { getRepositories, addRepositoryToConfig, readConfigFile, writeConfigFile } from '../core/config.js';
+import { syncPersonalSkillSymlinks } from '../utils/symlinks.js';
 
 /**
  * Parse a Git URL or local path
@@ -383,6 +384,12 @@ Description:
             console.log('  No skills were installed');
         }
         
+        // Sync symlinks for newly installed skills
+        if (results.installed.length > 0) {
+            console.log('\n**Syncing skill symlinks...**');
+            syncPersonalSkillSymlinks();
+        }
+        
     } catch (error) {
         // Clean up on error
         if (cleanup && sourcePath) {
@@ -588,6 +595,12 @@ Description:
         
         if (results.installed.length === 0 && results.errors.length === 0) {
             console.log('  No skills were updated');
+        }
+        
+        // Sync symlinks for updated skills
+        if (results.installed.length > 0) {
+            console.log('\n**Syncing skill symlinks...**');
+            syncPersonalSkillSymlinks();
         }
         
     } catch (error) {

@@ -29,6 +29,9 @@ import { installOpencodeCommands } from '../integrations/opencode.js';
 // Import update function
 import { runUpdate } from './update.js';
 
+// Import symlink utilities
+import { syncAllSkillSymlinks } from '../utils/symlinks.js';
+
 /**
  * Generate tool mappings for specified platforms by reading from template files
  */
@@ -573,9 +576,17 @@ const runBootstrap = () => {
     }
 
     console.log('\n---\n');
+
+    // Sync skill symlinks for Claude and Copilot
+    console.log('## Syncing Skill Symlinks\n');
+    const forceCreate = process.argv.includes('--force');
+    syncAllSkillSymlinks({ force: forceCreate });
+    console.log('\n---\n');
+
     console.log('# Bootstrap Complete!\n');
     console.log('✓ All integrations installed');
-    console.log('✓ Skills system ready\n');
+    console.log('✓ Skills system ready');
+    console.log('✓ Skill symlinks synced\n');
     console.log('Next steps:');
     console.log('  - Run `superpowers-agent find-skills` to see available skills');
     console.log('  - Run `superpowers-agent setup-skills` in your project directory');

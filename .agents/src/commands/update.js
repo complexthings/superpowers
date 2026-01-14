@@ -22,6 +22,9 @@ import { installGeminiCommands } from '../integrations/gemini.js';
 import { installClaudeCommands } from '../integrations/claude.js';
 import { installOpencodeCommands } from '../integrations/opencode.js';
 
+// Import symlink utilities
+import { syncAllSkillSymlinks } from '../utils/symlinks.js';
+
 /**
  * Reinstall a specific integration
  */
@@ -148,7 +151,12 @@ const runUpdate = (options = {}) => {
     console.log('\n---\n');
     installAliases();
     
-    // 9. Show summary
+    // 9. Sync skill symlinks
+    console.log('\n---\n');
+    console.log('## Syncing Skill Symlinks\n');
+    syncAllSkillSymlinks();
+    
+    // 10. Show summary
     const failures = results.filter(r => !r.success);
     if (failures.length > 0) {
         console.log('⚠️  Update completed with errors:');
