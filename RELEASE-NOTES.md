@@ -6,6 +6,70 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.3.0 (January 14, 2026)
+
+### ✨ New Features
+
+**Automatic Skill Symlinks for Claude Code and GitHub Copilot**
+
+Superpowers now automatically creates symlinks to make skills available in Claude Code's `~/.claude/skills/` and GitHub Copilot's `~/.copilot/skills/` directories, enabling native skill discovery in both IDEs.
+
+**Key Features:**
+- **Superpowers skills** symlinked to `~/.claude/skills/superpowers` and `~/.copilot/skills/superpowers`
+- **Personal skills** (from `~/.agents/skills/`) symlinked individually to both platforms
+- **Automatic sync** on `bootstrap`, `update`, `add`, and `pull` commands
+- **Config tracking** in `~/.agents/config.json` for symlink management
+- **Cross-platform support** for Unix/macOS and Windows (with Developer Mode)
+- **`--force` flag** to create parent directories if they don't exist
+
+**Usage:**
+```bash
+# Standard bootstrap (only creates symlinks if ~/.claude/ or ~/.copilot/ exist)
+superpowers-agent bootstrap
+
+# Force creation of parent directories
+superpowers-agent bootstrap --force
+
+# Symlinks auto-sync after adding skills
+superpowers-agent add @myrepo path/to/skill
+```
+
+**Symlink Mapping:**
+| Source | Claude Target | Copilot Target |
+|--------|---------------|----------------|
+| `~/.agents/superpowers/skills/` | `~/.claude/skills/superpowers` | `~/.copilot/skills/superpowers` |
+| `~/.agents/skills/<name>` | `~/.claude/skills/<name>` | `~/.copilot/skills/<name>` |
+
+**Config Tracking:**
+```json
+{
+  "symlinks": {
+    "claude": {
+      "superpowers": "~/.claude/skills/superpowers",
+      "skills": ["~/.claude/skills/acs", "~/.claude/skills/aem"]
+    },
+    "copilot": {
+      "superpowers": "~/.copilot/skills/superpowers",
+      "skills": ["~/.copilot/skills/acs"]
+    }
+  }
+}
+```
+
+**Windows Notes:**
+On Windows, symlinks require Developer Mode enabled or administrator privileges. If symlink creation fails, a warning with instructions is displayed.
+
+**Files Created/Modified:**
+- `.agents/src/utils/symlinks.js` - New centralized symlink management module
+- `.agents/src/commands/bootstrap.js` - Added symlink sync with `--force` flag
+- `.agents/src/commands/update.js` - Added symlink sync after updates
+- `.agents/src/skills/installer.js` - Added symlink sync after `add`/`pull`
+- `.agents/src/cli.js` - Updated help text with `--force` flag
+- `README.md` - Added "Skill Symlinks for IDE Integration" documentation
+- `docs/plans/2026-01-14-skill-symlinks-design.md` - Design document
+
+---
+
 ## v6.2.0 (December 16, 2025)
 
 ### ✨ New Features

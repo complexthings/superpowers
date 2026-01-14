@@ -247,6 +247,52 @@ Repository aliases make it easy to:
 - Quickly access frequently used skill collections
 - Support both Git URLs and local paths
 
+### Skill Symlinks for IDE Integration
+
+Superpowers automatically creates symlinks to make skills available to Claude Code and GitHub Copilot in their native skill directories.
+
+**How it works:**
+
+When you run `superpowers-agent bootstrap` or `superpowers-agent update`:
+
+1. **Superpowers skills** are symlinked to:
+   - `~/.claude/skills/superpowers` -> `~/.agents/superpowers/skills/`
+   - `~/.copilot/skills/superpowers` -> `~/.agents/superpowers/skills/`
+
+2. **Personal skills** (installed via `superpowers-agent add`) are symlinked individually:
+   - `~/.claude/skills/<skill-name>` -> `~/.agents/skills/<skill-name>`
+   - `~/.copilot/skills/<skill-name>` -> `~/.agents/skills/<skill-name>`
+
+**Behavior:**
+- Symlinks are only created if the parent directory exists (`~/.claude/` or `~/.copilot/`)
+- Use `--force` flag to create parent directories: `superpowers-agent bootstrap --force`
+- Symlinks are tracked in `~/.agents/config.json` for management
+
+**Windows Notes:**
+
+On Windows, symlinks require either:
+- Developer Mode enabled (Settings > Update & Security > For developers)
+- Running as administrator
+
+If symlink creation fails on Windows, you'll see a warning with instructions.
+
+**Configuration:**
+```json
+// ~/.agents/config.json
+{
+  "symlinks": {
+    "claude": {
+      "superpowers": "~/.claude/skills/superpowers",
+      "skills": ["~/.claude/skills/acs", "~/.claude/skills/aem"]
+    },
+    "copilot": {
+      "superpowers": "~/.copilot/skills/superpowers",
+      "skills": ["~/.copilot/skills/acs"]
+    }
+  }
+}
+```
+
 ## Slash Commands & Skill Priority
 
 Superpowers ships slash-command prompts for OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex so every agent can load the exact same skill definitions. Each command is a thin wrapper around `superpowers execute <name>`, so skill discovery always walks the same hierarchy before running anything. This section is the canonical reference for where those commands live in the repo and how the loader resolves conflicts.

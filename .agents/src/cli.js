@@ -101,7 +101,7 @@ const commands = {
     'default': () => {
         console.log(`Superpowers for Agents
 Usage:
-  superpowers-agent bootstrap [--no-update]                         # Run complete bootstrap
+  superpowers-agent bootstrap [--no-update] [--force]               # Run complete bootstrap
   superpowers-agent version                                         # Show current version
   superpowers-agent check-updates                                   # Check for updates
   superpowers-agent update [--no-reinstall]                         # Update to latest version
