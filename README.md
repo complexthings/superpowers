@@ -6,17 +6,17 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
-**v6.0.0 (November 29, 2025):**
+**v6.3.3 (January 14, 2026):**
 
-- 🏗️ **Complete Codebase Modernization** - Total architectural rewrite transforms the monolithic 3,406-line agent into a clean, modular system with 22 organized modules across 6 logical layers (CLI, Commands, Core, Integrations, Skills, Utils).
+- 🔌 **Codex Platform Support** - Added full Codex support for skill symlinks. Skills now sync to `~/.codex/skills/` alongside other platforms.
 
-- 📦 **90% Bundle Reduction** - Modern build system using esbuild produces optimized 324-line executable from well-organized source code. Faster startup, smaller footprint, same powerful features.
-
-- 🔧 **Enhanced Developer Experience** - New modular architecture with clear separation of concerns makes contributing easier. Includes development scripts (`npm run dev`, `npm run watch`), organized module structure, and comprehensive build tooling.
-
-- ✅ **Zero Breaking Changes** - Complete internal overhaul with identical external API. Existing workflows, scripts, and integrations continue working without modification.
+- 📝 **Updated TOOLS Templates** - Rewrote all 6 TOOLS-*.md.template files with accurate, up-to-date tool information from official documentation for GitHub Copilot, Cursor, Claude Code, Gemini, OpenCode, and Codex.
 
 **Previous Releases:**
+
+- **v6.3.2** - Native Skill Tools section, extended symlink support for OpenCode/Cursor/Gemini, OpenCode path corrections
+
+- **v6.0.0** - Complete Codebase Modernization with 90% bundle reduction
 
 - **v5.4.0** - Dynamic Tool Mappings, Automated Platform Detection, Smart File Updates, Cursor Hook Optimization
 

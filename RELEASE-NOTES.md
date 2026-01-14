@@ -6,6 +6,49 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.3.3 (January 14, 2026)
+
+### Codex Platform Support & Updated TOOLS Templates
+
+Added full Codex platform support for skill symlinks and rewrote all TOOLS template files with accurate, up-to-date tool information from official documentation.
+
+**Codex Skills Symlink Support:**
+- Added Codex to `SKILL_PLATFORMS` array in `symlinks.js`
+- Skills from `~/.agents/skills/` and `~/.agents/superpowers/skills/` now symlinked to `~/.codex/skills/`
+- Added `projectCodexSkills` and `homeCodexSkills` path getters in `paths.js`
+- Updated `AGENTS.md.template` with Codex in Native Skill Tools table and Skill Locations
+
+**Symlink Mapping (after bootstrap):**
+| Source | Codex Target |
+|--------|--------------|
+| `~/.agents/superpowers/skills/` | `~/.codex/skills/superpowers` |
+| `~/.agents/skills/<name>` | `~/.codex/skills/<name>` |
+
+**Updated TOOLS Templates:**
+All 6 TOOLS-*.md.template files were rewritten with accurate tool information from official documentation:
+
+| Template | Source Documentation | Key Updates |
+|----------|---------------------|-------------|
+| `TOOLS-CODEX.md.template` | developers.openai.com | Rewrote with `####` format, added `$skill-name` native skill invocation, documented shell_command, apply_patch, update_plan, web_search_request |
+| `TOOLS-CURSOR.md.template` | cursor.com/docs | Added browser, fetch_rules, codebase_search tools |
+| `TOOLS-GEMINI.md.template` | geminicli.com/docs | Added memory, write_todos, /skills management commands |
+| `TOOLS-OPENCODE.md.template` | opencode.ai/docs | Added LSP tool (experimental), patch tool |
+| `TOOLS-CLAUDE-CODE.md.template` | code.claude.com/docs | Added ExitPlanMode, BashOutput, KillShell, GetDiagnostics, ExecuteCode, plugin/enterprise skill locations |
+| `TOOLS-GITHUB-COPILOT.md.template` | code.visualstudio.com/docs | Fixed markdown hierarchy (`####`), comprehensive VS Code chat tools |
+
+**Files Modified:**
+- `.agents/src/utils/symlinks.js` - Added Codex to SKILL_PLATFORMS
+- `.agents/src/core/paths.js` - Added Codex path getters
+- `.agents/templates/AGENTS.md.template` - Added Codex to skill tables
+- `.agents/templates/TOOLS-CODEX.md.template` - Rewrote with accurate tools
+- `.agents/templates/TOOLS-CURSOR.md.template` - Updated tools
+- `.agents/templates/TOOLS-GEMINI.md.template` - Updated tools
+- `.agents/templates/TOOLS-OPENCODE.md.template` - Updated tools
+- `.agents/templates/TOOLS-CLAUDE-CODE.md.template` - Updated tools
+- `.agents/templates/TOOLS-GITHUB-COPILOT.md.template` - Fixed format, updated tools
+
+---
+
 ## v6.3.2 (January 14, 2026)
 
 ### Native Skill Tools & Extended Platform Symlinks
