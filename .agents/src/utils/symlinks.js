@@ -44,6 +44,12 @@ const SKILL_PLATFORMS = [
         parentDir: () => join(homedir(), '.gemini'),
         skillsDir: () => join(homedir(), '.gemini', 'skills'),
         superpowersTarget: 'superpowers'
+    },
+    {
+        name: 'codex',
+        parentDir: () => join(homedir(), '.codex'),
+        skillsDir: () => join(homedir(), '.codex', 'skills'),
+        superpowersTarget: 'superpowers'
     }
 ];
 

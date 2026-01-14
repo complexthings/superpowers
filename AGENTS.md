@@ -17,7 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/inst
 
 ### Updates Monitoring
 
-**Bootstrapped Version**: ^^SAV:6.2.0^^
+**Bootstrapped Version**: ^^SAV:6.3.2^^
 
 Your superpowers-agent may have updates available. If you see a different version
 in command output (e.g., `^^SAV:5.5.0^^`) than shown above, run:
@@ -32,7 +32,7 @@ This will update your Superpowers installation and refresh your project configur
 
 When you (the agent) start a conversation or run superpowers-agent commands:
 
-1. **Note the bootstrapped version** shown above (`^^SAV:6.2.0^^`)
+1. **Note the bootstrapped version** shown above (`^^SAV:6.3.2^^`)
 2. **Check command output** - Most `superpowers-agent` commands display `^^SAV:X.Y.Z^^` at the start
 3. **Compare versions** - If the command version differs from bootstrapped version:
    
@@ -88,6 +88,24 @@ This shows the skill path and tells you to read it. Use your `Read` tool (or `ca
 - Before starting any non-trivial task
 - When unsure how to approach something
 - When the task matches a skill description you saw in `find-skills`
+
+### NATIVE SKILL TOOLS
+
+Many AI agents have built-in skill tools that provide better integration than CLI commands. **Always attempt to use your native tool first:**
+
+| Agent | Native Tool | Skill Locations |
+|-------|-------------|-----------------|
+| GitHub Copilot | `Skill` tool | `.github/skills/`, `~/.copilot/skills/` |
+| Claude Code | `Skill` tool | `.claude/skills/`, `~/.claude/skills/` |
+| OpenCode | `skill` tool | `.opencode/skill/`, `~/.config/opencode/skill/` |
+| Cursor | Automatic discovery | `.cursor/skills/`, `~/.cursor/skills/` |
+| Gemini | `activate_skill` tool | `.gemini/skills/`, `~/.gemini/skills/` |
+
+**Tool Selection:**
+1. **First**: Attempt your native skill tool if available
+2. **Fallback**: If native tool fails or skill not found, use `superpowers-agent execute`
+
+Native tools provide automatic discovery, progressive disclosure, and better context management. Skills are symlinked across platforms for universal access.
 
 ### WHY THIS MATTERS
 
@@ -183,16 +201,19 @@ When skills reference tools you don't have, substitute your equivalent tools:
 - `WebFetch` → `features.web_search_request, web_search_request` (fetch web content)
 
 **Skill Locations:**
-- Project: `.agents/skills/` (highest priority)
-- Claude: `.claude/skills/`
-- Personal: `~/.agents/skills/`
+- Project: `.agents/skills/` > `.claude/skills/` > `.copilot/skills/` > `.opencode/skill/` > `.cursor/skills/` > `.gemini/skills/`
+- Personal: `~/.agents/skills/` > `~/.claude/skills/` > `~/.copilot/skills/` > `~/.config/opencode/skill/` > `~/.cursor/skills/` > `~/.gemini/skills/`
 - Superpowers: `~/.agents/superpowers/skills/`
 
-Priority: Project > Claude > Personal > Superpowers (when names match)
+Priority: Project > Personal > Superpowers (when names match)
 
 **Skill Naming:**
 - Project skills: `skill-name`
 - Claude skills: `claude:skill-name`
+- Copilot skills: `copilot:skill-name`
+- OpenCode skills: `opencode:skill-name`
+- Cursor skills: `cursor:skill-name`
+- Gemini skills: `gemini:skill-name`
 - Personal skills: `skill-name`
 - Superpowers skills: `superpowers:skill-name`
 
@@ -212,7 +233,7 @@ Announce when using a skill: "Using Skill: {Name} to {Purpose}"
 
 ---
 
-*Generated/Updated by Superpowers on 2025-12-16*
+*Generated/Updated by Superpowers on 2026-01-14*
 
 <!-- SUPERPOWERS_SKILLS_END -->
 
