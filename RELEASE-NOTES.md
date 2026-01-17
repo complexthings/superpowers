@@ -6,6 +6,22 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.3.4 (January 17, 2026)
+
+### SKILLS.md Updates for agentskills.io Compatibility
+
+Updated SKILLS.md files and agent instructions to follow the specifications from agentskills.io for improved cross-platform skill compatibility.
+
+**Changes:**
+- Updated SKILLS.md files to align with agentskills.io specifications
+- Updated agent instructions for the repository
+
+**Files Modified:**
+- Various SKILLS.md files updated for specification compliance
+- Repository agent instructions updated
+
+---
+
 ## v6.3.3 (January 14, 2026)
 
 ### Codex Platform Support & Updated TOOLS Templates
