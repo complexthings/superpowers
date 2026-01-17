@@ -1,8 +1,9 @@
 ---
-name: Preserving Productive Tensions
+name: preserving-productive-tensions
 description: Recognize when disagreements reveal valuable context, preserve multiple valid approaches instead of forcing premature resolution
-when_to_use: when oscillating between equally valid approaches that optimize for different legitimate priorities
-version: 1.1.0
+metadata:
+  when_to_use: when oscillating between equally valid approaches that optimize for different legitimate priorities
+  version: 1.1.0
 ---
 
 # Preserving Productive Tensions

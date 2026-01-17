@@ -1,8 +1,9 @@
 ---
-name: Subagent-Driven Development
+name: subagent-driven-development
 description: Execute implementation plan by dispatching fresh subagent for each task, with code review between tasks
-when_to_use: when executing implementation plans with independent tasks in the current session, using fresh subagents with review gates
-version: 1.1.0
+metadata:
+  when_to_use: when executing implementation plans with independent tasks in the current session, using fresh subagents with review gates
+  version: 1.1.0
 ---
 
 # Subagent-Driven Development

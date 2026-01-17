@@ -1,8 +1,9 @@
 ---
-name: Testing Anti-Patterns
+name: testing-anti-patterns
 description: Never test mock behavior. Never add test-only methods to production classes. Understand dependencies before mocking.
-when_to_use: when writing or changing tests, adding mocks, or tempted to add test-only methods to production code
-version: 1.1.0
+metadata:
+  when_to_use: when writing or changing tests, adding mocks, or tempted to add test-only methods to production code
+  version: 1.1.0
 ---
 
 # Testing Anti-Patterns

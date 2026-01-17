@@ -1,9 +1,10 @@
 ---
-name: Create skill.json
+name: create-skill-json
 description: Generate a skill.json metadata file for a skill from its SKILL.md and directory structure
-when_to_use: when adding or updating skill.json files for skills in a repository, ensuring proper metadata configuration for skill discovery and tooling
-version: 1.0.0
-dependencies: jq (optional, for JSON validation)
+metadata:
+  when_to_use: when adding or updating skill.json files for skills in a repository, ensuring proper metadata configuration for skill discovery and tooling
+  version: 1.0.0
+  dependencies: jq (optional, for JSON validation)
 ---
 
 # Create skill.json

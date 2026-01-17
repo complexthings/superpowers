@@ -1,8 +1,9 @@
 ---
-name: Brainstorming Ideas Into Designs
+name: brainstorming
 description: Interactive idea refinement using Socratic method to develop fully-formed designs
-when_to_use: when partner describes any feature or project idea, before writing code or implementation plans
-version: 2.2.0
+metadata:
+  when_to_use: when partner describes any feature or project idea, before writing code or implementation plans
+  version: 2.2.0
 ---
 
 # Brainstorming Ideas Into Designs

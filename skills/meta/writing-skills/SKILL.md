@@ -1,9 +1,10 @@
 ---
-name: Writing Skills
+name: writing-skills
 description: TDD for process documentation - test with subagents before writing, iterate until bulletproof
-when_to_use: when creating new skills, editing existing skills, or verifying skills work before deployment
-version: 5.1.0
-languages: all
+metadata:
+  when_to_use: when creating new skills, editing existing skills, or verifying skills work before deployment
+  version: 5.1.0
+  languages: all
 ---
 
 # Writing Skills

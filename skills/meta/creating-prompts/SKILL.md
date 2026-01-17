@@ -1,9 +1,10 @@
 ---
-name: Creating Prompts
+name: creating-prompts
 description: Create structured prompts for Do/Plan/Research/Refine workflows with dependency management
-when_to_use: when you need to create focused, reusable prompts for specific tasks, research, planning, or refinement workflows
-version: 5.1.0
-languages: all
+metadata:
+  when_to_use: when you need to create focused, reusable prompts for specific tasks, research, planning, or refinement workflows
+  version: 5.1.0
+  languages: all
 ---
 
 # Creating Prompts
