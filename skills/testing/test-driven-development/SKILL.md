@@ -1,9 +1,10 @@
 ---
-name: Test-Driven Development (TDD)
+name: test-driven-development
 description: Write the test first, watch it fail, write minimal code to pass
-when_to_use: when implementing any feature or bugfix, before writing implementation code
-version: 3.1.0
-languages: all
+metadata:
+  when_to_use: when implementing any feature or bugfix, before writing implementation code
+  version: 3.1.0
+  languages: all
 ---
 
 # Test-Driven Development (TDD)
