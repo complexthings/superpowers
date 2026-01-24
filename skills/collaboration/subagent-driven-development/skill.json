@@ -1,9 +1,15 @@
 {
-    "version": "1.1.0",
+    "version": "2.0.0",
     "name": "superpowers:collaboration/subagent-driven-development",
     "title": "Subagent-Driven Development",
+    "helpers": [
+        "implementer-prompt.md",
+        "spec-reviewer-prompt.md",
+        "code-quality-reviewer-prompt.md"
+    ],
     "aliases": [
         "subagent-driven-development",
-        "collaboration/subagent-driven-development"
+        "collaboration/subagent-driven-development",
+        "sdd"
     ]
 }

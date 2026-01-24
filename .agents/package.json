@@ -1,6 +1,6 @@
 {
   "type": "module",
-  "version": "6.4.1",
+  "version": "6.5.0",
   "name": "@complexthings/superpowers-agent",
   "bugs": {
     "url": "https://github.com/complexthings/superpowers"

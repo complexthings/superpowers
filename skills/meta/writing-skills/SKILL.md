@@ -13,7 +13,7 @@ metadata:
 
 **Writing skills IS Test-Driven Development applied to process documentation.**
 
-**Skills are written to `${SUPERPOWERS_SKILLS_ROOT}` (cloned to `~/.config/superpowers/skills/`).** You edit skills in your local branch of this repository.
+**Skills are written to `${AGENT_SKILLS_ROOT}` = `.agents/skills`** You edit skills in your local branch of this repository. Additionally Skills can be installed on a system-wide basis in for all agents to use and at `~/.agents/skills`.
 
 You write test cases (pressure scenarios with subagents), watch them fail (baseline behavior), write the skill (documentation), watch tests pass (agents comply), and refactor (close loopholes).
 
@@ -28,6 +28,30 @@ A **skill** is a reference guide for proven techniques, patterns, or tools. Skil
 **Skills are:** Reusable techniques, patterns, tools, reference guides
 
 **Skills are NOT:** Narratives about how you solved a problem once
+
+## CRITICAL: The Description Trap
+
+DO NOT summarize the workflow in the description field. Agents will follow the short description instead of reading the detailed skill content.
+
+**The Problem:**
+If you write a description like:
+```
+description: "Brainstorm using 4 phases: clarify, explore, refine, document"
+```
+
+The agent will follow the 4-phase summary and skip the actual skill content entirely.
+
+**CORRECT - Trigger only:**
+```
+description: "Use when starting creative work that needs design exploration"
+```
+
+**WRONG - Contains workflow:**
+```
+description: "Brainstorm by asking questions, then presenting design in chunks"
+```
+
+**Rule:** Descriptions must be trigger-only ("Use when X") with NO process details.
 
 ## TDD Mapping for Skills
 
@@ -72,10 +96,10 @@ API docs, syntax guides, tool documentation (office docs)
 
 ## Directory Structure
 
-**All skills are in the skills repository at `${SUPERPOWERS_SKILLS_ROOT}`:**
+**All skills are in the skills repository at `.agents/`:**
 
 ```
-${SUPERPOWERS_SKILLS_ROOT}
+.agents/
   skill-name/
     SKILL.md              # Main reference (required)
     supporting-file.*     # Only if needed
@@ -267,7 +291,7 @@ Use path format without `@` prefix or `/SKILL.md` suffix:
 
 **Why no @ links:** `@` syntax force-loads files immediately, consuming 200k+ context before you need them.
 
-**To read a skill reference:** Use Read tool on `${SUPERPOWERS_SKILLS_ROOT}/category/skill-name/SKILL.md`
+**To read a skill reference:** Use Read tool on `.agents/category/skill-name/SKILL.md`
 
 ## Flowchart Usage
 

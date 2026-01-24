@@ -3,7 +3,7 @@
 > This is detailed reference documentation for the superpowers-agent system.
 > Load this file only when you need specific information not covered in AGENTS.md.
 
-**Current Version:** ^^SAV:6.4.0^^
+**Current Version:** ^^SAV:6.5.0^^
 
 ---
 
@@ -22,7 +22,7 @@ curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/inst
 When superpowers-agent runs, it displays its version as `^^SAV:X.Y.Z^^` in output.
 
 **How to check for updates:**
-1. Note the bootstrapped version in AGENTS.md: `^^SAV:6.4.0^^`
+1. Note the bootstrapped version in AGENTS.md: `^^SAV:6.5.0^^`
 2. Compare with version shown when running superpowers-agent commands
 3. If versions differ, inform user:
    ```

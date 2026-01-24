@@ -6,6 +6,96 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.5.0 (January 24, 2026)
+
+### Upstream Sync: Advanced Features from obra/superpowers
+
+Ported key features from Jesse Vincent's original [obra/superpowers](https://github.com/obra/superpowers) repository (v4.1.1), adapting them for the agent-agnostic architecture of this fork.
+
+#### High Priority Features
+
+**OpenCode Plugin** (`.opencode/plugins/superpowers-agent.js`)
+- Uses `experimental.chat.system.transform` hook for session bootstrap injection
+- Loads `using-superpowers` skill content at every session start
+- Fixes the "agent reset" issue from older approaches
+- Seamless integration with OpenCode's plugin system
+
+**using-superpowers Skill** (`skills/meta/using-superpowers/`)
+- Behavioral enforcement skill that ensures agents follow Superpowers patterns
+- Red Flags rationalization table with 12 anti-patterns and counters
+- DOT flowchart for skill invocation decision-making
+- Agent-agnostic "How to Access Skills" section
+- Prevents common mistakes like skipping skill loading or inventing workflows
+
+**Two-Stage Code Review Process** (`skills/collaboration/subagent-driven-development/`)
+- **Stage 1: Spec Reviewer** - Validates implementation matches plan/spec requirements
+- **Stage 2: Code Quality Reviewer** - Checks code quality, patterns, and maintainability
+- New helper prompts: `spec-reviewer-prompt.md`, `code-quality-reviewer-prompt.md`, `implementer-prompt.md`
+- Updated SKILL.md with complete two-stage flow and DOT flowcharts
+- Bumped skill to v2.0.0
+
+**CSO Description Trap Warning** (`skills/meta/writing-skills/`)
+- Added warning about Claude Skill Objects where description overrides skill content
+- Correct vs incorrect description examples
+- Prevents accidental behavior changes through metadata
+
+#### Medium Priority Features
+
+**Test Infrastructure** (`tests/`)
+- `tests/skill-triggering/` - Tests for implicit skill triggering scenarios
+- `tests/explicit-skill-requests/` - Tests for explicit skill request handling
+- Agent-agnostic test scripts with environment variable configuration
+- Comprehensive README with usage instructions
+
+**Helper Scripts**
+- `skills/debugging/root-cause-tracing/find-polluter.sh` - Bisection script for finding test pollution
+
+#### Low Priority Features
+
+**Analysis Scripts** (`.agents/scripts/`)
+- `render-graphs.js` - Extracts DOT diagrams from skills and renders to SVG
+- `analyze-token-usage.py` - Analyzes token usage from conversation logs
+
+#### Files Created
+
+```
+.opencode/plugins/superpowers-agent.js
+skills/meta/using-superpowers/SKILL.md
+skills/meta/using-superpowers/skill.json
+skills/collaboration/subagent-driven-development/implementer-prompt.md
+skills/collaboration/subagent-driven-development/spec-reviewer-prompt.md
+skills/collaboration/subagent-driven-development/code-quality-reviewer-prompt.md
+skills/debugging/root-cause-tracing/find-polluter.sh
+.agents/scripts/render-graphs.js
+.agents/scripts/analyze-token-usage.py
+tests/README.md
+tests/skill-triggering/run-test.sh
+tests/skill-triggering/run-all.sh
+tests/skill-triggering/prompts/*.txt
+tests/explicit-skill-requests/run-test.sh
+tests/explicit-skill-requests/prompts/*.txt
+```
+
+#### Files Modified
+
+```
+skills/collaboration/subagent-driven-development/SKILL.md - Two-stage review flow
+skills/collaboration/subagent-driven-development/skill.json - Bumped to v2.0.0
+skills/meta/writing-skills/SKILL.md - CSO description trap warning
+```
+
+#### What Was NOT Ported (By Design)
+
+- **Claude Code Plugin Infrastructure** - Fork is a CLI tool, not IDE plugin
+- **Skills Repository Separation** - Fork's integrated approach is preferred
+- **Codex CLI Script** - Already integrated into main CLI
+
+#### Credits
+
+These features were adapted from Jesse Vincent's [obra/superpowers](https://github.com/obra/superpowers) v4.1.1 with gratitude for his pioneering work on systematic AI agent skills.
+
+---
+
 ## v6.4.1 (January 24, 2026)
 
 ### AGENTS.md Template Context Optimization

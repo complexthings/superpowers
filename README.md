@@ -6,35 +6,37 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
-**v6.3.3 (January 14, 2026):**
+**v6.5.0 (January 24, 2026):**
 
-- 🔌 **Codex Platform Support** - Added full Codex support for skill symlinks. Skills now sync to `~/.codex/skills/` alongside other platforms.
+- 🔄 **Upstream Sync** - Ported advanced features from Jesse Vincent's [obra/superpowers](https://github.com/obra/superpowers) v4.1.1:
+  - **OpenCode Plugin** (`.opencode/plugins/superpowers-agent.js`) - Session bootstrap injection via system prompt transform
+  - **using-superpowers Skill** - Behavioral enforcement with Red Flags rationalization table (12 anti-patterns)
+  - **Two-Stage Code Review** - Spec compliance review + code quality review workflow
+  - **Test Infrastructure** (`tests/`) - Agent-agnostic test scripts for skill triggering
 
-- 📝 **Updated TOOLS Templates** - Rewrote all 6 TOOLS-*.md.template files with accurate, up-to-date tool information from official documentation for GitHub Copilot, Cursor, Claude Code, Gemini, OpenCode, and Codex.
+- 🔌 **OpenCode Plugin** - Native plugin for OpenCode that injects superpowers context at every session start using `experimental.chat.system.transform` hook
+
+- 📋 **Two-Stage Review Process** - Updated `subagent-driven-development` skill with spec reviewer and code quality reviewer prompts for comprehensive code review
+
+**v6.4.x (January 23-24, 2026):**
+
+- 📐 **Context Optimization** - Reduced AGENTS.md context size by ~60-70% with separate SUPERPOWERS.md reference file
+- 🔗 **Project-Level Symlinks** - `setup-skills` now creates symlinks from agent directories to `.agents/skills`
 
 **Previous Releases:**
 
-- **v6.3.2** - Native Skill Tools section, extended symlink support for OpenCode/Cursor/Gemini, OpenCode path corrections
+- **v6.3.x** - Codex platform support, native skill tools, extended symlinks for OpenCode/Cursor/Gemini
+- **v6.0.0** - Complete codebase modernization with 90% bundle reduction
+- **v5.4.0** - Dynamic tool mappings, automated platform detection
 
-- **v6.0.0** - Complete Codebase Modernization with 90% bundle reduction
+**Key Features:**
 
-- **v5.4.0** - Dynamic Tool Mappings, Automated Platform Detection, Smart File Updates, Cursor Hook Optimization
-
-- 🎯 **Smart Skill Matching** - Just type `superpowers execute brainstorming` instead of the full `superpowers:collaboration/brainstorming` path. Suffix matching with priority resolution makes skill loading much more convenient.
-
-- 🚀 **One-Line Installer** - Install globally with `curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash`. Sets up universal aliases, slash commands, and optional project integration automatically.
-
-- 📦 **Skill Installation System** - New `add` and `add-repository` commands make it easy to install skills from Git repositories, local directories, or repository aliases. Create shortcuts with `superpowers-agent add-repository` and install skills with `superpowers-agent add @alias path/to/skill`.
-
-- 🔍 **Helper File Discovery** - New `get-helpers` command finds helper scripts within skills using smart substring matching. Skills can define helper files in their `skill.json` for easy discovery.
-
-- 📂 **Skill Directory Navigation** - New `dir` command returns the directory path of any skill, making it easy to access skill resources and helper scripts programmatically.
-
-- 🔧 **MCP Replacement Skills** - New `context-7` and `playwright-skill` provide library documentation search and browser automation without MCP overhead (~98% context reduction).
-
-- 📝 **Setup Skills Command** - New `/setup-skills` command initializes projects with AGENTS.md, CLAUDE.md, and GEMINI.md instruction files automatically.
-
-- 🛠️ **Universal CLI Tools Skill** - `leveraging-cli-tools` skill teaches agents to use high-performance tools (rg, jq, fd, bat, ast-grep) for 5-50x speedups.
+- 🎯 **Smart Skill Matching** - Just type `superpowers execute brainstorming` instead of full paths
+- 🚀 **One-Line Installer** - `curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash`
+- 📦 **Skill Installation** - `add` and `add-repository` commands for Git/local skill installation
+- 🔍 **Helper Discovery** - `get-helpers` finds scripts within skills using substring matching
+- 🔧 **MCP Replacements** - `context-7` and `playwright-skill` reduce context by ~98%
+- 📝 **Setup Skills** - `/setup-skills` initializes projects with agent instruction files
 
 ## What You Get
 
@@ -249,22 +251,32 @@ Repository aliases make it easy to:
 
 ### Skill Symlinks for IDE Integration
 
-Superpowers automatically creates symlinks to make skills available to Claude Code and GitHub Copilot in their native skill directories.
+Superpowers automatically creates symlinks to make skills available to all major AI coding assistants in their native skill directories.
 
 **How it works:**
 
-When you run `superpowers-agent bootstrap` or `superpowers-agent update`:
+When you run `superpowers-agent bootstrap` or `superpowers-agent setup-skills`:
 
-1. **Superpowers skills** are symlinked to:
+1. **Global symlinks** (via `bootstrap`) sync skills to user-level directories:
    - `~/.claude/skills/superpowers` -> `~/.agents/superpowers/skills/`
    - `~/.copilot/skills/superpowers` -> `~/.agents/superpowers/skills/`
+   - `~/.config/opencode/skill/superpowers` -> `~/.agents/superpowers/skills/`
+   - `~/.cursor/skills/superpowers` -> `~/.agents/superpowers/skills/`
+   - `~/.gemini/skills/superpowers` -> `~/.agents/superpowers/skills/`
+   - `~/.codex/skills/superpowers` -> `~/.agents/superpowers/skills/`
 
-2. **Personal skills** (installed via `superpowers-agent add`) are symlinked individually:
-   - `~/.claude/skills/<skill-name>` -> `~/.agents/skills/<skill-name>`
-   - `~/.copilot/skills/<skill-name>` -> `~/.agents/skills/<skill-name>`
+2. **Project symlinks** (via `setup-skills`) sync project skills to agent directories:
+   - `.claude/skills` -> `.agents/skills`
+   - `.github/skills` -> `.agents/skills`
+   - `.opencode/skill` -> `.agents/skills`
+   - `.cursor/skills` -> `.agents/skills`
+   - `.gemini/skills` -> `.agents/skills`
+   - `.codex/skills` -> `.agents/skills`
+
+3. **Personal skills** (installed via `superpowers-agent add`) are symlinked individually to all platforms.
 
 **Behavior:**
-- Symlinks are only created if the parent directory exists (`~/.claude/` or `~/.copilot/`)
+- Symlinks are only created if the parent directory exists
 - Use `--force` flag to create parent directories: `superpowers-agent bootstrap --force`
 - Symlinks are tracked in `~/.agents/config.json` for management
 
@@ -283,11 +295,27 @@ If symlink creation fails on Windows, you'll see a warning with instructions.
   "symlinks": {
     "claude": {
       "superpowers": "~/.claude/skills/superpowers",
-      "skills": ["~/.claude/skills/acs", "~/.claude/skills/aem"]
+      "skills": ["~/.claude/skills/my-skill"]
     },
     "copilot": {
       "superpowers": "~/.copilot/skills/superpowers",
-      "skills": ["~/.copilot/skills/acs"]
+      "skills": []
+    },
+    "opencode": {
+      "superpowers": "~/.config/opencode/skill/superpowers",
+      "skills": []
+    },
+    "cursor": {
+      "superpowers": "~/.cursor/skills/superpowers",
+      "skills": []
+    },
+    "gemini": {
+      "superpowers": "~/.gemini/skills/superpowers",
+      "skills": []
+    },
+    "codex": {
+      "superpowers": "~/.codex/skills/superpowers",
+      "skills": []
     }
   }
 }
@@ -413,7 +441,7 @@ Every table points to files that simply shell out to `superpowers-agent execute`
 - **receiving-code-review** - Responding to feedback
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
-- **subagent-driven-development** - Fast iteration with quality gates
+- **subagent-driven-development** - Fast iteration with two-stage code review (spec + quality)
 - **leveraging-cli-tools** - High-performance CLI tools (rg, jq, fd, bat, ast-grep)
 
 **MCP Replacement** (`skills/mcp-replacement/`)
@@ -421,13 +449,13 @@ Every table points to files that simply shell out to `superpowers-agent execute`
 - **playwright-skill** - Browser automation and web scraping (replaces MCP)
 
 **Meta** (`skills/meta/`)
+- **using-superpowers** - Behavioral enforcement skill loaded at session start (ported from obra/superpowers)
 - **writing-skills** - Create new skills following best practices
 - **writing-prompts** - Create custom slash commands for GitHub Copilot, Cursor, or Claude
 - **creating-prompts** - Create structured prompts for Do/Plan/Research/Refine workflows (adapted from TÂCHES)
 - **create-skill-json** - Generate skill.json metadata files from SKILL.md and directory structure
 - **sharing-skills** - Contribute skills back via branch and PR
 - **testing-skills-with-subagents** - Verify skills work under pressure
-- **using-superpowers** - Introduction to the skills system
 - **finding-skills** - Discover and search available skills
 - **using-a-skill** - Load and apply specific skills
 
@@ -480,6 +508,32 @@ Every table points to files that simply shell out to `superpowers-agent execute`
 - Node.js 18+ (for native fetch support)
 - Context-7: API key from https://context7.com
 - Playwright: `npm install` in scripts/ directory
+
+### Test Infrastructure
+
+The `tests/` directory contains agent-agnostic test scripts for validating skill behavior:
+
+**Test Categories:**
+- `tests/skill-triggering/` - Tests for implicit skill activation scenarios
+- `tests/explicit-skill-requests/` - Tests for explicit skill loading requests
+
+**Running Tests:**
+```bash
+# Run a single test
+./tests/skill-triggering/run-test.sh prompts/test-name.txt
+
+# Run all tests in a category
+./tests/skill-triggering/run-all.sh
+
+# Configure for your agent
+export AGENT_CLI="opencode"  # or "claude", "cursor", etc.
+./tests/skill-triggering/run-test.sh prompts/test-name.txt
+```
+
+**Creating New Tests:**
+1. Add prompt files to `prompts/` subdirectory
+2. Each test is a `.txt` file with the prompt to send
+3. Scripts output agent responses for manual verification
 
 ### Commands
 
@@ -637,7 +691,7 @@ superpowers-agent add @baici
 #### This Repository's skill.json
 
 This repository includes skill.json files for:
-- **35 individual skills** with versions ranging from 1.0.0 to 5.1.0
+- **37 individual skills** with versions ranging from 1.0.0 to 5.1.0
 - **Version tracking** synced with SKILL.md frontmatter
 - **Helper file listings** for skills with scripts, templates, and resources
 - **Skill aliases** for convenient loading (e.g., `brainstorming` or `collaboration/brainstorming`)
@@ -656,6 +710,11 @@ superpowers-agent dir test-driven-development
 2. **Skill Discovery** - Finds skills across system, personal, and project locations
 3. **Priority Resolution** - Project skills override personal skills override system skills
 4. **Universal Integration** - Works with OpenCode, GitHub Copilot, Cursor, Gemini, and other AI assistants
+
+**For OpenCode:**
+1. **Plugin System** - The `.opencode/plugins/superpowers-agent.js` plugin injects bootstrap context
+2. **System Transform Hook** - Uses `experimental.chat.system.transform` for reliable session injection
+3. **Native Skills** - Skills are accessible via OpenCode's native `skill` tool through symlinks
 
 **For Claude Code Plugin:**
 1. **SessionStart Hook** - Loads the `using-superpowers` skill at session start
@@ -755,7 +814,13 @@ For Claude Code plugin users:
 
 This project builds on [Jesse Vincent's Superpowers for Claude Code](https://github.com/obra/superpowers). Jesse's pioneering work introduced the concept of systematic, reusable skills for AI agents. Read his excellent blog post: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
 
-This fork extends that vision to support agent-agnostic workflows across multiple AI coding assistants.
+**Ported from obra/superpowers (v6.5.0):**
+- `using-superpowers` behavioral enforcement skill
+- Two-stage code review process (spec + quality reviewers)
+- OpenCode plugin architecture pattern
+- Test infrastructure for skill validation
+
+This fork extends that vision to support agent-agnostic workflows across multiple AI coding assistants including GitHub Copilot, Cursor, Gemini, OpenCode, and Codex.
 
 ## License
 
