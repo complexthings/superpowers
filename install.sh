@@ -79,6 +79,73 @@ detect_platform() {
   esac
 }
 
+# Detect user's shell profile file
+detect_shell_profile() {
+  local shell_name
+  shell_name=$(basename "$SHELL")
+  
+  case "$shell_name" in
+    zsh)
+      echo "$HOME/.zshrc"
+      ;;
+    bash)
+      # On macOS, bash uses .bash_profile for login shells
+      if [ "$(detect_platform)" = "macos" ] && [ -f "$HOME/.bash_profile" ]; then
+        echo "$HOME/.bash_profile"
+      elif [ -f "$HOME/.bashrc" ]; then
+        echo "$HOME/.bashrc"
+      else
+        echo "$HOME/.bash_profile"
+      fi
+      ;;
+    fish)
+      echo "$HOME/.config/fish/config.fish"
+      ;;
+    *)
+      # Default to .profile for unknown shells
+      echo "$HOME/.profile"
+      ;;
+  esac
+}
+
+# Add ~/.local/bin to PATH in shell profile if not already present
+add_path_to_profile() {
+  local profile_file
+  local path_export='export PATH="$HOME/.local/bin:$PATH"'
+  local path_pattern='\.local/bin'
+  
+  profile_file=$(detect_shell_profile)
+  
+  # For fish shell, use different syntax
+  if [[ "$profile_file" == *"fish"* ]]; then
+    path_export='set -gx PATH $HOME/.local/bin $PATH'
+    path_pattern='\.local/bin'
+  fi
+  
+  log_info "Checking PATH configuration in $profile_file..."
+  
+  # Create profile file if it doesn't exist
+  if [ ! -f "$profile_file" ]; then
+    log_info "Creating $profile_file..."
+    touch "$profile_file"
+  fi
+  
+  # Check if ~/.local/bin is already in the profile
+  if grep -q "$path_pattern" "$profile_file" 2>/dev/null; then
+    log_success "PATH already includes ~/.local/bin"
+    return 0
+  fi
+  
+  # Add the PATH export to the profile
+  log_info "Adding ~/.local/bin to PATH in $profile_file..."
+  echo "" >> "$profile_file"
+  echo "# Added by Superpowers installer" >> "$profile_file"
+  echo "$path_export" >> "$profile_file"
+  
+  log_success "Added ~/.local/bin to PATH in $profile_file"
+  log_warning "Please restart your terminal or run: source $profile_file"
+}
+
 # Check requirements
 check_requirements() {
   log_info "Checking requirements..."
@@ -234,6 +301,10 @@ main() {
   # Phase 2: Installation
   install_superpowers
   run_bootstrap
+  echo ""
+  
+  # Phase 2.5: Ensure PATH includes ~/.local/bin
+  add_path_to_profile
   echo ""
   
   # Phase 3: Project integration (optional)
