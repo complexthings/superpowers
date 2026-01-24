@@ -87,14 +87,9 @@ When skills reference tools you don't have, substitute OpenCode equivalents:
 - \`Skill\` tool → OpenCode's native \`skill\` tool
 - \`Read\`, \`Write\`, \`Edit\`, \`Bash\` → Your native tools
 
-**CLI Commands:**
-Use \`superpowers-agent\` CLI for skill operations:
-- \`superpowers-agent find-skills [PATTERN]\` - Discover available skills
-- \`superpowers-agent use-skill <skill-name>\` - Load a specific skill
-
 **Skills locations:**
-- System skills: \`~/.agents/superpowers/skills/\`
-- OpenCode skills: \`${configDir}/skills/superpowers/\`
+- System skills: \`~/.config/opencode/skill/\`
+- Project skills: \`./opencode/skill/\`
 
 Use OpenCode's native \`skill\` tool to list and load skills.`;
 

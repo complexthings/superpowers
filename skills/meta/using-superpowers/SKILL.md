@@ -17,7 +17,7 @@ This is not negotiable. This is not optional. You cannot rationalize your way ou
 
 ## How to Access Skills
 
-**Using your platform's native skill tool:** Most AI coding assistants provide a native `skill` tool. Use it to load skills by name. When you invoke a skill, its content is loaded and presented to you—follow it directly.
+**Using your platform's native skill tool:** Most AI coding assistants provide a native `skill` tool. Use it to Discover Skills and load skills by name. When you invoke a skill, its content is loaded and presented to you—follow it directly.
 
 **Fallback with superpowers-agent CLI:**
 ```bash
