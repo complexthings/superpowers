@@ -1,0 +1,9 @@
+{
+    "version": "1.0.0",
+    "name": "superpowers:meta/using-superpowers",
+    "title": "Using Superpowers",
+    "helpers": [],
+    "aliases": [
+        "using-superpowers"
+    ]
+}
