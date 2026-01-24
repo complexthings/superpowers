@@ -24,7 +24,7 @@ import {
 import { installCodexPrompts } from '../integrations/codex.js';
 import { installGeminiCommands } from '../integrations/gemini.js';
 import { installClaudeCommands } from '../integrations/claude.js';
-import { installOpencodeCommands } from '../integrations/opencode.js';
+import { installOpencodeCommands, installOpencodePluginSymlink } from '../integrations/opencode.js';
 
 // Import update function
 import { runUpdate } from './update.js';
@@ -562,6 +562,8 @@ const runBootstrap = () => {
     const opencodeDetected = toolDetection.opencode.check();
     if (opencodeDetected) {
         installOpencodeCommands();
+        console.log('');
+        installOpencodePluginSymlink();
     } else {
         console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
     }

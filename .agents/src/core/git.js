@@ -125,7 +125,8 @@ export const determineReinstalls = (changedFiles) => {
         '.codex/prompts/': 'codex-prompts',
         '.gemini/commands/': 'gemini-commands',
         'commands/': 'claude-commands',
-        '.opencode/command/': 'opencode-commands'
+        '.opencode/command/': 'opencode-commands',
+        '.opencode/plugins/': 'opencode-plugin'
     };
     
     const toReinstall = new Set();

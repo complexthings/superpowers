@@ -175,20 +175,6 @@ rm -rf ~/.agents/superpowers
 rm -rf ~/.github/copilot-instructions.d/superpowers-*.md
 ```
 
-## Alternative: Claude Code Plugin
-
-For Claude Code users, Jesse Vincent's original implementation is available via plugin:
-
-```bash
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
-```
-
-Claude Code commands:
-- `/superpowers:brainstorm`
-- `/superpowers:write-plan`
-- `/superpowers:execute-plan`
-
 **Learn more:** [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/) by Jesse Vincent
 
 ## Getting Help

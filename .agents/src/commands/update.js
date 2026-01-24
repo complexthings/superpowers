@@ -20,7 +20,7 @@ import {
 import { installCodexPrompts } from '../integrations/codex.js';
 import { installGeminiCommands } from '../integrations/gemini.js';
 import { installClaudeCommands } from '../integrations/claude.js';
-import { installOpencodeCommands } from '../integrations/opencode.js';
+import { installOpencodeCommands, installOpencodePluginSymlink } from '../integrations/opencode.js';
 
 // Import symlink utilities
 import { syncAllSkillSymlinks } from '../utils/symlinks.js';
@@ -37,7 +37,8 @@ const reinstallIntegration = (integration) => {
         'codex-prompts': installCodexPrompts,
         'gemini-commands': installGeminiCommands,
         'claude-commands': installClaudeCommands,
-        'opencode-commands': installOpencodeCommands
+        'opencode-commands': installOpencodeCommands,
+        'opencode-plugin': installOpencodePluginSymlink
     };
     
     const installFn = installFunctions[integration];
@@ -156,7 +157,12 @@ const runUpdate = (options = {}) => {
     console.log('## Syncing Skill Symlinks\n');
     syncAllSkillSymlinks();
     
-    // 10. Show summary
+    // 10. Sync OpenCode plugin symlink
+    console.log('\n---\n');
+    console.log('## OpenCode Plugin Symlink\n');
+    installOpencodePluginSymlink();
+    
+    // 11. Show summary
     const failures = results.filter(r => !r.success);
     if (failures.length > 0) {
         console.log('⚠️  Update completed with errors:');
