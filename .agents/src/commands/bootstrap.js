@@ -33,47 +33,18 @@ import { runUpdate } from './update.js';
 import { syncAllSkillSymlinks, syncProjectSkillSymlinks } from '../utils/symlinks.js';
 
 /**
- * Generate tool mappings for specified platforms by reading from template files
+ * Generate tool mappings by reading the generic TOOLS.md.template
  */
-const generateToolMappings = (platforms) => {
-    // Map platform identifiers to template file names
-    const templateFiles = {
-        'github-copilot': 'TOOLS-GITHUB-COPILOT.md.template',
-        'cursor': 'TOOLS-CURSOR.md.template',
-        'claude-code': 'TOOLS-CLAUDE-CODE.md.template',
-        'gemini': 'TOOLS-GEMINI.md.template',
-        'opencode': 'TOOLS-OPENCODE.md.template',
-        'codex': 'TOOLS-CODEX.md.template'
-    };
-    
-    const templatesDir = join(paths.superpowersRepo, '.agents', 'templates');
-    const mappings = [];
-    
-    for (const platform of platforms) {
-        const templateFile = templateFiles[platform];
-        if (!templateFile) continue;
-        
-        const templatePath = join(templatesDir, templateFile);
-        if (existsSync(templatePath)) {
-            try {
-                const content = readFileSync(templatePath, 'utf8').trim();
-                mappings.push(content);
-            } catch (error) {
-                // Fallback to simple header if template can't be read
-                const displayNames = {
-                    'github-copilot': 'GitHub Copilot',
-                    'cursor': 'Cursor',
-                    'claude-code': 'Claude Code',
-                    'opencode': 'OpenCode',
-                    'gemini': 'Gemini',
-                    'codex': 'Codex'
-                };
-                mappings.push(`**Tool Mapping for ${displayNames[platform]}:**`);
-            }
+const generateToolMappings = () => {
+    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'TOOLS.md.template');
+    if (existsSync(templatePath)) {
+        try {
+            return readFileSync(templatePath, 'utf8').trim();
+        } catch (error) {
+            return '### Using Tools\n\nUse your native skill tool. Fallback: `superpowers-agent find-skills`';
         }
     }
-    
-    return mappings.join('\n');
+    return '';
 };
 
 /**
@@ -87,8 +58,8 @@ const updatePlatformFile = (filePath, templateContent, platforms, createIfMissin
         return { updated: false, created: false, skipped: true };
     }
     
-    // Generate tool mappings for the specified platforms
-    const toolMappings = generateToolMappings(platforms);
+    // Generate tool mappings from generic template
+    const toolMappings = generateToolMappings();
     
     // Replace placeholder in template
     let content = templateContent.replace(/\{\{TOOL_MAPPINGS\}\}/g, toolMappings);
@@ -304,6 +275,22 @@ const runSetupSkills = () => {
         console.log('✓ .agents/skills/ directory exists');
     }
 
+    // Create docs directory and copy SUPERPOWERS.md
+    const docsDir = join(agentsDir, 'docs');
+    const superpowersMdPath = join(docsDir, 'SUPERPOWERS.md');
+    const superpowersTemplatePath = join(paths.superpowersRepo, '.agents', 'templates', 'SUPERPOWERS.md.template');
+
+    if (!existsSync(docsDir)) {
+        try {
+            execSync(`mkdir -p "${docsDir}"`, { stdio: 'pipe' });
+            console.log('✓ Created .agents/docs/ directory');
+        } catch (error) {
+            console.log(`⚠️  Failed to create docs directory: ${error.message}`);
+        }
+    } else {
+        console.log('✓ .agents/docs/ directory exists');
+    }
+
     // Handle existing AGENTS.md
     const agentsMdExists = existsSync(agentsMdPath);
     
@@ -331,6 +318,22 @@ const runSetupSkills = () => {
     // Inject current version into template
     const currentVersion = getLocalVersion();
     template = template.replace(/\{\{VERSION\}\}/g, currentVersion);
+
+    // Copy SUPERPOWERS.md with placeholder substitution
+    if (existsSync(superpowersTemplatePath)) {
+        try {
+            let superpowersContent = readFileSync(superpowersTemplatePath, 'utf8');
+            const currentDate = new Date().toISOString().split('T')[0];
+            superpowersContent = superpowersContent.replace(/\{\{VERSION\}\}/g, currentVersion);
+            superpowersContent = superpowersContent.replace(/\{\{DATE\}\}/g, currentDate);
+            writeFileSync(superpowersMdPath, superpowersContent, 'utf8');
+            console.log('✓ Created .agents/docs/SUPERPOWERS.md');
+        } catch (error) {
+            console.log(`⚠️  Failed to create SUPERPOWERS.md: ${error.message}`);
+        }
+    } else {
+        console.log('⚠️  SUPERPOWERS.md.template not found');
+    }
 
     // Detect platforms
     const projectPlatforms = [];
@@ -463,7 +466,8 @@ const runSetupSkills = () => {
     if (symlinkResults.created > 0) {
         setupMessage += `\n  - ${symlinkResults.created} project skill symlink(s) to agent directories`;
     }
-    setupMessage += '\n  - .agents/skills/ ready for project-specific skills\n';
+    setupMessage += '\n  - .agents/skills/ ready for project-specific skills';
+    setupMessage += '\n  - .agents/docs/SUPERPOWERS.md for detailed reference\n';
     
     console.log(setupMessage);
 };

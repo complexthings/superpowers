@@ -6,6 +6,68 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.4.1 (January 24, 2026)
+
+### AGENTS.md Template Context Optimization
+
+Reduced the context size of AGENTS.md by ~60-70% to improve agent performance and reduce token usage. Detailed reference material is now separated into a dedicated SUPERPOWERS.md file, and agent-specific tool mappings are replaced with generic guidance.
+
+**Key Changes:**
+
+- **New `SUPERPOWERS.md.template`** (108 lines) - Contains detailed reference documentation:
+  - Installation instructions
+  - Version detection details
+  - Skill locations reference
+  - Skill naming conventions
+  - Creating new skills workflow
+  - Common mistakes to avoid
+
+- **New `TOOLS.md.template`** (21 lines) - Generic tool guidance replacing 6 agent-specific files:
+  - Native skill tool usage
+  - Symlinked skills locations
+  - Tool equivalence guidance for cross-platform compatibility
+
+- **Streamlined `AGENTS.md.template`** (40 lines, down from 168 - **76% reduction**):
+  - Clarified two-step skill workflow: **Discover first**, then **Load JIT**
+  - Kept essential: skill discovery, JIT principle, version monitoring, why skills matter
+  - Moved detailed reference to SUPERPOWERS.md
+  - Replaced agent-specific tool mappings with generic TOOLS.md content
+
+- **`setup-skills` now creates `.agents/docs/SUPERPOWERS.md`**:
+  - Creates `.agents/docs/` directory
+  - Copies SUPERPOWERS.md.template with placeholder substitution
+  - Provides detailed reference without loading into agent context
+
+**Deleted Files (replaced by TOOLS.md.template):**
+- `TOOLS-GITHUB-COPILOT.md.template` (53 lines)
+- `TOOLS-CLAUDE-CODE.md.template` (35 lines)
+- `TOOLS-CURSOR.md.template` (31 lines)
+- `TOOLS-GEMINI.md.template` (27 lines)
+- `TOOLS-OPENCODE.md.template` (28 lines)
+- `TOOLS-CODEX.md.template` (25 lines)
+
+**Context Size Comparison:**
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| AGENTS.md.template | 168 lines | 40 lines | **76% smaller** |
+| Tool mappings per agent | 25-53 lines | 21 lines (shared) | **~60% smaller** |
+| Superpowers section in output | ~120+ lines | ~57 lines | **~52% smaller** |
+
+**Files Modified:**
+- `.agents/templates/AGENTS.md.template` - Streamlined content
+- `.agents/templates/SUPERPOWERS.md.template` - NEW: detailed reference
+- `.agents/templates/TOOLS.md.template` - NEW: generic tool guidance
+- `.agents/src/commands/bootstrap.js` - Updated `generateToolMappings()` and `runSetupSkills()`
+
+**Benefits:**
+- Faster agent startup with smaller context
+- Reduced token usage per conversation
+- Cleaner, more focused skill instructions
+- Detailed reference available on-demand in `.agents/docs/SUPERPOWERS.md`
+
+---
+
 ## v6.4.0 (January 23, 2026)
 
 ### Project-Level Skill Symlinks in setup-skills

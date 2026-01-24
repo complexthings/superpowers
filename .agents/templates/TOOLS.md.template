@@ -1,0 +1,15 @@
+### Using Tools with Skills
+
+**1. Native Skill Tool:** Use your platform's native skill tool for loading skills.
+
+**2. Symlinked Skills:** Superpowers skills are symlinked to your platform's skills directory.
+
+**3. Fallback:** If a skill isn't found via native tool, use `superpowers-agent find-skills [PATTERN]`
+
+**4. Tool Equivalence:** When skills reference tools you don't have, use your equivalent:
+   - File operations -> your Read/Write/Edit tools
+   - Terminal commands -> your Bash/Shell tool
+   - Search operations -> your Grep/Glob/Search tools
+   - Task management -> your TodoWrite/TodoRead tools
+   - Subagent dispatch -> your Task/Agent tool (or execute the work yourself)
+   - Web fetching -> your WebFetch/Fetch tool
