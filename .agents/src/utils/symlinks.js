@@ -54,6 +54,71 @@ const SKILL_PLATFORMS = [
 ];
 
 /**
+ * Project-level platform configurations for skill symlinks
+ * These detect agent directories in the project root and create symlinks
+ * from agent-specific skill directories TO .agents/skills
+ */
+const PROJECT_SKILL_PLATFORMS = [
+    {
+        name: 'claude',
+        agentDir: (projectRoot) => join(projectRoot, '.claude'),
+        skillsDir: (projectRoot) => join(projectRoot, '.claude', 'skills'),
+        detect: (projectRoot) => existsSync(join(projectRoot, '.claude'))
+    },
+    {
+        name: 'copilot',
+        agentDir: (projectRoot) => join(projectRoot, '.github'),
+        skillsDir: (projectRoot) => join(projectRoot, '.github', 'skills'),
+        detect: (projectRoot) => {
+            const hasGithub = existsSync(join(projectRoot, '.github'));
+            const hasAgentsMd = existsSync(join(projectRoot, 'AGENTS.md')) || 
+                               existsSync(join(projectRoot, '.agents', 'AGENTS.md'));
+            return hasGithub && hasAgentsMd;
+        }
+    },
+    {
+        name: 'opencode',
+        agentDir: (projectRoot) => join(projectRoot, '.opencode'),
+        skillsDir: (projectRoot) => join(projectRoot, '.opencode', 'skill'), // singular!
+        detect: (projectRoot) => {
+            const hasOpencode = existsSync(join(projectRoot, '.opencode'));
+            const hasAgentsMd = existsSync(join(projectRoot, 'AGENTS.md')) || 
+                               existsSync(join(projectRoot, '.agents', 'AGENTS.md')) ||
+                               existsSync(join(projectRoot, '.opencode', 'AGENTS.md'));
+            return hasOpencode && hasAgentsMd;
+        }
+    },
+    {
+        name: 'cursor',
+        agentDir: (projectRoot) => join(projectRoot, '.cursor'),
+        skillsDir: (projectRoot) => join(projectRoot, '.cursor', 'skills'),
+        detect: (projectRoot) => existsSync(join(projectRoot, '.cursor'))
+    },
+    {
+        name: 'gemini',
+        agentDir: (projectRoot) => join(projectRoot, '.gemini'),
+        skillsDir: (projectRoot) => join(projectRoot, '.gemini', 'skills'),
+        detect: (projectRoot) => {
+            const hasGemini = existsSync(join(projectRoot, '.gemini'));
+            const hasGeminiMd = existsSync(join(projectRoot, 'GEMINI.md')) || 
+                               existsSync(join(projectRoot, '.agents', 'GEMINI.md'));
+            return hasGemini && hasGeminiMd;
+        }
+    },
+    {
+        name: 'codex',
+        agentDir: (projectRoot) => join(projectRoot, '.codex'),
+        skillsDir: (projectRoot) => join(projectRoot, '.codex', 'skills'),
+        detect: (projectRoot) => {
+            const hasCodex = existsSync(join(projectRoot, '.codex'));
+            const hasAgentsMd = existsSync(join(projectRoot, 'AGENTS.md')) ||
+                               existsSync(join(projectRoot, '.agents', 'AGENTS.md'));
+            return hasCodex && hasAgentsMd;
+        }
+    }
+];
+
+/**
  * Check if a path is a symlink
  */
 const isSymlink = (path) => {
@@ -421,4 +486,58 @@ export const cleanupStaleSymlinks = () => {
     }
     
     return removed;
+};
+
+/**
+ * Sync skill symlinks for project-level agent directories
+ * Creates symlinks from agent-specific directories TO .agents/skills
+ * e.g., .claude/skills -> .agents/skills
+ * 
+ * @param {Object} options - Options
+ * @param {string} options.projectRoot - Project root directory (defaults to cwd)
+ * @returns {{ created: number, existed: number, skipped: number, errors: Array }}
+ */
+export const syncProjectSkillSymlinks = (options = {}) => {
+    const projectRoot = options.projectRoot || process.cwd();
+    const agentsSkillsDir = join(projectRoot, '.agents', 'skills');
+    
+    // Source must exist
+    if (!existsSync(agentsSkillsDir)) {
+        return { created: 0, existed: 0, skipped: 0, errors: [] };
+    }
+    
+    const results = { created: 0, existed: 0, skipped: 0, errors: [] };
+    
+    for (const platform of PROJECT_SKILL_PLATFORMS) {
+        // Check if platform is detected in this project
+        if (!platform.detect(projectRoot)) {
+            results.skipped++;
+            continue;
+        }
+        
+        const targetDir = platform.skillsDir(projectRoot);
+        const agentDir = platform.agentDir(projectRoot);
+        
+        // Agent directory must exist (we don't create it)
+        if (!existsSync(agentDir)) {
+            results.skipped++;
+            continue;
+        }
+        
+        // Create symlink: targetDir -> agentsSkillsDir
+        const result = createSymlink(agentsSkillsDir, targetDir);
+        
+        if (result.created) {
+            const shortTarget = targetDir.replace(projectRoot, '.');
+            console.log(`  ✓ Created ${shortTarget} -> .agents/skills`);
+            results.created++;
+        } else if (result.existed) {
+            results.existed++;
+        } else if (result.error) {
+            console.log(`  ⚠️  ${platform.name}: ${result.error}`);
+            results.errors.push({ platform: platform.name, error: result.error });
+        }
+    }
+    
+    return results;
 };

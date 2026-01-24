@@ -6,6 +6,61 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v6.4.0 (January 23, 2026)
+
+### Project-Level Skill Symlinks in setup-skills
+
+The `setup-skills` command now automatically creates symlinks from agent-specific directories to `.agents/skills`, enabling native skill discovery for all major AI coding assistants at the project level.
+
+**Key Features:**
+- Detects agent-specific directories in the project root
+- Creates symlinks from agent directories TO `.agents/skills`
+- Supports all major AI coding platforms
+- Idempotent - safe to run multiple times
+
+**Platform Detection Rules:**
+
+| Agent | Detection Condition | Symlink Target |
+|-------|---------------------|----------------|
+| Claude | `.claude/` exists | `.claude/skills` |
+| GitHub Copilot | `.github/` + `AGENTS.md` exists | `.github/skills` |
+| OpenCode | `.opencode/` + `AGENTS.md` exists | `.opencode/skill` (singular) |
+| Cursor | `.cursor/` exists | `.cursor/skills` |
+| Gemini | `.gemini/` + `GEMINI.md` exists | `.gemini/skills` |
+| Codex | `.codex/` + `AGENTS.md` exists | `.codex/skills` |
+
+**Note:** For platforms requiring `AGENTS.md`, the detection also checks `.agents/AGENTS.md` as a fallback location.
+
+**Usage:**
+```bash
+# In your project directory
+superpowers-agent setup-skills
+```
+
+**Example Output:**
+```
+## Syncing Project Skill Symlinks
+
+  ✓ Created ./.claude/skills -> .agents/skills
+  ✓ Created ./.github/skills -> .agents/skills
+  ✓ Created ./.opencode/skill -> .agents/skills
+  ✓ Created ./.cursor/skills -> .agents/skills
+
+✓ Created 4 project skill symlink(s)
+```
+
+**Symlink Behavior:**
+- Symlinks point FROM agent directories TO `.agents/skills`
+- Skills added to `.agents/skills/` become available in all agent-specific directories
+- Running setup-skills again reports "Project skill symlinks already exist"
+- Existing non-symlink directories are not overwritten (error reported instead)
+
+**Files Modified:**
+- `.agents/src/utils/symlinks.js` - Added `PROJECT_SKILL_PLATFORMS` config and `syncProjectSkillSymlinks()` function
+- `.agents/src/commands/bootstrap.js` - Integrated symlink sync into `runSetupSkills()`
+
+---
+
 ## v6.3.4 (January 17, 2026)
 
 ### SKILLS.md Updates for agentskills.io Compatibility

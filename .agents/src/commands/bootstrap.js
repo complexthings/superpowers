@@ -30,7 +30,7 @@ import { installOpencodeCommands } from '../integrations/opencode.js';
 import { runUpdate } from './update.js';
 
 // Import symlink utilities
-import { syncAllSkillSymlinks } from '../utils/symlinks.js';
+import { syncAllSkillSymlinks, syncProjectSkillSymlinks } from '../utils/symlinks.js';
 
 /**
  * Generate tool mappings for specified platforms by reading from template files
@@ -430,6 +430,20 @@ const runSetupSkills = () => {
         console.log('ℹ️  Skipped .github/copilot-instructions.md (does not exist)');
     }
 
+    // Sync project skill symlinks to agent-specific directories
+    console.log('\n## Syncing Project Skill Symlinks\n');
+    const symlinkResults = syncProjectSkillSymlinks({ projectRoot });
+    
+    if (symlinkResults.created > 0) {
+        console.log(`\n✓ Created ${symlinkResults.created} project skill symlink(s)`);
+    } else if (symlinkResults.existed > 0) {
+        console.log('ℹ️  Project skill symlinks already exist');
+    } else if (symlinkResults.errors.length > 0) {
+        console.log(`⚠️  Some symlinks could not be created`);
+    } else {
+        console.log('ℹ️  No agent directories detected for symlinking');
+    }
+
     // Build dynamic success message based on what was updated
     let setupMessage = `\n# Setup complete!\n\nYour project now has:
   - .agents/ directory structure`;
@@ -445,6 +459,9 @@ const runSetupSkills = () => {
     }
     if (copilotResult.updated) {
         setupMessage += '\n  - .github/copilot-instructions.md with GitHub Copilot skills instructions';
+    }
+    if (symlinkResults.created > 0) {
+        setupMessage += `\n  - ${symlinkResults.created} project skill symlink(s) to agent directories`;
     }
     setupMessage += '\n  - .agents/skills/ ready for project-specific skills\n';
     
