@@ -3,7 +3,7 @@ name: subagent-driven-development
 description: Use when executing implementation plans with independent tasks in the current session
 metadata:
   when_to_use: when executing implementation plans with independent tasks in the current session, using fresh subagents with review gates
-  version: 2.0.0
+  version: 2.1.0
 ---
 
 # Subagent-Driven Development
@@ -14,22 +14,14 @@ Execute plan by dispatching fresh subagent per task, with two-stage review after
 
 ## When to Use
 
-```dot
-digraph when_to_use {
-    "Have implementation plan?" [shape=diamond];
-    "Tasks mostly independent?" [shape=diamond];
-    "Stay in this session?" [shape=diamond];
-    "subagent-driven-development" [shape=box];
-    "executing-plans" [shape=box];
-    "Manual execution or brainstorm first" [shape=box];
-
-    "Have implementation plan?" -> "Tasks mostly independent?" [label="yes"];
-    "Have implementation plan?" -> "Manual execution or brainstorm first" [label="no"];
-    "Tasks mostly independent?" -> "Stay in this session?" [label="yes"];
-    "Tasks mostly independent?" -> "Manual execution or brainstorm first" [label="no - tightly coupled"];
-    "Stay in this session?" -> "subagent-driven-development" [label="yes"];
-    "Stay in this session?" -> "executing-plans" [label="no - parallel session"];
-}
+```mermaid
+flowchart TD
+    A{Have implementation plan?} -->|yes| B{Tasks mostly independent?}
+    A -->|no| C[Manual execution or brainstorm first]
+    B -->|yes| D{Stay in this session?}
+    B -->|no - tightly coupled| C
+    D -->|yes| E[subagent-driven-development]
+    D -->|no - parallel session| F[executing-plans]
 ```
 
 **vs. Executing Plans (parallel session):**
@@ -40,49 +32,30 @@ digraph when_to_use {
 
 ## The Process
 
-```dot
-digraph process {
-    rankdir=TB;
+```mermaid
+flowchart TD
+    PLAN[Read plan, extract tasks, create TodoWrite] --> IMPL[Dispatch implementer subagent]
 
-    subgraph cluster_per_task {
-        label="Per Task";
-        "Dispatch implementer subagent (./implementer-prompt.md)" [shape=box];
-        "Implementer subagent asks questions?" [shape=diamond];
-        "Answer questions, provide context" [shape=box];
-        "Implementer subagent implements, tests, commits, self-reviews" [shape=box];
-        "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [shape=box];
-        "Spec reviewer subagent confirms code matches spec?" [shape=diamond];
-        "Implementer subagent fixes spec gaps" [shape=box];
-        "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [shape=box];
-        "Code quality reviewer subagent approves?" [shape=diamond];
-        "Implementer subagent fixes quality issues" [shape=box];
-        "Mark task complete in TodoWrite" [shape=box];
-    }
+    subgraph PER_TASK [Per Task]
+        IMPL --> QUESTIONS{Implementer asks questions?}
+        QUESTIONS -->|yes| ANSWER[Answer questions, provide context]
+        ANSWER --> IMPL
+        QUESTIONS -->|no| WORK[Implementer implements, tests, commits, self-reviews]
+        WORK --> SPEC[Dispatch spec reviewer subagent]
+        SPEC --> SPEC_OK{Code matches spec?}
+        SPEC_OK -->|no| SPEC_FIX[Implementer fixes spec gaps]
+        SPEC_FIX -->|re-review| SPEC
+        SPEC_OK -->|yes| QUALITY[Dispatch code quality reviewer subagent]
+        QUALITY --> QUAL_OK{Quality reviewer approves?}
+        QUAL_OK -->|no| QUAL_FIX[Implementer fixes quality issues]
+        QUAL_FIX -->|re-review| QUALITY
+        QUAL_OK -->|yes| DONE_TASK[Mark task complete in TodoWrite]
+    end
 
-    "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
-    "More tasks remain?" [shape=diamond];
-    "Dispatch final code reviewer subagent for entire implementation" [shape=box];
-    "Use finishing-a-development-branch skill" [shape=box style=filled fillcolor=lightgreen];
-
-    "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer subagent asks questions?";
-    "Implementer subagent asks questions?" -> "Answer questions, provide context" [label="yes"];
-    "Answer questions, provide context" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Implementer subagent asks questions?" -> "Implementer subagent implements, tests, commits, self-reviews" [label="no"];
-    "Implementer subagent implements, tests, commits, self-reviews" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)";
-    "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" -> "Spec reviewer subagent confirms code matches spec?";
-    "Spec reviewer subagent confirms code matches spec?" -> "Implementer subagent fixes spec gaps" [label="no"];
-    "Implementer subagent fixes spec gaps" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [label="re-review"];
-    "Spec reviewer subagent confirms code matches spec?" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="yes"];
-    "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" -> "Code quality reviewer subagent approves?";
-    "Code quality reviewer subagent approves?" -> "Implementer subagent fixes quality issues" [label="no"];
-    "Implementer subagent fixes quality issues" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="re-review"];
-    "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
-    "Mark task complete in TodoWrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use finishing-a-development-branch skill";
-}
+    DONE_TASK --> MORE{More tasks remain?}
+    MORE -->|yes| IMPL
+    MORE -->|no| FINAL[Dispatch final code reviewer for entire implementation]
+    FINAL --> FINISH[Use finishing-a-development-branch skill]
 ```
 
 ## Prompt Templates

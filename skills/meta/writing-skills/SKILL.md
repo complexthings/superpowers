@@ -3,7 +3,7 @@ name: writing-skills
 description: TDD for process documentation - test with subagents before writing, iterate until bulletproof
 metadata:
   when_to_use: when creating new skills, editing existing skills, or verifying skills work before deployment
-  version: 5.1.0
+  version: 5.2.0
   languages: all
 ---
 
@@ -295,17 +295,11 @@ Use path format without `@` prefix or `/SKILL.md` suffix:
 
 ## Flowchart Usage
 
-```dot
-digraph when_flowchart {
-    "Need to show information?" [shape=diamond];
-    "Decision where I might go wrong?" [shape=diamond];
-    "Use markdown" [shape=box];
-    "Small inline flowchart" [shape=box];
-
-    "Need to show information?" -> "Decision where I might go wrong?" [label="yes"];
-    "Decision where I might go wrong?" -> "Small inline flowchart" [label="yes"];
-    "Decision where I might go wrong?" -> "Use markdown" [label="no"];
-}
+```mermaid
+flowchart TD
+    A{Need to show information?} -->|yes| B{Decision where I might go wrong?}
+    B -->|yes| C[Small inline flowchart]
+    B -->|no| D[Use markdown]
 ```
 
 **Use flowcharts ONLY for:**
@@ -319,7 +313,7 @@ digraph when_flowchart {
 - Linear instructions → Numbered lists
 - Labels without semantic meaning (step1, helper2)
 
-See @graphviz-conventions.dot for graphviz style rules.
+Use Mermaid `flowchart` syntax (not Graphviz DOT) — it's more widely understood by agents and renders natively on GitHub.
 
 ## Code Examples
 
@@ -570,9 +564,10 @@ example-js.js, example-py.py, example-go.go
 **Why bad:** Mediocre quality, maintenance burden
 
 ### ❌ Code in Flowcharts
-```dot
-step1 [label="import fs"];
-step2 [label="read file"];
+```mermaid
+flowchart TD
+    step1[import fs]
+    step2[read file]
 ```
 **Why bad:** Can't copy-paste, hard to read
 

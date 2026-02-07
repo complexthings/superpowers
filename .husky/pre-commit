@@ -1,0 +1,7 @@
+# If .agents/package.json was changed, regenerate bun.lock
+if git diff --cached --name-only | grep -q '^\.agents/package\.json$'; then
+  echo "📦 .agents/package.json changed — updating bun.lock..."
+  export PATH="$HOME/.bun/bin:$PATH"
+  cd .agents && bun install
+  git add bun.lock
+fi

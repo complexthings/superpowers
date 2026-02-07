@@ -1,7 +1,8 @@
 {
   "type": "module",
-  "version": "6.5.2",
+  "version": "7.0.0",
   "name": "@complexthings/superpowers-agent",
+  "packageManager": "bun@1.3.8",
   "bugs": {
     "url": "https://github.com/complexthings/superpowers"
   },
@@ -15,13 +16,14 @@
     "url": "https://github.com/complexthings/superpowers.git"
   },
   "scripts": {
-    "build": "node build.js",
-    "dev": "node src/cli.js",
-    "watch": "node build.js --watch",
-    "dev:link": "node scripts/link.cjs dev",
-    "production:link": "node scripts/link.cjs production"
+    "prepare": "cd .. && husky",
+    "build": "bun build.js",
+    "dev": "bun src/cli.js",
+    "watch": "bun build.js --watch",
+    "dev:link": "bun scripts/link.cjs dev",
+    "production:link": "bun scripts/link.cjs production"
   },
   "devDependencies": {
-    "esbuild": "^0.21.5"
+    "husky": "^9.1.7"
   }
 }

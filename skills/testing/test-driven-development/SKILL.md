@@ -3,7 +3,7 @@ name: test-driven-development
 description: Write the test first, watch it fail, write minimal code to pass
 metadata:
   when_to_use: when implementing any feature or bugfix, before writing implementation code
-  version: 3.1.0
+  version: 3.2.0
   languages: all
 ---
 
@@ -50,26 +50,17 @@ Implement fresh from tests. Period.
 
 ## Red-Green-Refactor
 
-```dot
-digraph tdd_cycle {
-    rankdir=LR;
-    red [label="RED\nWrite failing test", shape=box, style=filled, fillcolor="#ffcccc"];
-    verify_red [label="Verify fails\ncorrectly", shape=diamond];
-    green [label="GREEN\nMinimal code", shape=box, style=filled, fillcolor="#ccffcc"];
-    verify_green [label="Verify passes\nAll green", shape=diamond];
-    refactor [label="REFACTOR\nClean up", shape=box, style=filled, fillcolor="#ccccff"];
-    next [label="Next", shape=ellipse];
-
-    red -> verify_red;
-    verify_red -> green [label="yes"];
-    verify_red -> red [label="wrong\nfailure"];
-    green -> verify_green;
-    verify_green -> refactor [label="yes"];
-    verify_green -> green [label="no"];
-    refactor -> verify_green [label="stay\ngreen"];
-    verify_green -> next;
-    next -> red;
-}
+```mermaid
+flowchart LR
+    RED[RED: Write failing test] --> VR{Verify fails correctly}
+    VR -->|yes| GREEN[GREEN: Minimal code]
+    VR -->|wrong failure| RED
+    GREEN --> VG{Verify passes, all green}
+    VG -->|yes| REFACTOR[REFACTOR: Clean up]
+    VG -->|no| GREEN
+    REFACTOR --> VG2{Stay green?}
+    VG2 -->|yes| NEXT((Next))
+    NEXT --> RED
 ```
 
 ### RED - Write Failing Test

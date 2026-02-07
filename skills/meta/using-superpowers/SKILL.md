@@ -3,7 +3,7 @@ name: using-superpowers
 description: Use when starting any conversation - establishes how to find and use skills, requiring skill invocation before ANY response including clarifying questions
 metadata:
   when_to_use: when starting any task, before responding, before clarifying questions - skills tell you HOW to approach work
-  version: 1.0.0
+  version: 1.1.0
   languages: all
 ---
 
@@ -36,26 +36,16 @@ superpowers-agent find-skills [pattern]
 
 **Invoke relevant or requested skills BEFORE any response or action.** Even a 1% chance a skill might apply means that you should invoke the skill to check. If an invoked skill turns out to be wrong for the situation, you don't need to use it.
 
-```dot
-digraph skill_flow {
-    "User message received" [shape=doublecircle];
-    "Might any skill apply?" [shape=diamond];
-    "Invoke Skill tool" [shape=box];
-    "Announce: 'Using [skill] to [purpose]'" [shape=box];
-    "Has checklist?" [shape=diamond];
-    "Create TodoWrite todo per item" [shape=box];
-    "Follow skill exactly" [shape=box];
-    "Respond (including clarifications)" [shape=doublecircle];
-
-    "User message received" -> "Might any skill apply?";
-    "Might any skill apply?" -> "Invoke Skill tool" [label="yes, even 1%"];
-    "Might any skill apply?" -> "Respond (including clarifications)" [label="definitely not"];
-    "Invoke Skill tool" -> "Announce: 'Using [skill] to [purpose]'";
-    "Announce: 'Using [skill] to [purpose]'" -> "Has checklist?";
-    "Has checklist?" -> "Create TodoWrite todo per item" [label="yes"];
-    "Has checklist?" -> "Follow skill exactly" [label="no"];
-    "Create TodoWrite todo per item" -> "Follow skill exactly";
-}
+```mermaid
+flowchart TD
+    START(((User message received))) --> CHECK{Might any skill apply?}
+    CHECK -->|yes, even 1%| INVOKE[Invoke Skill tool]
+    CHECK -->|definitely not| RESPOND(((Respond, including clarifications)))
+    INVOKE --> ANNOUNCE["Announce: 'Using [skill] to [purpose]'"]
+    ANNOUNCE --> HAS{Has checklist?}
+    HAS -->|yes| TODO[Create TodoWrite todo per item]
+    HAS -->|no| FOLLOW[Follow skill exactly]
+    TODO --> FOLLOW
 ```
 
 ## Red Flags
