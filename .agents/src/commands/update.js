@@ -10,8 +10,7 @@ import { getLocalVersion, getRemoteVersion, isNewerVersion, printVersion } from 
 
 // Import integration install functions
 import { 
-    installCopilotPrompts, 
-    installCopilotInstructions 
+    installCopilotPrompts 
 } from '../integrations/copilot.js';
 import { 
     installCursorCommands, 
@@ -31,7 +30,6 @@ import { syncAllSkillSymlinks } from '../utils/symlinks.js';
 const reinstallIntegration = (integration) => {
     const installFunctions = {
         'copilot-prompts': installCopilotPrompts,
-        'copilot-instructions': installCopilotInstructions,
         'cursor-commands': installCursorCommands,
         'cursor-hooks': installCursorHooks,
         'codex-prompts': installCodexPrompts,

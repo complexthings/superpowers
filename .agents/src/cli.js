@@ -36,8 +36,7 @@ import {
 
 // Import integration installers
 import { 
-    installCopilotPrompts, 
-    installCopilotInstructions 
+    installCopilotPrompts 
 } from './integrations/copilot.js';
 
 import { 
@@ -90,7 +89,6 @@ const commands = {
     
     // Integration install commands
     'install-copilot-prompts': installCopilotPrompts,
-    'install-copilot-instructions': installCopilotInstructions,
     'install-cursor-commands': installCursorCommands,
     'install-cursor-hooks': installCursorHooks,
     'install-codex-prompts': installCodexPrompts,
@@ -121,7 +119,6 @@ Usage:
   superpowers-agent execute <skill-name>                            # Execute a skill
   superpowers-agent get-helpers <skill> <search-term>               # Get helper file path
   superpowers-agent install-copilot-prompts                         # Install GitHub Copilot prompts
-  superpowers-agent install-copilot-instructions                    # Install universal instructions
   superpowers-agent install-cursor-commands                         # Install Cursor commands
   superpowers-agent install-cursor-hooks                            # Install Cursor hooks
   superpowers-agent install-codex-prompts                           # Install Codex prompts
