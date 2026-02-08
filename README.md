@@ -6,6 +6,13 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
+**v7.0.0 (February 7, 2026):**
+
+- 🔧 **Bun Build System** - Migrated CLI build toolchain from Node.js/npm to Bun for faster builds and simpler dependency management
+- 📋 **Smart Copilot Instructions** - `bootstrap` and `update` now process `~/.github/copilot-instructions.md` as a template, injecting the `using-superpowers` skill content and supporting marker-based idempotent updates with automatic backups
+- 📊 **Mermaid Flowcharts** - Replaced DOT-format flowcharts with Mermaid syntax across 8 skills for better rendering in GitHub, VS Code, and agent contexts
+- 🔄 **Skill Version Bumps** - Updated versions for `dispatching-parallel-agents`, `subagent-driven-development`, `root-cause-tracing`, `using-superpowers`, `writing-skills`, `when-stuck`, `condition-based-waiting`, and `test-driven-development`
+
 **v6.5.0 (January 24, 2026):**
 
 - 🔄 **Upstream Sync** - Ported advanced features from Jesse Vincent's [obra/superpowers](https://github.com/obra/superpowers) v4.1.1:
@@ -814,7 +821,7 @@ For Claude Code plugin users:
 
 This project builds on [Jesse Vincent's Superpowers for Claude Code](https://github.com/obra/superpowers). Jesse's pioneering work introduced the concept of systematic, reusable skills for AI agents. Read his excellent blog post: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
 
-**Ported from obra/superpowers (v6.5.0):**
+**Ported from obra/superpowers (v7.0.0):**
 - `using-superpowers` behavioral enforcement skill
 - Two-stage code review process (spec + quality reviewers)
 - OpenCode plugin architecture pattern
