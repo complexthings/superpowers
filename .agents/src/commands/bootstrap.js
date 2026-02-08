@@ -14,8 +14,7 @@ import { toolDetection, detectPlatforms } from '../core/platform-detection.js';
 
 // Import all integration installers
 import { 
-    installCopilotPrompts, 
-    installCopilotInstructions 
+    installCopilotPrompts 
 } from '../integrations/copilot.js';
 import { 
     installCursorCommands, 
@@ -226,6 +225,108 @@ const installAliases = () => {
 };
 
 /**
+ * Update .github/copilot-instructions.md in a project with Superpowers content
+ * 
+ * Reads the template from .github/copilot-instructions.md in the superpowers repo,
+ * replaces ${content} with the using-superpowers SKILL.md content, and installs to
+ * the project's .github/copilot-instructions.md.
+ * Uses marker-based update-in-place for idempotent updates.
+ */
+const updateCopilotInstructions = (projectRoot) => {
+    const instructionsSource = join(paths.superpowersRepo, '.github', 'copilot-instructions.md');
+    const skillSource = join(paths.superpowersRepo, 'skills', 'meta', 'using-superpowers', 'SKILL.md');
+    const instructionsDest = join(projectRoot, '.github', 'copilot-instructions.md');
+    
+    const START_MARKER = '<!-- SUPERPOWERS_-_INSTRUCTIONS_START -->';
+    const END_MARKER = '<!-- SUPERPOWERS_-_INSTRUCTIONS_END -->';
+    
+    if (!existsSync(instructionsSource)) {
+        return { error: true, message: 'Source template not found' };
+    }
+    
+    if (!existsSync(skillSource)) {
+        return { error: true, message: 'using-superpowers SKILL.md not found' };
+    }
+    
+    // Read the template and skill content
+    let templateContent;
+    let skillContent;
+    try {
+        templateContent = readFileSync(instructionsSource, 'utf8');
+        skillContent = readFileSync(skillSource, 'utf8');
+    } catch (error) {
+        return { error: true, message: `Failed to read source files: ${error.message}` };
+    }
+    
+    // Replace ${content} placeholder with actual skill content
+    const processedContent = templateContent.replace('${content}', skillContent);
+    
+    // Verify markers are present in the processed content
+    if (!processedContent.includes(START_MARKER) || !processedContent.includes(END_MARKER)) {
+        return { error: true, message: 'Template is missing required markers' };
+    }
+    
+    // Create .github directory if needed
+    const destDir = dirname(instructionsDest);
+    try {
+        if (!existsSync(destDir)) {
+            execSync(`mkdir -p "${destDir}"`, { stdio: 'pipe' });
+        }
+    } catch (error) {
+        return { error: true, message: `Failed to create .github directory: ${error.message}` };
+    }
+    
+    // Check if destination file already exists
+    if (existsSync(instructionsDest)) {
+        let existingContent;
+        try {
+            existingContent = readFileSync(instructionsDest, 'utf8');
+        } catch (error) {
+            return { error: true, message: `Failed to read existing file: ${error.message}` };
+        }
+        
+        // Backup the existing file
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const backupPath = `${instructionsDest}.backup-${timestamp}`;
+        try {
+            execSync(`cp "${instructionsDest}" "${backupPath}"`, { stdio: 'pipe' });
+        } catch (error) {
+            return { error: true, message: `Failed to backup: ${error.message}` };
+        }
+        
+        // Check if file already has markers
+        if (existingContent.includes(START_MARKER) && existingContent.includes(END_MARKER)) {
+            // Replace content between markers (inclusive of markers)
+            const regex = new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}`, 'g');
+            const newContent = existingContent.replace(regex, processedContent.trim());
+            try {
+                writeFileSync(instructionsDest, newContent, 'utf8');
+                return { updated: true, backup: backupPath };
+            } catch (error) {
+                return { error: true, message: `Failed to update: ${error.message}` };
+            }
+        } else {
+            // No markers found - append the new content to end of file
+            const newContent = existingContent.trimEnd() + '\n\n' + processedContent.trim() + '\n';
+            try {
+                writeFileSync(instructionsDest, newContent, 'utf8');
+                return { updated: true, backup: backupPath };
+            } catch (error) {
+                return { error: true, message: `Failed to append: ${error.message}` };
+            }
+        }
+    } else {
+        // No existing file - write the processed content directly
+        try {
+            writeFileSync(instructionsDest, processedContent, 'utf8');
+            return { created: true };
+        } catch (error) {
+            return { error: true, message: `Failed to create: ${error.message}` };
+        }
+    }
+};
+
+/**
  * Command: setup-skills
  * Initialize project with skills infrastructure
  */
@@ -412,25 +513,43 @@ const runSetupSkills = () => {
         console.log('⚠️  Failed to update GEMINI.md');
     }
 
-    // Update .github/copilot-instructions.md if it exists AND AGENTS.md does NOT exist
+    // Update .github/copilot-instructions.md with Superpowers instructions when GitHub Copilot is detected
     const copilotInstructionsPath = join(projectRoot, '.github', 'copilot-instructions.md');
-    const agentsMdDoesNotExist = !existsSync(rootAgentsMdPath) && !existsSync(dotAgentsAgentsMdPath);
     let copilotResult = { skipped: true };
-    
-    if (existsSync(copilotInstructionsPath) && agentsMdDoesNotExist) {
-        copilotResult = updatePlatformFile(copilotInstructionsPath, template, ['github-copilot'], false);
-        if (copilotResult.updated) {
-            console.log('✓ Updated .github/copilot-instructions.md with GitHub Copilot tool mappings');
+
+    if (projectPlatforms.includes('github-copilot')) {
+        copilotResult = updateCopilotInstructions(projectRoot);
+        if (copilotResult.created) {
+            console.log('✓ Created .github/copilot-instructions.md with Superpowers instructions');
+        } else if (copilotResult.updated) {
+            console.log('✓ Updated .github/copilot-instructions.md with Superpowers instructions');
             if (copilotResult.backup) {
                 console.log(`  Backed up to ${parse(copilotResult.backup).base}`);
             }
         } else if (copilotResult.error) {
-            console.log('⚠️  Failed to update .github/copilot-instructions.md');
+            console.log(`⚠️  Failed to update .github/copilot-instructions.md: ${copilotResult.message || ''}`);
+        }
+    } else {
+        console.log('ℹ️  Skipped .github/copilot-instructions.md (GitHub Copilot not detected)');
+    }
+
+    // Update .github/copilot-instructions.md with tool mappings if it exists AND AGENTS.md does NOT exist
+    const agentsMdDoesNotExist = !existsSync(rootAgentsMdPath) && !existsSync(dotAgentsAgentsMdPath);
+    
+    if (existsSync(copilotInstructionsPath) && agentsMdDoesNotExist) {
+        const copilotToolResult = updatePlatformFile(copilotInstructionsPath, template, ['github-copilot'], false);
+        if (copilotToolResult.updated) {
+            console.log('✓ Updated .github/copilot-instructions.md with GitHub Copilot tool mappings');
+            if (copilotToolResult.backup) {
+                console.log(`  Backed up to ${parse(copilotToolResult.backup).base}`);
+            }
+        } else if (copilotToolResult.error) {
+            console.log('⚠️  Failed to update .github/copilot-instructions.md with tool mappings');
         }
     } else if (existsSync(copilotInstructionsPath) && !agentsMdDoesNotExist) {
-        console.log('ℹ️  Skipped .github/copilot-instructions.md (AGENTS.md exists, using that instead)');
-    } else {
-        console.log('ℹ️  Skipped .github/copilot-instructions.md (does not exist)');
+        console.log('ℹ️  Skipped .github/copilot-instructions.md tool mappings (AGENTS.md exists, using that instead)');
+    } else if (!existsSync(copilotInstructionsPath) && !projectPlatforms.includes('github-copilot')) {
+        console.log('ℹ️  Skipped .github/copilot-instructions.md tool mappings (does not exist)');
     }
 
     // Sync project skill symlinks to agent-specific directories
@@ -460,8 +579,8 @@ const runSetupSkills = () => {
     if (geminiResult.updated || geminiResult.created) {
         setupMessage += '\n  - GEMINI.md with Gemini skills instructions';
     }
-    if (copilotResult.updated) {
-        setupMessage += '\n  - .github/copilot-instructions.md with GitHub Copilot skills instructions';
+    if (copilotResult.updated || copilotResult.created) {
+        setupMessage += '\n  - .github/copilot-instructions.md with Superpowers instructions';
     }
     if (symlinkResults.created > 0) {
         setupMessage += `\n  - ${symlinkResults.created} project skill symlink(s) to agent directories`;
@@ -516,8 +635,6 @@ const runBootstrap = () => {
     // Install GitHub Copilot integration
     console.log('## GitHub Copilot Integration\n');
     installCopilotPrompts();
-    console.log('');
-    installCopilotInstructions();
     console.log('\n---\n');
 
     // Install Cursor integration
