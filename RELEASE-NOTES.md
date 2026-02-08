@@ -6,6 +6,78 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v7.0.0 (February 7, 2026)
+
+### Build System Migration to Bun
+
+Migrated the `superpowers-agent` CLI build toolchain from Node.js/npm to **Bun**, significantly improving build speed and simplifying the dependency chain.
+
+**Build System:**
+- Refactored `build.js` to use Bun's native bundler
+- Replaced `package-lock.json` with `bun.lock`
+- Switched `packageManager` field to `bun@1.3.8`
+- Added `.husky/pre-commit` hook for automated `package-lock.json` regeneration
+
+### Copilot Instructions: Smart Template Processing
+
+The `installCopilotInstructions()` function now performs **template processing** instead of a simple file copy, injecting the `using-superpowers` skill content directly into `~/.github/copilot-instructions.md`.
+
+**Key improvements:**
+- **`${content}` replacement** - The `.github/copilot-instructions.md` template's `${content}` placeholder is replaced with the full contents of `skills/meta/using-superpowers/SKILL.md` at install time
+- **Marker-based idempotent updates** - Uses `<!-- SUPERPOWERS_-_INSTRUCTIONS_START -->` / `<!-- SUPERPOWERS_-_INSTRUCTIONS_END -->` markers to update content in-place on subsequent runs
+- **Preserves user content** - Existing `~/.github/copilot-instructions.md` files are never overwritten; superpowers content is appended or updated between markers
+- **Automatic backups** - Creates timestamped backups (e.g., `copilot-instructions.md.backup-2026-02-07T...`) before any modification
+- **Update trigger on skill changes** - Changes to `skills/meta/using-superpowers/` now trigger a `copilot-instructions` reinstall during `superpowers-agent update`
+
+### Skill Flowchart Migration: DOT → Mermaid
+
+Replaced all DOT-format flowcharts with **Mermaid syntax** across 8 skills for better rendering compatibility in GitHub, VS Code, and agent contexts.
+
+**Skills updated:**
+- `dispatching-parallel-agents` v1.2.0
+- `subagent-driven-development` v2.1.0
+- `root-cause-tracing` v1.2.0
+- `using-superpowers` v1.1.0
+- `writing-skills` v5.2.0
+- `when-stuck` v1.2.0
+- `condition-based-waiting` v1.2.0
+- `test-driven-development` v3.2.0
+
+### Version Bumps
+
+- `skill.json` → `7.0.0`
+- `package.json` → `7.0.0`
+
+### Files Modified
+
+```
+.agents/build.js - Bun build system
+.agents/bun.lock - NEW: Bun lockfile
+.agents/package.json - Version 7.0.0, Bun packageManager
+.agents/superpowers-agent - Rebuilt bundle
+.agents/src/integrations/copilot.js - Smart template processing
+.agents/src/core/git.js - Skill change triggers copilot-instructions reinstall
+.github/copilot-instructions.md - NEW: Copilot instructions template
+.husky/pre-commit - NEW: Pre-commit hook
+skill.json - Version 7.0.0
+skills/collaboration/dispatching-parallel-agents/SKILL.md - DOT→Mermaid, v1.2.0
+skills/collaboration/subagent-driven-development/SKILL.md - DOT→Mermaid, v2.1.0
+skills/debugging/root-cause-tracing/SKILL.md - DOT→Mermaid, v1.2.0
+skills/meta/using-superpowers/SKILL.md - DOT→Mermaid, v1.1.0
+skills/meta/writing-skills/SKILL.md - DOT→Mermaid, v5.2.0
+skills/problem-solving/when-stuck/SKILL.md - DOT→Mermaid, v1.2.0
+skills/testing/condition-based-waiting/SKILL.md - DOT→Mermaid, v1.2.0
+skills/testing/test-driven-development/SKILL.md - DOT→Mermaid, v3.2.0
+```
+
+### Files Deleted
+
+```
+.agents/package-lock.json - Replaced by bun.lock
+```
+
+---
+
 ## v6.5.0 (January 24, 2026)
 
 ### Upstream Sync: Advanced Features from obra/superpowers
