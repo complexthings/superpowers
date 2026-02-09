@@ -1,6 +1,6 @@
 ---
 name: finishing-a-development-branch
-description: Complete feature development with structured options for merge, PR, or cleanup
+description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting structured options for merge, PR, or cleanup
 metadata:
   when_to_use: when implementation is complete, all tests pass, and you need to decide how to integrate the work
   version: 1.1.0
@@ -14,7 +14,7 @@ Guide completion of development work by presenting clear options and handling ch
 
 **Core principle:** Verify tests → Present options → Execute choice → Clean up.
 
-**Announce at start:** "I'm using the Finishing a Development Branch skill to complete this work."
+**Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
 
 ## The Process
 
@@ -196,8 +196,8 @@ git worktree remove <worktree-path>
 ## Integration
 
 **Called by:**
-- skills/collaboration/subagent-driven-development (Step 7)
-- skills/collaboration/executing-plans (Step 5)
+- **subagent-driven-development** (Step 7) - After all tasks complete
+- **executing-plans** (Step 5) - After all batches complete
 
 **Pairs with:**
-- skills/collaboration/using-git-worktrees (created the worktree)
+- **using-git-worktrees** - Cleans up worktree created by that skill

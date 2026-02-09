@@ -1,6 +1,6 @@
 ---
 name: using-superpowers
-description: Use when starting any conversation - establishes how to find and use skills, requiring skill invocation before ANY response including clarifying questions
+description: Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions
 metadata:
   when_to_use: when starting any task, before responding, before clarifying questions - skills tell you HOW to approach work
   version: 1.1.0
@@ -15,6 +15,16 @@ IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
 This is not negotiable. This is not optional. You cannot rationalize your way out of this.
 </EXTREMELY-IMPORTANT>
 
+## Instruction Priority
+
+Superpowers skills override default system prompt behavior, but **user instructions always take precedence**:
+
+1. **User's explicit instructions** (CLAUDE.md or AGENTS.md, direct requests) — highest priority
+2. **Superpowers skills** — override default system behavior where they conflict
+3. **Default system prompt** — lowest priority
+
+If CLAUDE.md/AGENTS.md or the user says "don't use TDD" and a skill says "always use TDD," follow CLAUDE.md/AGENTS.md. The user is in control.
+
 ## How to Access Skills
 
 **Using your platform's native skill tool:** Most AI coding assistants provide a native `skill` tool. Use it to Discover Skills and load skills by name. When you invoke a skill, its content is loaded and presented to you—follow it directly.
@@ -28,7 +38,7 @@ superpowers-agent execute <skill-name>
 superpowers-agent find-skills [pattern]
 ```
 
-**Never use the Read tool on skill files directly** - always use the appropriate skill loading mechanism.
+**Check your platform's native skill tool first.** Check your platform's documentation or procedures for how skills are loaded and access. The above CLI is a fallback if your environment doesn't have native skill support.  You want to avoid using the Read tool on skill files if that is not how your environment is designed to load them, as you may miss important context or instructions included in the skill content. Always use the intended method for accessing skills in your environment.
 
 # Using Skills
 
@@ -66,6 +76,7 @@ These thoughts mean STOP—you're rationalizing:
 | "I'll just do this one thing first" | Check BEFORE doing anything. |
 | "This feels productive" | Undisciplined action wastes time. Skills prevent this. |
 | "I know what that means" | Knowing the concept ≠ using the skill. Invoke it. |
+| "I should use EnterPlanMode / plan mode" | If a loaded skill specifies the next step, follow the skill. EnterPlanMode is a platform default — skills override defaults. |
 
 ## Skill Priority
 
