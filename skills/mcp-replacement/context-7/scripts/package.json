@@ -1,9 +1,0 @@
-{
-  "name": "context-7-scripts",
-  "version": "1.0.0",
-  "description": "Context-7 API scripts for library documentation search",
-  "type": "module",
-  "engines": {
-    "node": ">=18.0.0"
-  }
-}
