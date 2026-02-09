@@ -1,8 +1,0 @@
-I need to build a new authentication system for our app. It needs to support:
-- Email/password login
-- OAuth with Google and GitHub
-- Session management with JWT
-- Rate limiting on login attempts
-- Password reset flow
-
-This is a big feature. Can you help me plan out the implementation?
