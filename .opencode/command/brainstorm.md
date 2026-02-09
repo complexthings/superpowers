@@ -1,25 +1,7 @@
 ---
-description: Refine ideas into designs through collaborative Socratic questioning
+description: You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores requirements and design before implementation.
 ---
 
-# Brainstorm With Superpowers
-
-I'm using the brainstorming skill to help develop your idea.
-
-First, let me load the skill:
-
-**IMPORTANT RUN THIS COMMAND AND FOLLOW IT'S INSTRUCTIONS TO LOAD THE SKILL**:
-```bash
-superpowers-agent execute superpowers:collaboration/brainstorming
-```
-
-Now I'll follow the skill guidance to:
-1. Understand current project context (files, docs, recent commits)
-2. Ask questions one at a time to refine the idea
-3. Explore 2-3 alternative approaches with trade-offs
-4. Present design in sections (200-300 words each) for validation
-5. Write validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
-
-Let's start by understanding what you want to build.
+Invoke the superpowers:collaboration/brainstorming skill and follow it exactly as presented to you
 
 $ARGUMENTS
