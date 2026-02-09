@@ -58,56 +58,51 @@ flowchart TD
     FINAL --> FINISH[Use finishing-a-development-branch skill]
 ```
 
+
+## Model Selection
+
+Use the least powerful model that can handle each role to conserve cost and increase speed.
+
+**Mechanical implementation tasks** (isolated functions, clear specs, 1-2 files): use a fast, cheap model. Most implementation tasks are mechanical when the plan is well-specified.
+
+**Integration and judgment tasks** (multi-file coordination, pattern matching, debugging): use a standard model.
+
+**Architecture, design, and review tasks**: use the most capable available model.
+
+**Task complexity signals:**
+- Touches 1-2 files with a complete spec → cheap model
+- Touches multiple files with integration concerns → standard model
+- Requires design judgment or broad codebase understanding → most capable model
+
+## Handling Implementer Status
+
+Implementer subagents report one of four statuses. Handle each appropriately:
+
+**DONE:** Proceed to spec compliance review.
+
+**DONE_WITH_CONCERNS:** The implementer completed the work but flagged doubts. Read the concerns before proceeding. If the concerns are about correctness or scope, address them before review. If they're observations (e.g., "this file is getting large"), note them and proceed to review.
+
+**NEEDS_CONTEXT:** The implementer needs information that wasn't provided. Provide the missing context and re-dispatch.
+
+**BLOCKED:** The implementer cannot complete the task. Assess the blocker:
+1. If it's a context problem, provide more context and re-dispatch with the same model
+2. If the task requires more reasoning, re-dispatch with a more capable model
+3. If the task is too large, break it into smaller pieces
+4. If the plan itself is wrong, escalate to the human
+
+**Never** ignore an escalation or force the same model to retry without changes. If the implementer said it's stuck, something needs to change.
 ## Prompt Templates
 
-Use these templates when dispatching subagents:
-
-- `./implementer-prompt.md` - Dispatch implementer subagent with self-review checklist
-- `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent (Stage 1)
-- `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent (Stage 2)
-
-## Two-Stage Review Explained
-
-### Stage 1: Spec Compliance Review
-
-**Purpose:** Verify implementer built what was requested (nothing more, nothing less)
-
-**Catches:**
-- Missing requirements
-- Extra/unneeded features
-- Misunderstandings of requirements
-
-**Key behavior:** Don't trust the implementer's report - read the actual code and compare to spec.
-
-### Stage 2: Code Quality Review
-
-**Purpose:** Verify implementation is well-built (clean, tested, maintainable)
-
-**Only runs after spec compliance passes.**
-
-**Catches:**
-- Missing tests
-- Poor code structure
-- Technical debt
-- Maintainability issues
-
-### Why Two Stages?
-
-**Problem with single-stage review:**
-- Reviewer might approve clean code that doesn't match spec
-- Or reject spec-compliant code for style issues
-- Different concerns get conflated
-
-**Two-stage solution:**
-1. First ensure it does the right thing
-2. Then ensure it's built well
+- `./implementer-prompt.md` - Dispatch implementer subagent
+- `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent
+- `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
 
 ## Example Workflow
 
 ```
 You: I'm using Subagent-Driven Development to execute this plan.
 
-[Read plan file once: docs/plans/feature-plan.md]
+[Read plan file once: .agents/superpowers/specs/YYYY-MM-DD-<topic>-design.md]
 [Extract all 5 tasks with full text and context]
 [Create TodoWrite with all tasks]
 
@@ -213,6 +208,7 @@ Done!
 ## Red Flags
 
 **Never:**
+- Start implementation on main/master branch without explicit user consent
 - Skip reviews (spec compliance OR code quality)
 - Proceed with unfixed issues
 - Dispatch multiple implementation subagents in parallel (conflicts)
@@ -243,12 +239,13 @@ Done!
 ## Integration
 
 **Required workflow skills:**
-- **writing-plans** - Creates the plan this skill executes
-- **requesting-code-review** - Code review template for reviewer subagents
-- **finishing-a-development-branch** - Complete development after all tasks
+- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **superpowers:writing-plans** - Creates the plan this skill executes
+- **superpowers:requesting-code-review** - Code review template for reviewer subagents
+- **superpowers:finishing-a-development-branch** - Complete development after all tasks
 
 **Subagents should use:**
-- **test-driven-development** - Subagents follow TDD for each task
+- **superpowers:test-driven-development** - Subagents follow TDD for each task
 
 **Alternative workflow:**
-- **executing-plans** - Use for parallel session instead of same-session execution
+- **superpowers:executing-plans** - Use for parallel session instead of same-session execution

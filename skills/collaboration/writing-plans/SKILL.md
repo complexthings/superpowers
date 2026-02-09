@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Create detailed implementation plans with bite-sized tasks for engineers with zero codebase context
+description: Use when you have a spec or requirements for a multi-step task, before touching code. After brainstorming, ALWAYS use this — not EnterPlanMode or plan mode.
 metadata:
   when_to_use: when design is complete and you need detailed implementation tasks for engineers with zero codebase context
   version: 2.1.0
@@ -14,34 +14,27 @@ Write comprehensive implementation plans assuming the engineer has zero context 
 
 Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
 
-**Announce at start:** "I'm using the Writing Plans skill to create the implementation plan."
+**Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Context:** This runs in the main workspace after brainstorming, while context is fresh. The worktree is created afterward for implementation.
 
-## Prompts vs Plans
+**Save plans to:** `.agents/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
+- (User preferences for plan location override this default)
 
-**Use plans (this skill) when:**
-- Comprehensive implementation (>100 LOC)
-- Multi-phase development with checkpoints
-- Complex features needing detailed roadmap
+## Scope Check
 
-**Use prompts (creating-prompts skill) when:**
-- Focused, single-purpose tasks (<100 LOC)
-- Lightweight instructions for specific workflows
-- Building prompt chains (research → plan → do)
+If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
 
-See skills/meta/creating-prompts for lightweight prompt creation.
+## File Structure
 
-**Save plans to:** `.agents/plans/YYYY-MM-DD-<feature-name>.md` (configurable via `.agents/config.json`)
+Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
 
-**Get configured directory:**
-```bash
-superpowers-agent get-config plans_dir
-```
+- Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
+- You reason best about code you can hold in context at once, and your edits are more reliable when files are focused. Prefer smaller, focused files over large ones that do too much.
+- Files that change together should live together. Split by responsibility, not by technical layer.
+- In existing codebases, follow established patterns. If the codebase uses large files, don't unilaterally restructure - but if a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
 
-**Default:** `.agents/plans/`
-
-**Override:** Set `plans_dir` in `.agents/config.json` (project) or `~/.agents/config.json` (global)
+This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
 ## Bite-Sized Task Granularity
 
@@ -59,7 +52,7 @@ superpowers-agent get-config plans_dir
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **FOR AGENTS** Use `superpowers-agent use-skill executing-plans` to implement this plan task-by-task.
+> **FOR AGENTS** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -80,7 +73,7 @@ superpowers-agent get-config plans_dir
 - Modify: `exact/path/to/existing.py:123-145`
 - Test: `tests/exact/path/to/test.py`
 
-**Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing test**
 
 ```python
 def test_specific_behavior():
@@ -88,29 +81,28 @@ def test_specific_behavior():
     assert result == expected
 ```
 
-**Step 2: Run test to verify it fails**
+- [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/path/test.py::test_name -v`
 Expected: FAIL with "function not defined"
 
-**Step 3: Write minimal implementation**
+- [ ] **Step 3: Write minimal implementation**
 
 ```python
 def function(input):
     return expected
 ```
 
-**Step 4: Run test to verify it passes**
+- [ ] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/path/test.py::test_name -v`
 Expected: PASS
 
-**Step 5: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add tests/path/test.py src/path/file.py
 git commit -m "feat: add specific feature"
-```
 ```
 
 ## Remember
@@ -120,23 +112,38 @@ git commit -m "feat: add specific feature"
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
 
+## Plan Review Loop
+
+After completing each chunk of the plan:
+
+1. Dispatch plan-document-reviewer subagent (see plan-document-reviewer-prompt.md) for the current chunk
+   - Provide: chunk content, path to spec document
+2. If ❌ Issues Found:
+   - Fix the issues in the chunk
+   - Re-dispatch reviewer for that chunk
+   - Repeat until ✅ Approved
+3. If ✅ Approved: proceed to next chunk (or execution handoff if last chunk)
+
+**Chunk boundaries:** Use `## Chunk N: <name>` headings to delimit chunks. Each chunk should be ≤1000 lines and logically self-contained.
+
+**Review loop guidance:**
+- Same agent that wrote the plan fixes it (preserves context)
+- If loop exceeds 5 iterations, surface to human for guidance
+- Reviewers are advisory - explain disagreements if you believe feedback is incorrect
+
 ## Execution Handoff
 
-After saving the plan, offer execution choice:
+After saving the plan:
 
-**"Plan complete and saved to `docs/plans/<filename>.md`. Two execution options:**
+**"Plan complete and saved to `.agents/superpowers/plans/<filename>.md`. Ready to execute?"**
 
-**1. Subagent-Driven (this session)** - I dispatch fresh subagent per task, review between tasks, fast iteration
+**Execution path depends on harness capabilities:**
 
-**2. Parallel Session (separate)** - Open new session with executing-plans, batch execution with checkpoints
+**If harness has subagents (Claude Code, etc.):**
+- **REQUIRED:** Use superpowers:subagent-driven-development
+- Do NOT offer a choice - subagent-driven is the standard approach
+- Fresh subagent per task + two-stage review
 
-**Which approach?"**
-
-**If Subagent-Driven chosen:**
-- Use skills/collaboration/subagent-driven-development
-- Stay in this session
-- Fresh subagent per task + code review
-
-**If Parallel Session chosen:**
-- Guide them to open new session in worktree
-- New session uses skills/collaboration/executing-plans
+**If harness does NOT have subagents:**
+- Execute plan in current session using superpowers:executing-plans
+- Batch execution with checkpoints for review
