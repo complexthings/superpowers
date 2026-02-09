@@ -18,7 +18,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Context:** This runs in the main workspace after brainstorming, while context is fresh. The worktree is created afterward for implementation.
 
-**Save plans to:** `.agents/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
+**Save plans to:** `.agents/superpowers/specs/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
 
 ## Scope Check
@@ -135,7 +135,7 @@ After completing each chunk of the plan:
 
 After saving the plan:
 
-**"Plan complete and saved to `.agents/superpowers/plans/<filename>.md`. Ready to execute?"**
+**"Plan complete and saved to `.agents/superpowers/specs/<filename>.md`. Ready to execute?"**
 
 **Execution path depends on harness capabilities:**
 
