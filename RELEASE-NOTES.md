@@ -6,6 +6,58 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v7.0.5 (February 9, 2026)
+
+### Agent Auto-Installation via `agents.json`
+
+The `superpowers-agent add` and `superpowers-agent pull` commands now automatically detect and install **agents** from repositories that contain an `agents.json` manifest file.
+
+**How it works:**
+- When a repository contains an `agents.json` file at its root, the system reads the manifest and installs listed agents to the appropriate platform-specific directories via symlinks
+- Supports **GitHub Copilot** agents (symlinked to VS Code `prompts/` directory) and **OpenCode** agents (symlinked to `~/.config/opencode/agents/`)
+- Platform support is extensible — additional platforms can be added in future versions
+
+**`agents.json` manifest format:**
+```json
+{
+    "version": "1.0.0",
+    "repository": "@my-agents",
+    "agents": {
+        "github": ["agent-name-1", "agent-name-2"],
+        "opencode": ["agent-name-1", "agent-name-2"]
+    }
+}
+```
+
+**Platform path conventions:**
+- `github` agents: Source at `.github/agents/<name>.agent.md`, installed to VS Code User `prompts/` directory
+- `opencode` agents: Source at `.opencode/agents/<name>.md`, installed to `~/.config/opencode/agents/`
+
+**Key features:**
+- Automatic detection — no extra flags needed
+- Agent tracking in `~/.agents/config.json` under `installedAgents` (records source repo, version, and install timestamps)
+- Persistent repository storage at `~/.agents/repos/` for git-sourced repositories (ensures symlinks remain valid after temp clones are cleaned up)
+- Schema validation with clear error messages for malformed manifests
+- Existing agents at destination paths are overwritten (symlinks replaced)
+- Works with both `add` (fresh install) and `pull` (update) commands
+
+### Files Created
+
+```
+.agents/src/agents/platforms.js - Platform path resolution for agent destinations
+.agents/src/agents/installer.js - Core agent installation logic
+```
+
+### Files Modified
+
+```
+.agents/src/skills/installer.js - Hooked agent installation into add/pull commands
+.agents/src/core/config.js - Added agent tracking functions
+.agents/package.json - Version 7.0.5
+```
+
+---
+
 ## v7.0.0 (February 7, 2026)
 
 ### Build System Migration to Bun

@@ -6,6 +6,12 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
+**v7.0.5 (February 9, 2026):**
+
+- **Agent Auto-Installation** - `add` and `pull` commands now automatically detect and install agents from repositories with an `agents.json` manifest, supporting GitHub Copilot and OpenCode platforms with extensible platform support
+- **Agent Tracking** - Installed agents are tracked in `~/.agents/config.json` with source repository, version, and install timestamps
+- **Persistent Repo Storage** - Git-sourced agent repositories are persisted at `~/.agents/repos/` to maintain valid symlinks
+
 **v7.0.0 (February 7, 2026):**
 
 - 🔧 **Bun Build System** - Migrated CLI build toolchain from Node.js/npm to Bun for faster builds and simpler dependency management
@@ -255,6 +261,44 @@ Repository aliases make it easy to:
 - Share skill repositories across teams
 - Quickly access frequently used skill collections
 - Support both Git URLs and local paths
+
+### Agent Auto-Installation
+
+Repositories can include an `agents.json` manifest to automatically install AI agents alongside skills. When you run `superpowers-agent add` or `superpowers-agent pull` on a repository containing `agents.json`, agents are automatically symlinked to the appropriate platform directories.
+
+**`agents.json` format:**
+```json
+{
+    "version": "1.0.0",
+    "repository": "@my-agents",
+    "agents": {
+        "github": ["agent-name-1", "agent-name-2"],
+        "opencode": ["agent-name-1", "agent-name-2"]
+    }
+}
+```
+
+**Supported platforms and paths:**
+
+| Platform | Source Directory | Destination |
+|----------|----------------|-------------|
+| `github` | `.github/agents/<name>.agent.md` | VS Code `prompts/` directory |
+| `opencode` | `.opencode/agents/<name>.md` | `~/.config/opencode/agents/` |
+
+**How it works:**
+1. After skills are installed, the system checks for `agents.json` at the repository root
+2. For each platform listed, agents are symlinked from the repository to the platform destination
+3. For git-sourced repositories, a persistent copy is stored at `~/.agents/repos/` so symlinks remain valid
+4. Installed agents are tracked in `~/.agents/config.json` under `installedAgents`
+
+**Examples:**
+```bash
+# Install skills and agents from a repository
+superpowers-agent add https://github.com/example/agents-repo.git
+
+# Update agents from a repository alias
+superpowers-agent pull @my-agents
+```
 
 ### Skill Symlinks for IDE Integration
 

@@ -1,9 +1,68 @@
-import { existsSync, readFileSync } from 'fs';
-import { join, dirname, parse } from 'path';
+import { existsSync, readFileSync, mkdirSync, rmSync, cpSync } from 'fs';
+import { join, dirname, parse, sep } from 'path';
 import { execSync } from 'child_process';
 import { homedir } from 'os';
 import { getRepositories, addRepositoryToConfig, readConfigFile, writeConfigFile } from '../core/config.js';
 import { syncPersonalSkillSymlinks } from '../utils/symlinks.js';
+import { installAgents } from '../agents/installer.js';
+
+/**
+ * Get the repository root from a clone path.
+ * For git-tree clones, sourcePath may be a subdirectory of the tmp clone.
+ * This resolves back to the root of the cloned repo.
+ */
+export const getRepoRoot = (sourcePath, parsed) => {
+    if (parsed.type === 'local') {
+        // For local paths, walk up to find agents.json
+        let dir = sourcePath;
+        for (let i = 0; i < 10; i++) {
+            if (existsSync(join(dir, 'agents.json'))) return dir;
+            const parent = dirname(dir);
+            if (parent === dir) break;
+            dir = parent;
+        }
+        return sourcePath;
+    }
+    
+    // For git clones, the tmp root is the clone root
+    const tmpMarker = join('.agents', 'tmp');
+    if (sourcePath.includes(tmpMarker)) {
+        const idx = sourcePath.indexOf(tmpMarker);
+        const afterTmp = sourcePath.substring(idx + tmpMarker.length + 1);
+        const tmpName = afterTmp.split(sep)[0];
+        return join(sourcePath.substring(0, idx), '.agents', 'tmp', tmpName);
+    }
+    return sourcePath;
+};
+
+/**
+ * Persist a cloned repository for agent symlinks.
+ * Copies the clone to ~/.agents/repos/<alias>/ so symlinks remain valid.
+ * Returns the new persistent repo root path.
+ */
+export const persistRepoForAgents = (tmpRepoRoot, alias) => {
+    const reposDir = join(homedir(), '.agents', 'repos');
+    const safeName = alias.replace(/^@/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const destDir = join(reposDir, safeName);
+    
+    try {
+        // Create repos dir
+        mkdirSync(reposDir, { recursive: true });
+        
+        // Remove existing if present
+        if (existsSync(destDir)) {
+            rmSync(destDir, { recursive: true, force: true });
+        }
+        
+        // Copy clone to persistent location
+        cpSync(tmpRepoRoot, destDir, { recursive: true });
+        
+        return destDir;
+    } catch (error) {
+        console.log(`  Warning: Could not persist repository for agents: ${error.message}`);
+        return null;
+    }
+};
 
 /**
  * Parse a Git URL or local path
@@ -352,6 +411,27 @@ Description:
             installSingleSkill(dirname(sourcePath), parse(sourcePath).base, installBase, results);
         }
         
+        // Check for agents.json and install agents
+        const repoRoot = getRepoRoot(sourcePath, parsed);
+        const agentsJsonPath = join(repoRoot, 'agents.json');
+        if (existsSync(agentsJsonPath)) {
+            let agentRepoRoot = repoRoot;
+            // For git sources, persist the clone so symlinks remain valid
+            if (cleanup) {
+                // Determine alias from agents.json or URL
+                let agentManifest;
+                try {
+                    agentManifest = JSON.parse(readFileSync(agentsJsonPath, 'utf8'));
+                } catch {}
+                const alias = agentManifest?.repository || parsed.original;
+                const persistedRoot = persistRepoForAgents(repoRoot, alias);
+                if (persistedRoot) {
+                    agentRepoRoot = persistedRoot;
+                }
+            }
+            installAgents(agentRepoRoot, { isUpdate: false });
+        }
+        
         // Clean up temporary clone
         if (cleanup && sourcePath) {
             try {
@@ -563,6 +643,26 @@ Description:
             // Single skill
             const skillName = rootSkillJson.name || parse(sourcePath).base;
             installSingleSkill(dirname(sourcePath), parse(sourcePath).base, installBase, results);
+        }
+        
+        // Check for agents.json and install agents
+        const repoRoot = getRepoRoot(sourcePath, parsed);
+        const agentsJsonPath = join(repoRoot, 'agents.json');
+        if (existsSync(agentsJsonPath)) {
+            let agentRepoRoot = repoRoot;
+            // For git sources, persist the clone so symlinks remain valid
+            if (cleanup) {
+                let agentManifest;
+                try {
+                    agentManifest = JSON.parse(readFileSync(agentsJsonPath, 'utf8'));
+                } catch {}
+                const alias = agentManifest?.repository || parsed.original;
+                const persistedRoot = persistRepoForAgents(repoRoot, alias);
+                if (persistedRoot) {
+                    agentRepoRoot = persistedRoot;
+                }
+            }
+            installAgents(agentRepoRoot, { isUpdate: true });
         }
         
         // Clean up temporary clone
