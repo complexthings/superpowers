@@ -106,3 +106,32 @@ export const addRepositoryToConfig = (alias, url, isGlobal) => {
     config.repositories[alias] = url;
     writeConfigFile(config, isGlobal);
 };
+
+/**
+ * Get installed agents from global config
+ */
+export function getInstalledAgents() {
+    const config = readConfigFile(true); // always global
+    return config.installedAgents || {};
+}
+
+/**
+ * Track an installed agent in global config
+ */
+export function trackInstalledAgent(repoAlias, version, platformKey, agentName, sourcePath, destPath) {
+    const config = readConfigFile(true);
+    if (!config.installedAgents) config.installedAgents = {};
+    if (!config.installedAgents[repoAlias]) {
+        config.installedAgents[repoAlias] = { version, agents: {} };
+    }
+    config.installedAgents[repoAlias].version = version;
+    if (!config.installedAgents[repoAlias].agents[platformKey]) {
+        config.installedAgents[repoAlias].agents[platformKey] = {};
+    }
+    config.installedAgents[repoAlias].agents[platformKey][agentName] = {
+        source: sourcePath,
+        destination: destPath,
+        installedAt: new Date().toISOString()
+    };
+    writeConfigFile(config, true);
+}
