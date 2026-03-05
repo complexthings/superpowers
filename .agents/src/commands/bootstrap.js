@@ -602,6 +602,13 @@ const runBootstrap = () => {
     // Check for --no-update flag
     const noUpdate = process.argv.includes('--no-update');
 
+    // Parse --force-<agent> flags
+    const KNOWN_AGENTS = ['copilot', 'cursor', 'codex', 'gemini', 'claude', 'opencode'];
+    const forceAgents = new Set(
+        KNOWN_AGENTS.filter(a => process.argv.includes(`--force-${a}`))
+    );
+    const hasForcedAgents = forceAgents.size > 0;
+
     // Auto-update check
     if (!noUpdate) {
         const config = readConfig();
@@ -628,94 +635,110 @@ const runBootstrap = () => {
         }
     }
 
-    // Install universal aliases
-    installAliases();
-    console.log('---\n');
+    // Install universal aliases (skip when targeting specific agents)
+    if (!hasForcedAgents) {
+        installAliases();
+        console.log('---\n');
+    }
 
     // Install GitHub Copilot integration
-    console.log('## GitHub Copilot Integration\n');
-    installCopilotPrompts();
-    console.log('\n---\n');
+    if (!hasForcedAgents || forceAgents.has('copilot')) {
+        console.log('## GitHub Copilot Integration\n');
+        installCopilotPrompts();
+        console.log('\n---\n');
+    }
 
     // Install Cursor integration
-    console.log('## Cursor Integration\n');
-    installCursorCommands();
-    console.log('');
-    installCursorHooks();
-    console.log('\n---\n');
+    if (!hasForcedAgents || forceAgents.has('cursor')) {
+        console.log('## Cursor Integration\n');
+        installCursorCommands();
+        console.log('');
+        installCursorHooks();
+        console.log('\n---\n');
+    }
 
     // Install Codex integration
-    console.log('## OpenAI Codex Integration\n');
-    const codexDetected = toolDetection.codex.check();
-    if (codexDetected) {
-        installCodexPrompts();
-    } else {
-        console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)\n💡 To enable Codex integration:\n   1. Install Codex: ${toolDetection.codex.installUrl}\n   2. Run: superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
+    if (!hasForcedAgents || forceAgents.has('codex')) {
+        console.log('## OpenAI Codex Integration\n');
+        const codexDetected = toolDetection.codex.check();
+        if (codexDetected) {
+            installCodexPrompts();
+        } else {
+            console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)\n💡 To enable Codex integration:\n   1. Install Codex: ${toolDetection.codex.installUrl}\n   2. Run: superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
+        }
+        console.log('\n---\n');
     }
-    console.log('\n---\n');
 
     // Install Gemini integration
-    console.log('## Gemini Integration\n');
-    const geminiDetected = toolDetection.gemini.check();
-    if (geminiDetected) {
-        installGeminiCommands();
-    } else {
-        console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)\n💡 To enable Gemini integration:\n   1. Install Gemini: ${toolDetection.gemini.installUrl}\n   2. Run: superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
+    if (!hasForcedAgents || forceAgents.has('gemini')) {
+        console.log('## Gemini Integration\n');
+        const geminiDetected = toolDetection.gemini.check();
+        if (geminiDetected) {
+            installGeminiCommands();
+        } else {
+            console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)\n💡 To enable Gemini integration:\n   1. Install Gemini: ${toolDetection.gemini.installUrl}\n   2. Run: superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
+        }
+        console.log('\n---\n');
     }
-    console.log('\n---\n');
 
     // Install Claude Code integration
-    console.log('## Claude Code Integration\n');
-    const claudeDetected = toolDetection.claude.check();
-    if (claudeDetected) {
-        installClaudeCommands();
-    } else {
-        console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
+    if (!hasForcedAgents || forceAgents.has('claude')) {
+        console.log('## Claude Code Integration\n');
+        const claudeDetected = toolDetection.claude.check();
+        if (claudeDetected) {
+            installClaudeCommands();
+        } else {
+            console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
+        }
+        console.log('\n---\n');
     }
-    console.log('\n---\n');
 
     // Install OpenCode integration
-    console.log('## OpenCode Integration\n');
-    const opencodeDetected = toolDetection.opencode.check();
-    if (opencodeDetected) {
-        installOpencodeCommands();
-        console.log('');
-        installOpencodePluginSymlink();
-    } else {
-        console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
-    }
-    console.log('\n---\n');
-
-    // Generate platform-specific files
-    console.log('## Generating Platform-Specific Files\n');
-    
-    const detectedPlatforms = detectPlatforms();
-    console.log(`Detected platforms: ${detectedPlatforms.join(', ') || 'none'}\n`);
-    
-    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'AGENTS.md.template');
-    let baseTemplate = '';
-    try {
-        baseTemplate = readFileSync(templatePath, 'utf8');
-    } catch (error) {
-        console.log(`⚠️  Could not read AGENTS.md template: ${error.message}\n`);
-    }
-    
-    if (baseTemplate) {
-        // Inject current version into template
-        const currentVersion = getLocalVersion();
-        baseTemplate = baseTemplate.replace(/\{\{VERSION\}\}/g, currentVersion);
-        
-        // Update global AGENTS.md
-        const globalAgentsPath = join(paths.home, '.agents', 'AGENTS.md');
-        const globalResult = updatePlatformFile(globalAgentsPath, baseTemplate, detectedPlatforms, true);
-        if (globalResult.created) {
-            console.log(`✓ Created ${globalAgentsPath}`);
-        } else if (globalResult.updated) {
-            console.log(`✓ Updated ${globalAgentsPath}`);
+    if (!hasForcedAgents || forceAgents.has('opencode')) {
+        console.log('## OpenCode Integration\n');
+        const opencodeDetected = toolDetection.opencode.check();
+        if (opencodeDetected) {
+            installOpencodeCommands();
+            console.log('');
+            installOpencodePluginSymlink();
+        } else {
+            console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);
         }
+        console.log('\n---\n');
     }
 
-    console.log('\n---\n');
+    // Generate platform-specific files (skip when targeting specific agents)
+    if (!hasForcedAgents) {
+        console.log('## Generating Platform-Specific Files\n');
+        
+        const detectedPlatforms = detectPlatforms();
+        console.log(`Detected platforms: ${detectedPlatforms.join(', ') || 'none'}\n`);
+        
+        const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'AGENTS.md.template');
+        let baseTemplate = '';
+        try {
+            baseTemplate = readFileSync(templatePath, 'utf8');
+        } catch (error) {
+            console.log(`⚠️  Could not read AGENTS.md template: ${error.message}\n`);
+        }
+        
+        if (baseTemplate) {
+            // Inject current version into template
+            const currentVersion = getLocalVersion();
+            baseTemplate = baseTemplate.replace(/\{\{VERSION\}\}/g, currentVersion);
+            
+            // Update global AGENTS.md
+            const globalAgentsPath = join(paths.home, '.agents', 'AGENTS.md');
+            const globalResult = updatePlatformFile(globalAgentsPath, baseTemplate, detectedPlatforms, true);
+            if (globalResult.created) {
+                console.log(`✓ Created ${globalAgentsPath}`);
+            } else if (globalResult.updated) {
+                console.log(`✓ Updated ${globalAgentsPath}`);
+            }
+        }
+
+        console.log('\n---\n');
+    }
 
     // Sync skill symlinks for Claude and Copilot
     console.log('## Syncing Skill Symlinks\n');
