@@ -6,6 +6,43 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v7.1.0 (March 5, 2026)
+
+### Targeted Agent Re-Installation via `--force-<agent>` Flags
+
+The `superpowers-agent bootstrap` command now supports **`--force-<agent>`** flags to re-run only specific agent integrations without repeating the full bootstrap.
+
+**Supported flags:**
+
+| Flag | Re-installs |
+|------|-------------|
+| `--force-copilot` | GitHub Copilot prompts |
+| `--force-cursor` | Cursor slash commands & hooks |
+| `--force-codex` | OpenAI Codex prompts |
+| `--force-gemini` | Gemini CLI commands |
+| `--force-claude` | Claude Code commands |
+| `--force-opencode` | OpenCode commands & plugin symlink |
+
+**Usage examples:**
+```bash
+# Re-install only GitHub Copilot integration
+superpowers-agent bootstrap --force-copilot
+
+# Re-install Copilot and Gemini together
+superpowers-agent bootstrap --force-copilot --force-gemini
+
+# Standard full bootstrap (no flags)
+superpowers-agent bootstrap
+```
+
+**Behavior when force flags are used:**
+- Only the targeted agent sections run
+- Universal aliases installation is skipped
+- Platform-specific `AGENTS.md` generation is skipped
+- Skill symlink sync always runs regardless of flags
+
+---
+
 ## v7.0.5 (February 9, 2026)
 
 ### Agent Auto-Installation via `agents.json`
