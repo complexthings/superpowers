@@ -329,6 +329,7 @@ When you run `superpowers-agent bootstrap` or `superpowers-agent setup-skills`:
 **Behavior:**
 - Symlinks are only created if the parent directory exists
 - Use `--force` flag to create parent directories: `superpowers-agent bootstrap --force`
+- Use `--force-<agent>` flags to re-install only specific agent integrations (e.g. `--force-copilot`, `--force-cursor`, `--force-claude`)
 - Symlinks are tracked in `~/.agents/config.json` for management
 
 **Windows Notes:**
@@ -813,6 +814,22 @@ superpowers-agent bootstrap
 ```bash
 superpowers-agent bootstrap --no-update
 ```
+
+**Re-install only specific agent integrations:**
+
+Use `--force-<agent>` flags to target individual agents without running the full bootstrap. Useful when you've updated a single agent's tools or want to repair a specific integration.
+
+```bash
+# Re-install only GitHub Copilot integration
+superpowers-agent bootstrap --force-copilot
+
+# Re-install Copilot and Gemini together
+superpowers-agent bootstrap --force-copilot --force-gemini
+```
+
+Supported flags: `--force-copilot`, `--force-cursor`, `--force-codex`, `--force-gemini`, `--force-claude`, `--force-opencode`
+
+> When `--force-<agent>` flags are used, universal alias installation and `AGENTS.md` platform generation are skipped. Skill symlink sync still runs.
 
 ### Manual Updates
 
