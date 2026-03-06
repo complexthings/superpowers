@@ -372,15 +372,16 @@ const syncPersonalSkillsForPlatform = (platform, options = {}) => {
  * @param {boolean} options.force - Create parent directories even if they don't exist
  */
 export const syncAllSkillSymlinks = (options = {}) => {
-    const { force = false } = options;
+    const { force = false, forceAgents = new Set() } = options;
     
     for (const platform of SKILL_PLATFORMS) {
+        const platformForce = force || forceAgents.has(platform.name);
         const parentDir = platform.parentDir();
         const skillsDir = platform.skillsDir();
         
         // Check if parent directory exists
         if (!existsSync(parentDir)) {
-            if (force) {
+            if (platformForce) {
                 try {
                     mkdirSync(parentDir, { recursive: true });
                     console.log(`✓ Created ${parentDir.replace(homedir(), '~')}`);
@@ -390,7 +391,7 @@ export const syncAllSkillSymlinks = (options = {}) => {
                 }
             } else {
                 console.log(`⚠️  Skipping ${platform.name} (${parentDir.replace(homedir(), '~')} not found)`);
-                console.log(`   Use --force to create directory`);
+                console.log(`   Use --force or --force-<agent> to create directory`);
                 continue;
             }
         }
