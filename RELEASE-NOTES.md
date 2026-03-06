@@ -6,6 +6,14 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v7.1.1 (March 5, 2026)
+
+### Fixed
+
+- **`--force-<agent>` creates missing agent directory** — Previously, if the agent's parent directory (e.g. `~/.copilot`) did not exist, `--force-copilot` would silently skip skill installation. Now the directory is created automatically before installing skills.
+
+---
+
 ## v7.1.0 (March 5, 2026)
 
 ### Targeted Agent Re-Installation via `--force-<agent>` Flags
