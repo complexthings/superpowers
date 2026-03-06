@@ -829,7 +829,7 @@ superpowers-agent bootstrap --force-copilot --force-gemini
 
 Supported flags: `--force-copilot`, `--force-cursor`, `--force-codex`, `--force-gemini`, `--force-claude`, `--force-opencode`
 
-> When `--force-<agent>` flags are used, universal alias installation and `AGENTS.md` platform generation are skipped. Skill symlink sync still runs.
+> When `--force-<agent>` flags are used, universal alias installation and `AGENTS.md` platform generation are skipped. Skill symlink sync still runs. If the agent's directory does not exist (e.g. `~/.copilot`), it will be created automatically.
 
 ### Manual Updates
 
