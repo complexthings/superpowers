@@ -743,7 +743,7 @@ const runBootstrap = () => {
     // Sync skill symlinks for Claude and Copilot
     console.log('## Syncing Skill Symlinks\n');
     const forceCreate = process.argv.includes('--force');
-    syncAllSkillSymlinks({ force: forceCreate });
+    syncAllSkillSymlinks({ force: forceCreate, forceAgents });
     console.log('\n---\n');
 
     console.log('# Bootstrap Complete!\n');
