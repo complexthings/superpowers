@@ -6,6 +6,14 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v7.1.2 (March 5, 2026)
+
+### Fixed
+
+- **`--force-<agent>` creates missing agent directories (binary rebuild)** — v7.1.1 documented this fix but the binary was not rebuilt before release. This release ships the rebuilt binary. Running `bootstrap --force-copilot` (or any `--force-<agent>`) now correctly creates the agent's parent directory when it does not exist, instead of skipping with a warning.
+
+---
+
 ## v7.1.1 (March 5, 2026)
 
 ### Fixed
