@@ -1,10 +1,6 @@
 ---
 name: test-driven-development
-description: Write the test first, watch it fail, write minimal code to pass
-metadata:
-  when_to_use: when implementing any feature or bugfix, before writing implementation code
-  version: 3.2.0
-  languages: all
+description: Write the test first, watch it fail, write minimal code to pass. Use when implementing any feature or bugfix, before writing implementation code. Also use when fixing bugs, refactoring, or doing behavior changes — any time you're about to write production code, TDD applies. Essential for AI-assisted coding sessions to ensure generated code is verified.
 ---
 
 # Test-Driven Development (TDD)
@@ -26,9 +22,9 @@ Write the test first. Watch it fail. Write minimal code to pass.
 - Behavior changes
 
 **Exceptions (ask your human partner):**
-- Throwaway prototypes
-- Generated code
-- Configuration files
+- Throwaway prototypes (delete before merging)
+- Scaffolded/boilerplate code with no logic
+- Pure configuration files
 
 Thinking "skip TDD just this once"? Stop. That's rationalization.
 
@@ -48,10 +44,15 @@ Write code before the test? Delete it. Start over.
 
 Implement fresh from tests. Period.
 
-## Red-Green-Refactor
+## The Full Cycle
+
+Before writing your first test, write a **test list**: a short list of scenarios you need to cover. Don't turn them all into tests immediately — just capture them so you don't lose track of edge cases while you're heads-down implementing.
+
+Then for each item, follow Red-Green-Refactor:
 
 ```mermaid
 flowchart LR
+    LIST[Test List] --> RED
     RED[RED: Write failing test] --> VR{Verify fails correctly}
     VR -->|yes| GREEN[GREEN: Minimal code]
     VR -->|wrong failure| RED
@@ -59,11 +60,26 @@ flowchart LR
     VG -->|yes| REFACTOR[REFACTOR: Clean up]
     VG -->|no| GREEN
     REFACTOR --> VG2{Stay green?}
-    VG2 -->|yes| NEXT((Next))
+    VG2 -->|yes| NEXT((Next item))
     NEXT --> RED
 ```
 
-### RED - Write Failing Test
+### Step 0 — Write the Test List
+
+Before writing any code or test, write down the scenarios you'll need to handle:
+
+```
+User login:
+- valid credentials → success
+- wrong password → error message
+- empty email → validation error
+- locked account → specific error
+- remember me → session persists
+```
+
+Pick the simplest item first. Sequence matters — easier tests illuminate the design for harder ones.
+
+### RED — Write Failing Test
 
 Write one minimal test showing what should happen.
 
@@ -105,7 +121,7 @@ Vague name, tests mock not code
 - Clear name
 - Real code (no mocks unless unavoidable)
 
-### Verify RED - Watch It Fail
+### Verify RED — Watch It Fail
 
 **MANDATORY. Never skip.**
 
@@ -122,7 +138,7 @@ Confirm:
 
 **Test errors?** Fix error, re-run until it fails correctly.
 
-### GREEN - Minimal Code
+### GREEN — Minimal Code
 
 Write simplest code to pass the test.
 
@@ -160,7 +176,7 @@ Over-engineered
 
 Don't add features, refactor other code, or "improve" beyond the test.
 
-### Verify GREEN - Watch It Pass
+### Verify GREEN — Watch It Pass
 
 **MANDATORY.**
 
@@ -177,7 +193,7 @@ Confirm:
 
 **Other tests fail?** Fix now.
 
-### REFACTOR - Clean Up
+### REFACTOR — Clean Up
 
 After green only:
 - Remove duplication
@@ -188,7 +204,33 @@ Keep tests green. Don't add behavior.
 
 ### Repeat
 
-Next failing test for next feature.
+Pick the next item from your test list. Write the next failing test.
+
+## Using TDD with AI-Generated Code
+
+When an AI assistant generates implementation code, TDD discipline is *more* important, not less — AI code looks plausible but may be subtly wrong.
+
+**The rule is the same:** tests first, then generation.
+
+**Practical pattern:**
+1. Write your test list as you normally would
+2. Write the failing test
+3. Run it — confirm it fails for the right reason
+4. Ask the AI to implement the minimal code to pass the test (paste the test as context)
+5. Run the test — confirm it passes
+6. Review the AI code before accepting: does it actually do what you intended, or did it fake out the test?
+
+**Watch for faking:** AI assistants sometimes generate code that passes the specific test without implementing the real behavior. For example, hardcoding a return value that matches your test fixture. Your test list (step 0) and multiple test cases prevent this.
+
+**Exploration is fine — then delete it:**
+```
+✅ "Generate a spike to explore the API"
+✅ Review the spike for understanding
+✅ Delete the spike completely
+✅ Write tests, then re-implement from scratch
+```
+
+Never ask an AI to "add tests to the code I just wrote." The tests will be biased toward the existing implementation.
 
 ## Good Tests
 
@@ -197,6 +239,24 @@ Next failing test for next feature.
 | **Minimal** | One thing. "and" in name? Split it. | `test('validates email and domain and whitespace')` |
 | **Clear** | Name describes behavior | `test('test1')` |
 | **Shows intent** | Demonstrates desired API | Obscures what code should do |
+
+## Test Doubles — Use Sparingly
+
+A **test double** replaces a real dependency during testing. The goal is isolation from slow or external systems — not avoiding real code.
+
+| Type | What it does | When to use |
+|------|-------------|-------------|
+| **Fake** | Working implementation, shortcuts (e.g., in-memory DB) | Best choice when available |
+| **Stub** | Returns canned values | Isolate from external data sources |
+| **Spy** | Records calls for later assertion | Verify side-effect behavior |
+| **Mock** | Pre-programmed expectations, fails if wrong calls | Rarely — fragile on refactoring |
+| **Dummy** | Passed but never used | Fill required parameters |
+
+**Prefer fakes and stubs over mocks.** Mocks couple tests to implementation details, breaking on refactoring even when behavior is correct.
+
+**The real-code default:** Write your test without any doubles first. Add doubles only when the test is genuinely slow, non-deterministic, or has destructive side effects.
+
+Read `@testing-anti-patterns` before adding any mocks or test utilities.
 
 ## Why Order Matters
 
@@ -263,12 +323,13 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 | "TDD will slow me down" | TDD faster than debugging. Pragmatic = test-first. |
 | "Manual test faster" | Manual doesn't prove edge cases. You'll re-test every change. |
 | "Existing code has no tests" | You're improving it. Add tests for existing code. |
+| "AI generated the code, tests would be redundant" | AI code looks correct but often isn't. TDD applies especially here. |
 
-## Red Flags - STOP and Start Over
+## Red Flags — STOP and Start Over
 
 - Code before test
 - Test after implementation
-- Test passes immediately
+- Test passes immediately (without implementation)
 - Can't explain why test failed
 - Tests added "later"
 - Rationalizing "just this once"
@@ -285,6 +346,11 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 ## Example: Bug Fix
 
 **Bug:** Empty email accepted
+
+**Test List:**
+- empty email → validation error
+- whitespace-only email → validation error
+- valid email → passes through
 
 **RED**
 ```typescript
@@ -323,6 +389,7 @@ Extract validation for multiple fields if needed.
 
 Before marking work complete:
 
+- [ ] Wrote a test list before writing any test
 - [ ] Every new function/method has a test
 - [ ] Watched each test fail before implementing
 - [ ] Each test failed for expected reason (feature missing, not typo)
@@ -342,12 +409,20 @@ Can't check all boxes? You skipped TDD. Start over.
 | Test too complicated | Design too complicated. Simplify interface. |
 | Must mock everything | Code too coupled. Use dependency injection. |
 | Test setup huge | Extract helpers. Still complex? Simplify design. |
+| AI generated code first | Delete it. Write test. Ask AI to implement from test. |
 
 ## Debugging Integration
 
 Bug found? Write failing test reproducing it. Follow TDD cycle. Test proves fix and prevents regression.
 
 Never fix bugs without a test.
+
+## Testing Anti-Patterns
+
+When adding mocks or test utilities, read @testing-anti-patterns to avoid common pitfalls:
+- Testing mock behavior instead of real behavior
+- Adding test-only methods to production classes
+- Mocking without understanding dependencies
 
 ## Final Rule
 

@@ -1,10 +1,8 @@
 ---
 name: create-skill-json
-description: Generate a skill.json metadata file for a skill from its SKILL.md and directory structure
+description: Generate a skill.json metadata file for a skill from its SKILL.md and directory structure. Use when adding a new skill to a repository, updating an existing skill's metadata, or standardizing skill.json files. Triggers whenever someone mentions generating, creating, or updating skill.json files.
 metadata:
-  when_to_use: when adding or updating skill.json files for skills in a repository, ensuring proper metadata configuration for skill discovery and tooling
-  version: 1.0.0
-  dependencies: jq (optional, for JSON validation)
+  version: 1.1.0
 ---
 
 # Create skill.json
@@ -16,14 +14,6 @@ Generate a `skill.json` metadata file for a skill based on its `SKILL.md` frontm
 **Core principle:** skill.json is generated from existing information (frontmatter, file structure), not created from scratch with assumptions.
 
 **CRITICAL:** skill.json contains **EXACTLY 5 FIELDS** - no more, no less. Any additional fields are forbidden.
-
-## When to Use
-
-Use this skill when:
-- Adding a new skill that needs a skill.json file
-- Updating an existing skill's metadata
-- Standardizing skill.json files across a repository
-- Migrating skills to use the skill.json format
 
 ## Input Requirements
 
@@ -58,46 +48,47 @@ Read the SKILL.md file and extract frontmatter fields:
 
 ```yaml
 ---
-name: Human-Readable Name
-description: One-line summary
-when_to_use: when [trigger/situation]
-version: 1.0.0  # Optional, defaults to 1.0.0
+name: human-readable-name
+description: One-line summary of what the skill does and when to use it.
+metadata:
+  version: 1.0.0  # Optional, defaults to 1.0.0
 ---
 ```
 
 **Required fields from frontmatter:**
 - `name` → becomes `title` in skill.json
-- `description` → for documentation (not used in skill.json directly)
-- `when_to_use` → for documentation (not used in skill.json directly)
+- `metadata.version` (or top-level `version`) → use if present, otherwise default to "1.0.0"
 
-**Optional fields:**
-- `version` → use if present, otherwise default to "1.0.0"
+### 3. Determine Skill Name (with Namespace)
 
-### 3. Determine Skill Name (Canonical Path)
+The skill `name` in skill.json includes a **namespace prefix** based on where the skill lives:
 
-The skill `name` in skill.json is the **relative path from the skills root directory**.
+| Location | Namespace | Example name |
+|----------|-----------|--------------|
+| `~/.agents/superpowers/skills/` | `superpowers:` | `superpowers:debugging/memory-profiling` |
+| `.agents/skills/` (project) | none | `debugging/memory-profiling` |
+| `~/.agents/skills/` (personal) | none | `debugging/memory-profiling` |
+
+The path component after the namespace is the **relative path from the skills root directory**.
 
 **Examples:**
-- Skill at `./skills/debugging/memory-profiling/` → name: `debugging/memory-profiling`
-- Skill at `./skills/meta/create-skill-json/` → name: `meta/create-skill-json`
-- Skill at `~/.agents/superpowers/skills/collaboration/brainstorming/` → name: `collaboration/brainstorming`
+- Superpowers skill at `~/.agents/superpowers/skills/debugging/memory-profiling/` → name: `superpowers:debugging/memory-profiling`
+- Project skill at `./skills/meta/create-skill-json/` → name: `meta/create-skill-json`
+- Personal skill at `~/.agents/skills/collaboration/brainstorming/` → name: `collaboration/brainstorming`
 
-**DO NOT add namespace prefixes** like `superpowers:` or `project:` - the name is just the path.
+**When context is ambiguous** (can't determine location), ask the user or default to no prefix.
 
 ### 4. Identify Helper Files
 
-Helper files are any files in the skill directory (excluding SKILL.md itself) that support the skill:
-
-**Common helper locations:**
-- `scripts/` - executable scripts
-- `examples/` - example code or files
-- `templates/` - reusable templates
-- `helpers/`, `utilities/`, `tools/`, `docs/` - supporting files
-- Root directory files (e.g., `package.json`, `*.js`, `*.py`, `*.sh`)
+Helper files are files in the skill directory (excluding SKILL.md itself) that the skill **references or uses**. Focus on files that support agents executing the skill.
 
 **Include in helpers array:**
-- All files in subdirectories: `scripts/`, `examples/`, `templates/`, etc.
-- All non-SKILL.md files in the root directory
+- `scripts/` — executable scripts referenced in the skill
+- `examples/` — example code or files used in the skill
+- `templates/` — reusable templates the skill instructs agents to use
+- `references/` — reference documents the skill tells agents to read
+- `assets/` — static resources the skill uses
+- Root-level support files (e.g., `package.json`, `*.sh`, `*.py` that aren't test files)
 
 **Path format:** Relative to the skill directory (where skill.json will live)
 
@@ -110,51 +101,70 @@ Helper files are any files in the skill directory (excluding SKILL.md itself) th
 ]
 ```
 
-**Exclusions:**
-- SKILL.md itself
-- skill.json (if it already exists)
+**Exclude from helpers:**
+- `SKILL.md` itself
+- `skill.json` (if it already exists)
 - Hidden files (starting with `.`)
-- Common non-helper files: `README.md`, `.gitignore`, `node_modules/`, etc.
+- Test/evaluation files (`test-*.md`, `evals/`, `*-workspace/`)
+- Documentation not used by the skill: `README.md`, `CHANGELOG.md`, `LICENSE.txt`
+- `node_modules/`, build artifacts
+
+**If helpers array is empty**, omit the field entirely (don't include `"helpers": []`).
 
 ### 5. Generate Aliases
 
 Aliases allow users to reference the skill with shorter names.
 
-**Required aliases (in this order):**
-1. The full skill path: `category/skill-name`
-2. Just the skill name: `skill-name`
+**Standard aliases (in this order):**
+1. Just the skill name (shortest): `skill-name`
+2. The full path: `category/skill-name`
 
 **Example:**
 ```json
 "aliases": [
-  "debugging/memory-profiling",
-  "memory-profiling"
+  "memory-profiling",
+  "debugging/memory-profiling"
 ]
 ```
 
-**Do NOT add extra aliases** unless explicitly instructed. Stick to the two standard aliases.
+**Optional:** Add a well-known abbreviation as a third alias if one exists (e.g., `"tdd"` for test-driven-development, `"sdd"` for subagent-driven-development). Only add an abbreviation if it's clearly recognized — don't invent aliases.
+
+**Do NOT add random synonyms** — stick to the standard two aliases unless an obvious abbreviation exists.
 
 ### 6. Create skill.json
 
-Assemble the complete skill.json with **EXACTLY these 5 fields**:
+Assemble the complete skill.json with **EXACTLY these 5 fields** (or 4 if helpers is empty):
 
 ```json
 {
   "version": "1.0.0",
-  "name": "category/skill-name",
+  "name": "superpowers:category/skill-name",
   "title": "Human-Readable Title",
   "helpers": [
-    "scripts/helper1.js",
-    "scripts/helper2.py"
+    "scripts/helper1.js"
   ],
   "aliases": [
-    "category/skill-name",
-    "skill-name"
+    "skill-name",
+    "category/skill-name"
   ]
 }
 ```
 
-**FORBIDDEN:** Do NOT add any other fields. No `description`, `tags`, `capabilities`, `triggers`, `keyConcepts`, `components`, `references`, `quickReference`, `resources`, `stats`, or any other creative fields.
+When helpers is empty, omit it:
+
+```json
+{
+  "version": "1.0.0",
+  "name": "superpowers:category/skill-name",
+  "title": "Human-Readable Title",
+  "aliases": [
+    "skill-name",
+    "category/skill-name"
+  ]
+}
+```
+
+**FORBIDDEN:** Do NOT add any other fields. No `description`, `tags`, `capabilities`, `triggers`, `keyConcepts`, `components`, `references`, `quickReference`, `resources`, `stats`, `when_to_use`, or any other creative fields.
 
 ### 7. Write and Validate
 
@@ -172,13 +182,21 @@ fi
 echo "Created: $output_path"
 ```
 
+Also run `skills-ref validate` if the tool is available:
+
+```bash
+if command -v skills-ref &> /dev/null; then
+    skills-ref validate "$skill_dir" && echo "Skill validation passed"
+fi
+```
+
 ## Complete Example
 
-**Input:** `./skills/debugging/memory-profiling/`
+**Input:** `~/.agents/superpowers/skills/debugging/memory-profiling/`
 
 **Directory structure:**
 ```
-./skills/debugging/memory-profiling/
+~/.agents/superpowers/skills/debugging/memory-profiling/
 ├── SKILL.md
 ├── scripts/
 │   ├── profile-heap.js
@@ -191,8 +209,9 @@ echo "Created: $output_path"
 **SKILL.md frontmatter:**
 ```yaml
 ---
-name: Memory Profiling
-version: 2.1.0
+name: memory-profiling
+metadata:
+  version: 2.1.0
 ---
 ```
 
@@ -200,8 +219,8 @@ version: 2.1.0
 ```json
 {
   "version": "2.1.0",
-  "name": "debugging/memory-profiling",
-  "title": "Memory Profiling",
+  "name": "superpowers:debugging/memory-profiling",
+  "title": "memory-profiling",
   "helpers": [
     "scripts/profile-heap.js",
     "scripts/analyze-snapshots.py",
@@ -209,79 +228,49 @@ version: 2.1.0
     "examples/node-example.js"
   ],
   "aliases": [
-    "debugging/memory-profiling",
-    "memory-profiling"
+    "memory-profiling",
+    "debugging/memory-profiling"
   ]
 }
 ```
 
 ## FORBIDDEN FIELDS
 
-**skill.json must contain EXACTLY 5 fields.** The following fields are explicitly FORBIDDEN:
+**skill.json must contain EXACTLY 4-5 fields** (version, name, title, helpers [optional], aliases). The following fields are explicitly FORBIDDEN:
 
 ### Documentation Fields (belongs in SKILL.md)
 - ❌ `description` - Use SKILL.md frontmatter `description` field
-- ❌ `when_to_use` - Use SKILL.md frontmatter `when_to_use` field
+- ❌ `when_to_use` - Use SKILL.md frontmatter or content
 - ❌ `keyConcepts` - Document in SKILL.md content
 - ❌ `overview` - Document in SKILL.md content
-- ❌ `documentation` - Use SKILL.md
 
 ### Discovery Fields (handled by find-skills)
 - ❌ `tags` - Use SKILL.md frontmatter fields for search
 - ❌ `keywords` - Use SKILL.md content for search
-- ❌ `triggers` - Use SKILL.md `when_to_use` field
+- ❌ `triggers` - Use SKILL.md `description` field
 - ❌ `categories` - Path already indicates category
-- ❌ `topics` - Use SKILL.md content
 
 ### Capability Fields (documented in SKILL.md)
 - ❌ `capabilities` - Document in SKILL.md content
 - ❌ `features` - Document in SKILL.md content
-- ❌ `functions` - Document in SKILL.md content
 - ❌ `commands` - Document in SKILL.md content
-- ❌ `operations` - Document in SKILL.md content
 
 ### Reference Fields (use helper files)
 - ❌ `references` - Link to helper files in SKILL.md
 - ❌ `resources` - Add to `helpers` array if needed
 - ❌ `links` - Add to SKILL.md content
-- ❌ `importantLinks` - Add to SKILL.md content
-- ❌ `externalDocs` - Add to SKILL.md content
 
 ### Structure Fields (use helper files)
 - ❌ `components` - Document in SKILL.md or helper files
-- ❌ `modules` - Document in SKILL.md or helper files
-- ❌ `apis` - Document in SKILL.md or helper files
 - ❌ `quickReference` - Create as helper file if needed
-- ❌ `quickNavigation` - Use SKILL.md table of contents
 
 ### Metadata Fields (not used by tooling)
 - ❌ `author` - Track in git history
-- ❌ `contributors` - Track in git history
 - ❌ `license` - Inherited from repository
-- ❌ `repository` - Known from location
-- ❌ `homepage` - Not applicable
-- ❌ `bugs` - Use repository issues
 
-### Usage Fields (belongs in SKILL.md)
-- ❌ `examples` - Add as helper files or SKILL.md content
-- ❌ `userLevels` - Document in SKILL.md content
-- ❌ `quickStart` - Document in SKILL.md content
-- ❌ `tutorials` - Create as helper files
-
-### Statistics Fields (unnecessary)
+### Statistics/Config Fields (unnecessary)
 - ❌ `stats` - Not used by any tooling
-- ❌ `metrics` - Not used by any tooling
-- ❌ `counts` - Not used by any tooling
-
-### Update Fields (unnecessary)
-- ❌ `updateInstructions` - Document in SKILL.md or README
-- ❌ `changelog` - Track in git history
-- ❌ `lastUpdated` - Track in git history
-
-### Configuration Fields (not part of metadata)
 - ❌ `config` - Create as helper file if needed
-- ❌ `settings` - Create as helper file if needed
-- ❌ `options` - Document in SKILL.md
 
 ## Rationalization Table
 
@@ -290,85 +279,89 @@ version: 2.1.0
 | "Adding `description` helps with discoverability" | NO. Description is in SKILL.md frontmatter. find-skills reads that. |
 | "`tags` make it easier to categorize and search" | NO. find-skills uses SKILL.md content and frontmatter. Path already indicates category. |
 | "`capabilities` document what the skill does" | NO. That's what SKILL.md content is for. skill.json is for tooling, not documentation. |
-| "`triggers` help agents know when to use this" | NO. SKILL.md `when_to_use` field serves this purpose. Don't duplicate. |
+| "`triggers` help agents know when to use this" | NO. SKILL.md `description` field serves this purpose. Don't duplicate. |
 | "These fields might be useful for future features" | YAGNI violation. No imaginary consumers. Only add fields when tooling actually needs them. |
-| "`quickReference` provides fast access to commands" | NO. Create as a helper file and add to `helpers` array if needed. |
-| "`references` link to documentation sources" | NO. Add links in SKILL.md content or as helper files. |
-| "Other skill systems use these fields" | Irrelevant. superpowers-agent uses 5 fields. Period. |
+| "`helpers: []` is cleaner than omitting the field" | NO. Omit empty arrays — real skill.json files do not include `helpers` when empty. |
+| "Other skill systems use these fields" | Irrelevant. superpowers-agent uses 4-5 fields. Period. |
 | "Extra metadata is harmless" | NO. Bloats files, creates maintenance burden, misleads about what tooling uses. |
-| "I want to preserve information from SKILL.md" | NO. Information belongs in SKILL.md. skill.json is for superpowers-agent configuration only. |
-
-**The rule is absolute:** skill.json contains EXACTLY 5 fields. No exceptions.
 
 ## Common Mistakes
 
-### ❌ Adding namespace prefixes to name
+### ❌ Missing namespace prefix for superpowers skills
 ```json
-"name": "superpowers:debugging/memory-profiling"  // WRONG
+"name": "debugging/memory-profiling"  // WRONG for superpowers skills
 ```
 
-**Fix:** Name is just the path, no prefix:
+**Fix:** Add the `superpowers:` prefix for skills in `~/.agents/superpowers/skills/`:
 ```json
-"name": "debugging/memory-profiling"  // CORRECT
+"name": "superpowers:debugging/memory-profiling"  // CORRECT
 ```
+
+### ❌ Wrong alias order
+```json
+"aliases": ["debugging/memory-profiling", "memory-profiling"]  // WRONG - long path first
+```
+
+**Fix:** Short name first, full path second:
+```json
+"aliases": ["memory-profiling", "debugging/memory-profiling"]  // CORRECT
+```
+
+### ❌ Including empty helpers array
+```json
+"helpers": []  // WRONG - omit if empty
+```
+
+**Fix:** Omit the field entirely when there are no helpers:
+```json
+// Just leave out "helpers" when there's nothing to list
+```
+
+### ❌ Including test/eval files in helpers
+```json
+"helpers": ["test-scenarios.md", "evals/evals.json"]  // WRONG - test files aren't helpers
+```
+
+**Fix:** Only include files that agents use when executing the skill.
 
 ### ❌ Adding creative aliases
 ```json
 "aliases": ["memory-profiling", "heap-profiling", "memory-analysis"]  // WRONG
 ```
 
-**Fix:** Only use standard path-based aliases:
+**Fix:** Standard two aliases unless a well-known abbreviation exists:
 ```json
-"aliases": ["debugging/memory-profiling", "memory-profiling"]  // CORRECT
-```
-
-### ❌ Excluding example files from helpers
-```json
-"helpers": ["scripts/helper.js"]  // examples/ files missing
-```
-
-**Fix:** Include all supporting files:
-```json
-"helpers": ["scripts/helper.js", "examples/example.js"]  // CORRECT
-```
-
-### ❌ Using description for title
-```json
-"title": "One-line summary of what this does"  // WRONG
-```
-
-**Fix:** Use the `name` field from frontmatter:
-```json
-"title": "Memory Profiling"  // CORRECT
+"aliases": ["memory-profiling", "debugging/memory-profiling"]  // CORRECT
 ```
 
 ## Fields Reference
 
 | Field | Source | Required | Default |
 |-------|--------|----------|---------|
-| `version` | Frontmatter `version` | No | `"1.0.0"` |
-| `name` | Skill directory path | Yes | N/A |
-| `title` | Frontmatter `name` | Yes | N/A |
-| `helpers` | All files except SKILL.md, skill.json | No | `[]` |
-| `aliases` | Generated from path | Yes | `[full-path, skill-name]` |
+| `version` | Frontmatter `metadata.version` | No | `"1.0.0"` |
+| `name` | Namespace + skill directory path | Yes | N/A |
+| `title` | Frontmatter `name` field | Yes | N/A |
+| `helpers` | Referenced support files | No | Omit if empty |
+| `aliases` | Generated from path | Yes | `["skill-name", "category/skill-name"]` |
 
 ## Verification
 
 After creating skill.json, verify:
 
 - [ ] JSON is valid syntax (use `jq` if available)
-- [ ] **File contains EXACTLY 5 top-level fields** (version, name, title, helpers, aliases)
-- [ ] No forbidden fields present (see FORBIDDEN FIELDS section)
+- [ ] **File contains exactly 4 or 5 top-level fields** (version, name, title, [helpers], aliases)
+- [ ] No forbidden fields present
 - [ ] `version` matches SKILL.md frontmatter (or is "1.0.0")
-- [ ] `name` is the relative path without namespace prefix
+- [ ] `name` includes correct namespace prefix (`superpowers:` for superpowers repo, none for project/personal)
 - [ ] `title` matches `name` field from SKILL.md frontmatter
-- [ ] `helpers` array includes all support files with correct relative paths
-- [ ] `aliases` contains exactly two entries: full path and skill name
+- [ ] `helpers` array lists only referenced support files (omitted if empty)
+- [ ] `aliases` has short name first, full path second
 - [ ] File saved to same directory as SKILL.md
+- [ ] `skills-ref validate` passes (if tool available)
 
 **Field count check:**
 ```bash
-jq 'keys | length' skill.json  # Must output: 5
+jq 'keys | length' skill.json  # Must output: 4 or 5
 ```
 
 ## Related Skills

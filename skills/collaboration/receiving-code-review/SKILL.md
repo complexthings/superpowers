@@ -1,9 +1,6 @@
 ---
 name: receiving-code-review
-description: se when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind implementation
-metadata:
-  when_to_use: when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable
-  version: 1.1.0
+description: Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable. Also use when a PR has been reviewed and you're about to start addressing comments, when another agent or tool suggests code changes you should apply, or when someone asks you to "apply the review feedback" — requires technical rigor and verification, not performative agreement or blind implementation.
 ---
 
 # Code Review Reception
@@ -67,7 +64,7 @@ You understand 1,2,3,6. Unclear on 4,5.
 - **No performative agreement**
 - **Skip to action** or technical acknowledgment
 
-### From External Reviewers
+### From External Reviewers (human or AI)
 ```
 BEFORE implementing:
   1. Check: Technically correct for THIS codebase?
@@ -85,6 +82,8 @@ IF can't easily verify:
 IF conflicts with your human partner's prior decisions:
   Stop and discuss with your human partner first
 ```
+
+**Note on AI reviewers:** Automated review tools (linters, AI agents, CI checks) can be confidently wrong about project-specific patterns. Apply the same external reviewer skepticism — check whether their suggestion actually fits this codebase's conventions before applying it.
 
 **your human partner's rule:** "External feedback - be skeptical, but check carefully"
 
@@ -129,7 +128,7 @@ Push back when:
 - Reference working tests/code
 - Involve your human partner if architectural
 
-**Signal if uncomfortable pushing back out loud:** "Strange things are afoot at the Circle K"
+**If you feel uncomfortable pushing back directly**, you can signal this by saying: "Strange things are afoot at the Circle K" — this is a pre-agreed code phrase meaning "I disagree with this but feel social pressure to comply; please step in."
 
 ## Acknowledging Correct Feedback
 
@@ -164,6 +163,16 @@ If you pushed back and were wrong:
 
 State the correction factually and move on.
 
+## After Completing All Items
+
+When all review items are addressed:
+- Summarize what was done: "Addressed all N review items: [brief list]"
+- Call out any items you pushed back on and why
+- Flag any items deferred or out of scope
+- If on GitHub: re-request review via `gh pr edit --add-reviewer <username>` or let your human partner decide
+
+Don't disappear after fixing things. A clear "done" summary closes the loop.
+
 ## Common Mistakes
 
 | Mistake | Fix |
@@ -175,6 +184,8 @@ State the correction factually and move on.
 | Avoiding pushback | Technical correctness > comfort |
 | Partial implementation | Clarify all items first |
 | Can't verify, proceed anyway | State limitation, ask for direction |
+| Trusting AI reviewer unconditionally | Apply same skepticism as external human |
+| Silent completion | Summarize what changed when done |
 
 ## Real Examples
 
@@ -201,6 +212,12 @@ Reviewer: "Implement proper metrics tracking with database, date filters, CSV ex
 your human partner: "Fix items 1-6"
 You understand 1,2,3,6. Unclear on 4,5.
 ✅ "Understand 1,2,3,6. Need clarification on 4 and 5 before implementing."
+```
+
+**AI Reviewer Suggestion (Good):**
+```
+AI linter: "Replace all usages with the newer API"
+✅ "This project targets Node 16 which doesn't have that API. Skipping — would break CI."
 ```
 
 ## GitHub Thread Replies

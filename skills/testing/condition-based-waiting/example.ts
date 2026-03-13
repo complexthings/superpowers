@@ -35,7 +35,7 @@ export function waitForEvent(
       } else if (Date.now() - startTime > timeoutMs) {
         reject(new Error(`Timeout waiting for ${eventType} event after ${timeoutMs}ms`));
       } else {
-        setTimeout(check, 10); // Poll every 10ms for efficiency
+        setTimeout(check, 50); // Poll every 50ms — efficient without hammering CPU
       }
     };
 
@@ -80,7 +80,7 @@ export function waitForEventCount(
           )
         );
       } else {
-        setTimeout(check, 10);
+        setTimeout(check, 50);
       }
     };
 
@@ -127,7 +127,7 @@ export function waitForEventMatch(
       } else if (Date.now() - startTime > timeoutMs) {
         reject(new Error(`Timeout waiting for ${description} after ${timeoutMs}ms`));
       } else {
-        setTimeout(check, 10);
+        setTimeout(check, 50);
       }
     };
 

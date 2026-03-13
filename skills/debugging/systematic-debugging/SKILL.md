@@ -1,9 +1,8 @@
 ---
 name: systematic-debugging
-description: Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes
+description: Systematically trace bugs backward through call stack to find original trigger before proposing fixes. Use when encountering ANY bug, test failure, unexpected behavior, performance problem, or build failure — especially when under time pressure, when a quick fix seems obvious, or when previous fixes didn't work. Do NOT skip this for "simple" bugs — simple bugs have root causes too.
 metadata:
-  when_to_use: when encountering any bug, test failure, or unexpected behavior, before proposing fixes
-  version: 2.1.0
+  version: 2.2.0
   languages: all
 ---
 
@@ -235,7 +234,7 @@ If you catch yourself thinking:
 
 **If 3+ fixes failed:** Question the architecture (see Phase 4.5)
 
-## your human partner's Signals You're Doing It Wrong
+## Human Partner Signals You're Doing It Wrong
 
 **Watch for these redirections:**
 - "Is that not happening?" - You assumed without verifying

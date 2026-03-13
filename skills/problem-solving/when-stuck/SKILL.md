@@ -1,71 +1,69 @@
 ---
 name: when-stuck
-description: Dispatch to the right problem-solving technique based on how you're stuck
+description: Dispatch to the right problem-solving technique based on how you're stuck. Use this skill whenever you hit a wall — code behaving wrong, complexity spiraling, can't find a good approach, assumptions feel forced, unclear how it will scale, or you need to pick the right debugging technique before diving in. Use it proactively before major architecture decisions or when a solution feels like it's fighting you.
 metadata:
-  when_to_use: when stuck and unsure which problem-solving technique to apply for your specific type of stuck-ness
-  version: 1.2.0
+  version: "2.0.0"
 ---
 
-# When Stuck - Problem-Solving Dispatch
+# When Stuck — Problem-Solving Dispatch
 
-## Overview
+## Core Principle
 
-Different stuck-types need different techniques. This skill helps you quickly identify which problem-solving skill to use.
+Different stuck-types need different techniques. Picking the wrong technique wastes time. This skill helps you identify the right one in under a minute.
 
-**Core principle:** Match stuck-symptom to technique.
-
-## Quick Dispatch
-
-```mermaid
-flowchart TD
-    STUCK((You're Stuck))
-
-    STUCK --> COMPLEXITY["Same thing 5+ ways?<br>Growing special cases?<br>Excessive if/else?"]
-    STUCK --> INNOVATION["Can't find fitting approach?<br>Conventional solutions inadequate?<br>Need breakthrough?"]
-    STUCK --> PATTERNS["Same issue in different places?<br>Feels familiar across domains?<br>Reinventing wheels?"]
-    STUCK --> ASSUMPTIONS["Solution feels forced?<br>'This must be done this way'?<br>Stuck on assumptions?"]
-    STUCK --> SCALE["Will this work at production?<br>Edge cases unclear?<br>Unsure of limits?"]
-    STUCK --> BUGS["Code behaving wrong?<br>Test failing?<br>Unexpected output?"]
-
-    COMPLEXITY -->|yes| SIMP[skills/problem-solving/<br>simplification-cascades]
-    INNOVATION -->|yes| COLL[skills/problem-solving/<br>collision-zone-thinking]
-    PATTERNS -->|yes| META[skills/problem-solving/<br>meta-pattern-recognition]
-    ASSUMPTIONS -->|yes| INV[skills/problem-solving/<br>inversion-exercise]
-    SCALE -->|yes| SCL[skills/problem-solving/<br>scale-game]
-    BUGS -->|yes| DBG[skills/debugging/<br>systematic-debugging]
-```
+**Match symptom → technique, then load and follow that skill.**
 
 ## Stuck-Type → Technique
 
-| How You're Stuck | Use This Skill |
-|------------------|----------------|
-| **Complexity spiraling** - Same thing 5+ ways, growing special cases | skills/problem-solving/simplification-cascades |
-| **Need innovation** - Conventional solutions inadequate, can't find fitting approach | skills/problem-solving/collision-zone-thinking |
-| **Recurring patterns** - Same issue different places, reinventing wheels | skills/problem-solving/meta-pattern-recognition |
-| **Forced by assumptions** - "Must be done this way", can't question premise | skills/problem-solving/inversion-exercise |
-| **Scale uncertainty** - Will it work in production? Edge cases unclear? | skills/problem-solving/scale-game |
-| **Code broken** - Wrong behavior, test failing, unexpected output | skills/debugging/systematic-debugging |
-| **Multiple independent problems** - Can parallelize investigation | skills/collaboration/dispatching-parallel-agents |
-| **Root cause unknown** - Symptom clear, cause hidden | skills/debugging/root-cause-tracing |
+| How You're Stuck | Technique to Use |
+|------------------|-----------------|
+| **Complexity spiraling** — Same thing implemented 5+ ways, growing special cases, each fix reveals a new problem | `simplification-cascades` |
+| **Need innovation** — Conventional solutions feel inadequate, stuck inside one way of thinking, need breakthrough | `collision-zone-thinking` |
+| **Recurring patterns** — Same issue across different domains, reinventing wheels, déjà vu in problem-solving | `meta-pattern-recognition` |
+| **Forced by assumptions** — "Must be done this way," solution fights the system, can't question the premise | `inversion-exercise` |
+| **Scale uncertainty** — Unsure it'll hold at production, edge cases unclear, architecture decisions without load data | `scale-game` |
+| **Code broken** — Wrong behavior, test failing, unexpected output, bug with unknown root cause | `systematic-debugging` |
+| **Symptom clear, cause hidden** — Error is deep in the call chain, fix locations but not the origin | `root-cause-tracing` |
+| **Multiple independent problems** — Separate failing tests, parallel research questions, independent subsystems | `dispatching-parallel-agents` |
+| **Starting fresh, scope unclear** — New feature, unclear requirements, don't know what to build | `brainstorming` |
+| **Have a plan, need execution** — Know what to build, complex multi-step implementation ahead | `writing-plans` |
 
-## Process
+## How to Identify Your Stuck-Type
 
-1. **Identify stuck-type** - What symptom matches above?
-2. **Load that skill** - Read the specific technique
-3. **Apply technique** - Follow its process
-4. **If still stuck** - Try different technique or combine
+If the symptom isn't obvious, ask these questions:
+
+1. **Is something broken?** → `systematic-debugging` (always start here for bugs)
+2. **Is there too much code doing similar things?** → `simplification-cascades`
+3. **Does the solution feel forced or fight the codebase?** → `inversion-exercise`
+4. **Does nothing in this domain work?** → `collision-zone-thinking` (leave the domain)
+5. **Have I seen this shape before in other contexts?** → `meta-pattern-recognition`
+6. **Do I not know if it'll hold under load?** → `scale-game`
+7. **Is the problem actually several independent things?** → `dispatching-parallel-agents`
+
+## Proactive Use (Not Just When Stuck)
+
+Some techniques should be used *before* you're stuck:
+
+- **Before major architecture decisions** → `inversion-exercise` (pre-mortem: "how would this fail?")
+- **Before implementing a complex feature** → `brainstorming` then `writing-plans`
+- **Before committing to a design at scale** → `scale-game`
+- **When a config file or handler list keeps growing** → `simplification-cascades`
 
 ## Combining Techniques
 
-Some problems need multiple techniques:
+Some problems need more than one:
 
-- **Simplification + Meta-pattern**: Find pattern, then simplify all instances
-- **Collision + Inversion**: Force metaphor, then invert its assumptions
-- **Scale + Simplification**: Extremes reveal what to eliminate
+| Combination | When to Use |
+|-------------|-------------|
+| `systematic-debugging` → `root-cause-tracing` | Bug found, but fix location is far from origin |
+| `simplification-cascades` + `meta-pattern-recognition` | Find the recurring pattern, then collapse all instances |
+| `collision-zone-thinking` + `inversion-exercise` | Force a new metaphor, then stress-test its assumptions |
+| `scale-game` + `simplification-cascades` | Extremes reveal what to eliminate |
+| `inversion-exercise` + `scale-game` | "How does this fail?" × "At what scale?" |
 
-## Remember
+## If Still Stuck After First Technique
 
-- Match symptom to technique
-- One technique at a time
-- Combine if first doesn't work
-- Document what you tried
+1. Try a different technique from the table — wrong diagnosis is common
+2. Combine two techniques (see above)
+3. If 3+ fixes have failed for a bug → this is an architectural problem, not a debugging problem. Use `inversion-exercise` to question the design.
+4. Step back: is the problem statement itself wrong? → `brainstorming`
