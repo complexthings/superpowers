@@ -1,34 +1,32 @@
 ---
 name: testing-anti-patterns
-description: Never test mock behavior. Never add test-only methods to production classes. Understand dependencies before mocking.
+description: Identifies and corrects dangerous testing anti-patterns including testing mock behavior instead of real behavior, adding test-only methods to production classes, mocking without understanding dependencies, writing brittle implementation-coupled tests, and sharing mutable state across tests. Use when writing or changing tests, adding mocks, designing test fixtures, debugging flaky tests, or tempted to add test-only methods to production code.
 metadata:
-  when_to_use: when writing or changing tests, adding mocks, or tempted to add test-only methods to production code
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # Testing Anti-Patterns
 
 ## Overview
 
-Tests must verify real behavior, not mock behavior. Mocks are a means to isolate, not the thing being tested.
+Tests must verify real behavior, not mock behavior. Mocks isolate; they are not the thing being tested.
 
-**Core principle:** Test what the code does, not what the mocks do.
+**Core principle:** Test what the code *does*, not how it *does it* or what the mocks *do*.
 
-**Following strict TDD prevents these anti-patterns.**
+**Following strict TDD prevents most of these anti-patterns.**
 
 ## The Iron Laws
 
-```
 1. NEVER test mock behavior
 2. NEVER add test-only methods to production classes
 3. NEVER mock without understanding dependencies
-```
+4. NEVER couple tests to implementation details — test contracts, not internals
 
 ## Anti-Pattern 1: Testing Mock Behavior
 
 **The violation:**
 ```typescript
-// ❌ BAD: Testing that the mock exists
+// ❌ BAD: Testing that the mock exists, not real behavior
 test('renders sidebar', () => {
   render(<Page />);
   expect(screen.getByTestId('sidebar-mock')).toBeInTheDocument();
@@ -36,202 +34,206 @@ test('renders sidebar', () => {
 ```
 
 **Why this is wrong:**
-- You're verifying the mock works, not that the component works
-- Test passes when mock is present, fails when it's not
-- Tells you nothing about real behavior
-
-**your human partner's correction:** "Are we testing the behavior of a mock?"
+- Verifies the mock is present, not that the component works
+- Passes when mock exists, fails when mock changes — irrelevant to behavior
+- `getByTestId` is an implementation artifact; prefer semantic queries
 
 **The fix:**
 ```typescript
-// ✅ GOOD: Test real component or don't mock it
+// ✅ GOOD: Test real behavior; query by role, not by test ID
 test('renders sidebar', () => {
-  render(<Page />);  // Don't mock sidebar
+  render(<Page />);  // Don't mock sidebar if avoidable
   expect(screen.getByRole('navigation')).toBeInTheDocument();
 });
 
-// OR if sidebar must be mocked for isolation:
-// Don't assert on the mock - test Page's behavior with sidebar present
+// If sidebar must be mocked for isolation:
+// Assert Page's behavior, not the mock's presence
 ```
 
-### Gate Function
-
-```
-BEFORE asserting on any mock element:
-  Ask: "Am I testing real component behavior or just mock existence?"
-
-  IF testing mock existence:
-    STOP - Delete the assertion or unmock the component
-
-  Test real behavior instead
-```
+**When you see an assertion on a `*-mock` testId:** Ask "Am I testing real component behavior or just mock existence?" If the latter, delete the assertion.
 
 ## Anti-Pattern 2: Test-Only Methods in Production
 
 **The violation:**
 ```typescript
-// ❌ BAD: destroy() only used in tests
+// ❌ BAD: destroy() only called from tests
 class Session {
-  async destroy() {  // Looks like production API!
+  async destroy() {  // Looks like a production API!
     await this._workspaceManager?.destroyWorkspace(this.id);
-    // ... cleanup
   }
 }
-
-// In tests
 afterEach(() => session.destroy());
 ```
 
 **Why this is wrong:**
-- Production class polluted with test-only code
-- Dangerous if accidentally called in production
+- Pollutes production API with test concerns
+- Dangerous if called accidentally in production
 - Violates YAGNI and separation of concerns
-- Confuses object lifecycle with entity lifecycle
 
 **The fix:**
 ```typescript
-// ✅ GOOD: Test utilities handle test cleanup
-// Session has no destroy() - it's stateless in production
+// ✅ GOOD: Cleanup lives in test utilities
+// Session has no destroy() in production
 
-// In test-utils/
+// In test-utils/session-helpers.ts
 export async function cleanupSession(session: Session) {
   const workspace = session.getWorkspaceInfo();
   if (workspace) {
     await workspaceManager.destroyWorkspace(workspace.id);
   }
 }
-
-// In tests
 afterEach(() => cleanupSession(session));
 ```
 
-### Gate Function
-
-```
-BEFORE adding any method to production class:
-  Ask: "Is this only used by tests?"
-
-  IF yes:
-    STOP - Don't add it
-    Put it in test utilities instead
-
-  Ask: "Does this class own this resource's lifecycle?"
-
-  IF no:
-    STOP - Wrong class for this method
-```
+**Before adding any method to a production class:** Ask "Is this only used by tests?" If yes, put it in test utilities.
 
 ## Anti-Pattern 3: Mocking Without Understanding
 
 **The violation:**
 ```typescript
-// ❌ BAD: Mock breaks test logic
+// ❌ BAD: Mock kills the side effect this test actually depends on
 test('detects duplicate server', () => {
-  // Mock prevents config write that test depends on!
   vi.mock('ToolCatalog', () => ({
     discoverAndCacheTools: vi.fn().mockResolvedValue(undefined)
   }));
-
   await addServer(config);
-  await addServer(config);  // Should throw - but won't!
+  await addServer(config);  // Should throw — but won't, mock prevented config write
 });
 ```
 
 **Why this is wrong:**
-- Mocked method had side effect test depended on (writing config)
-- Over-mocking to "be safe" breaks actual behavior
-- Test passes for wrong reason or fails mysteriously
+- Mocked method had a side effect the test depended on
+- Over-mocking "to be safe" hides the real behavior
+- Test passes for the wrong reason or fails mysteriously
 
 **The fix:**
 ```typescript
-// ✅ GOOD: Mock at correct level
+// ✅ GOOD: Mock at the correct level — the slow/external part only
 test('detects duplicate server', () => {
-  // Mock the slow part, preserve behavior test needs
-  vi.mock('MCPServerManager'); // Just mock slow server startup
-
-  await addServer(config);  // Config written
-  await addServer(config);  // Duplicate detected ✓
+  vi.mock('MCPServerManager'); // Mock slow startup, not config logic
+  await addServer(config);    // Config written ✓
+  await addServer(config);    // Duplicate detected ✓
 });
 ```
 
-### Gate Function
+**Before mocking any method:**
+1. Ask "What side effects does the real method have?"
+2. Ask "Does this test depend on any of those side effects?"
+3. Run the test with the real implementation first; observe what it needs
+4. THEN add minimal mocking at the lowest appropriate level
 
-```
-BEFORE mocking any method:
-  STOP - Don't mock yet
-
-  1. Ask: "What side effects does the real method have?"
-  2. Ask: "Does this test depend on any of those side effects?"
-  3. Ask: "Do I fully understand what this test needs?"
-
-  IF depends on side effects:
-    Mock at lower level (the actual slow/external operation)
-    OR use test doubles that preserve necessary behavior
-    NOT the high-level method the test depends on
-
-  IF unsure what test depends on:
-    Run test with real implementation FIRST
-    Observe what actually needs to happen
-    THEN add minimal mocking at the right level
-
-  Red flags:
-    - "I'll mock this to be safe"
-    - "This might be slow, better mock it"
-    - Mocking without understanding the dependency chain
-```
+**Red flags:** "I'll mock this to be safe" · "This might be slow, better mock it" · Mocking a high-level method without reading its source
 
 ## Anti-Pattern 4: Incomplete Mocks
 
 **The violation:**
 ```typescript
-// ❌ BAD: Partial mock - only fields you think you need
+// ❌ BAD: Only mock the fields you think you need
 const mockResponse = {
   status: 'success',
   data: { userId: '123', name: 'Alice' }
-  // Missing: metadata that downstream code uses
+  // Missing: metadata.requestId that downstream code reads
 };
-
-// Later: breaks when code accesses response.metadata.requestId
+// Breaks silently when code accesses response.metadata.requestId
 ```
 
 **Why this is wrong:**
-- **Partial mocks hide structural assumptions** - You only mocked fields you know about
-- **Downstream code may depend on fields you didn't include** - Silent failures
-- **Tests pass but integration fails** - Mock incomplete, real API complete
-- **False confidence** - Test proves nothing about real behavior
-
-**The Iron Rule:** Mock the COMPLETE data structure as it exists in reality, not just fields your immediate test uses.
+- Partial mocks hide structural assumptions
+- Silent failures when downstream code accesses unmocked fields
+- Tests pass in isolation; integration fails against the real API
 
 **The fix:**
 ```typescript
-// ✅ GOOD: Mirror real API completeness
+// ✅ GOOD: Mirror the complete real API structure
 const mockResponse = {
   status: 'success',
   data: { userId: '123', name: 'Alice' },
   metadata: { requestId: 'req-789', timestamp: 1234567890 }
-  // All fields real API returns
+  // All fields the real API returns
 };
 ```
 
-### Gate Function
+**Before creating a mock response:** Examine the actual API docs or real response. Include ALL fields downstream code might access. If uncertain, include all documented fields.
 
-```
-BEFORE creating mock responses:
-  Check: "What fields does the real API response contain?"
+## Anti-Pattern 5: Brittle Implementation-Coupled Tests
 
-  Actions:
-    1. Examine actual API response from docs/examples
-    2. Include ALL fields system might consume downstream
-    3. Verify mock matches real response schema completely
-
-  Critical:
-    If you're creating a mock, you must understand the ENTIRE structure
-    Partial mocks fail silently when code depends on omitted fields
-
-  If uncertain: Include all documented fields
+**The violation:**
+```typescript
+// ❌ BAD: Tests internal method call order, not the outcome
+test('calculates total', () => {
+  const spy = vi.spyOn(calculator, '_applyDiscount');
+  calculator.total(items);
+  expect(spy).toHaveBeenCalledWith(items, 0.1);  // Tests HOW, not WHAT
+});
 ```
 
-## Anti-Pattern 5: Integration Tests as Afterthought
+**Why this is wrong:**
+- Tests lock in implementation details, not behavioral contracts
+- A valid refactor (same output, different internals) breaks the test
+- *"Coupling to the implementation also interferes with refactoring"* — Fowler
+- Discourages clean code evolution
+
+**The fix:**
+```typescript
+// ✅ GOOD: Test the observable outcome/state
+test('applies 10% discount to qualifying items', () => {
+  const result = calculator.total(qualifyingItems);
+  expect(result).toBe(expectedDiscountedTotal);
+  // Don't care HOW the discount was applied
+});
+```
+
+**Rule of thumb:** A test should survive any refactor that preserves the public contract. If renaming a private method breaks a test, the test is wrong.
+
+## Anti-Pattern 6: Shared Mutable State Between Tests
+
+**The violation:**
+```typescript
+// ❌ BAD: State leaks between tests; order-dependent results
+let store: AppStore;
+beforeAll(() => {
+  store = createStore();  // Shared across all tests
+});
+
+test('adds item', () => {
+  store.add({ id: 1 });
+  expect(store.count()).toBe(1);
+});
+
+test('removes item', () => {
+  store.remove(1);  // Assumes 'adds item' ran first — flaky!
+  expect(store.count()).toBe(0);
+});
+```
+
+**Why this is wrong:**
+- Tests become order-dependent — pass in one order, fail in another
+- Debugging requires running the full suite to reproduce
+- Violates test isolation; each test should be a self-contained unit
+
+**The fix:**
+```typescript
+// ✅ GOOD: Fresh state for each test
+let store: AppStore;
+beforeEach(() => {
+  store = createStore();  // Reset before each test
+});
+
+test('adds item', () => {
+  store.add({ id: 1 });
+  expect(store.count()).toBe(1);
+});
+
+test('removes item', () => {
+  store.add({ id: 1 });   // Set up own preconditions
+  store.remove(1);
+  expect(store.count()).toBe(0);
+});
+```
+
+**Red flags:** `beforeAll` modifying state that tests mutate · Tests that only pass when run in a specific order · Cleanup logic in `afterAll` that tests depend on
+
+## Anti-Pattern 7: Tests as Afterthought
 
 **The violation:**
 ```
@@ -240,66 +242,57 @@ BEFORE creating mock responses:
 "Ready for testing"
 ```
 
-**Why this is wrong:**
-- Testing is part of implementation, not optional follow-up
-- TDD would have caught this
-- Can't claim complete without tests
+Testing is part of implementation, not optional follow-up. Claiming "complete" without tests is incomplete.
 
-**The fix:**
-```
-TDD cycle:
-1. Write failing test
-2. Implement to pass
-3. Refactor
-4. THEN claim complete
-```
+**The fix:** TDD cycle — write failing test → implement to pass → refactor → then claim complete.
 
 ## When Mocks Become Too Complex
 
 **Warning signs:**
-- Mock setup longer than test logic
-- Mocking everything to make test pass
-- Mocks missing methods real components have
-- Test breaks when mock changes
+- Mock setup is longer than test logic
+- Mocking everything just to make the test compile
+- Mocks missing methods that real components have
+- Test breaks when mock internals change, not when behavior changes
 
-**your human partner's question:** "Do we need to be using a mock here?"
-
-**Consider:** Integration tests with real components often simpler than complex mocks
+**Consider:** Integration tests with real components are often simpler than maintaining complex mocks.
 
 ## TDD Prevents These Anti-Patterns
 
-**Why TDD helps:**
-1. **Write test first** → Forces you to think about what you're actually testing
-2. **Watch it fail** → Confirms test tests real behavior, not mocks
-3. **Minimal implementation** → No test-only methods creep in
-4. **Real dependencies** → You see what the test actually needs before mocking
+1. **Write test first** → Forces clarity on what you're actually testing
+2. **Watch it fail** → Confirms the test verifies real behavior, not mock presence
+3. **Minimal implementation** → No test-only methods added speculatively
+4. **Real dependencies visible** → You see what the test needs before mocking anything
 
-**If you're testing mock behavior, you violated TDD** - you added mocks without watching test fail against real code first.
+**If you're testing mock behavior, you violated TDD** — mocks were added without watching the test fail against real code first.
 
 ## Quick Reference
 
-| Anti-Pattern | Fix |
-|--------------|-----|
-| Assert on mock elements | Test real component or unmock it |
-| Test-only methods in production | Move to test utilities |
-| Mock without understanding | Understand dependencies first, mock minimally |
-| Incomplete mocks | Mirror real API completely |
-| Tests as afterthought | TDD - tests first |
-| Over-complex mocks | Consider integration tests |
+| Anti-Pattern | Harm | Fix |
+|---|---|---|
+| Assert on mock elements | Tests mock, not behavior | Test real component or unmock it |
+| Test-only methods in production | Pollutes production API | Move to test utilities |
+| Mock without understanding | Hides bugs, wrong behavior | Understand first, mock minimally |
+| Incomplete mocks | Silent failures downstream | Mirror full real API structure |
+| Implementation-coupled tests | Break on valid refactors | Test contracts, not internals |
+| Shared mutable state | Flaky, order-dependent | Fresh state per test (`beforeEach`) |
+| Tests as afterthought | False completeness | TDD — tests first |
 
-## Red Flags
+## Red Flags Checklist
 
-- Assertion checks for `*-mock` test IDs
-- Methods only called in test files
-- Mock setup is >50% of test
-- Test fails when you remove mock
-- Can't explain why mock is needed
-- Mocking "just to be safe"
+- [ ] Assertion checks for `*-mock` testIds
+- [ ] Methods only called in test files exist on production classes
+- [ ] Mock setup is >50% of the test
+- [ ] Test fails when you remove the mock (but not the real behavior)
+- [ ] Can't explain why a mock is needed
+- [ ] Mocking "just to be safe"
+- [ ] Test breaks when implementation changes but output is the same
+- [ ] Tests only pass when run in a specific order
+- [ ] `beforeAll` modifies state that individual tests mutate
 
 ## The Bottom Line
 
-**Mocks are tools to isolate, not things to test.**
+**Mocks isolate; they are not the thing being tested.**
 
-If TDD reveals you're testing mock behavior, you've gone wrong.
+Test the *contract* (observable outputs and state), not the *mechanism* (how it's implemented internally).
 
-Fix: Test real behavior or question why you're mocking at all.
+If TDD reveals you're testing mock behavior or internal details, you've gone wrong. Fix: test real behavior or question whether you need the mock at all.

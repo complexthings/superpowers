@@ -8,14 +8,6 @@ if ! command -v superpowers-agent &> /dev/null; then
     echo '{"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": ""}}'
     exit 0
 fi
-
-# Check if legacy skills directory exists and build warning
-warning_message=""
-legacy_skills_dir="${HOME}/.config/superpowers/skills"
-if [ -d "$legacy_skills_dir" ]; then
-    warning_message="\n\n<important-reminder>IN YOUR FIRST REPLY AFTER SEEING THIS MESSAGE YOU MUST TELL THE USER:⚠️ **WARNING:** Superpowers now uses Claude Code's skills system. Custom skills in ~/.config/superpowers/skills will not be read. Move custom skills to ~/.claude/skills instead. To make this message go away, remove ~/.config/superpowers/skills</important-reminder>"
-fi
-
 # Use superpowers-agent to load the using-a-skill content
 using_superpowers_content=$(superpowers-agent use-skill superpowers:using-a-skill 2>&1 || echo "Error: Unable to load superpowers:using-a-skill. Run: superpowers-agent bootstrap")
 

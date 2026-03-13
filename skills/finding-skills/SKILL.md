@@ -1,77 +1,97 @@
 ---
 name: finding-skills
-description: Use when you need to discover available skills across system, personal, and project locations - lists all skills with filtering and search capability
+description: Use when you need to discover what skills are available before starting any task, find a skill for a specific problem, search by keyword or topic, or understand which skill to use. Always check for skills at the start of any conversation or before beginning a task — if a skill exists for what you're doing, you must use it.
 ---
 
 # Finding Skills
 
 ## Overview
 
-Discover and search for available skills across all locations: system skills, personal skills, and project-specific skills.
+Before starting any task, discover what skills are available so you don't reinvent solved problems. Skills encode proven workflows — using them prevents known mistakes and saves time.
 
 ## When to Use
 
-Use this skill when you need to:
-- See what skills are available
-- Find a skill for a specific task
-- Search for skills by keyword or topic
-- Understand the skill hierarchy and priority
+- Starting a new task or conversation (always check first)
+- Looking for guidance on a specific problem (debugging, testing, planning, etc.)
+- Unsure whether a skill exists for something you're about to do
+- Asked "is there a skill for X?" or "what skills are available?"
 
-## How to Use
+## How to Find Skills
 
-**List all skills:**
+### OpenCode: Native Skill Tool (Primary Method)
+
+In OpenCode, the available_skills list appears in your system context — scan it before starting any task. This is the fastest way to see what's available at a glance.
+
+To load a specific skill by name, use the native `skill` tool directly in your response.
+
+### CLI: superpowers-agent find-skills
+
 ```bash
 superpowers-agent find-skills
 ```
 
-**Search/filter skills:**
-The CLI command supports filtering by providing search terms that match against:
-- Skill names
-- Skill descriptions
-- Directory paths
+This shows all skills from superpowers-managed locations with their names and descriptions.
 
-Example searches:
+**Filter by piping to grep:**
 ```bash
 # Find testing-related skills
 superpowers-agent find-skills | grep -i test
 
 # Find debugging skills
 superpowers-agent find-skills | grep -i debug
+
+# Find skills about a topic
+superpowers-agent find-skills | grep -i brainstorm
+```
+
+**Get the path to a specific skill:**
+```bash
+superpowers-agent path <skill-name>
+```
+
+**Load and execute a skill directly:**
+```bash
+superpowers-agent execute <skill-name>
 ```
 
 ## Skill Locations and Priority
 
-Skills are discovered from multiple locations in priority order:
+Skills are discovered from multiple locations. Higher priority overrides lower when names conflict:
 
-1. **Project skills** (highest priority)
-   - `.agents/skills/` - Project-specific skills
-   - `.claude/skills/` - Claude-specific project skills
+| Priority | Location | Scope |
+|----------|----------|-------|
+| 1 (highest) | `.agents/skills/` in project | Project-specific |
+| 1 (highest) | `.claude/skills/` in project | Claude project skills |
+| 2 | `~/.agents/skills/` | Personal, cross-project |
+| 3 | `~/.config/opencode/skill/` | OpenCode system skills |
+| 4 (lowest) | `~/.agents/superpowers/skills/` | Superpowers community skills |
 
-2. **Personal skills**
-   - `~/.agents/skills/` - Your personal cross-project skills
+Project skills always win. When a project skill and a system skill share the same name, the project version is used.
 
-3. **System skills** (lowest priority)
-   - `~/.agents/superpowers/skills/` - Superpowers community skills
+## After Finding a Skill
 
-When skills have the same name, project skills override personal skills, which override system skills.
+Once you identify a relevant skill:
 
-## Output Format
+1. Load it via the native `skill` tool (OpenCode) or `superpowers-agent execute <name>`
+2. Announce: "Using Skill: [name] to [purpose]"
+3. Follow the skill's instructions exactly
 
-The command shows:
-- Skill name with appropriate prefix (`superpowers:`, `claude:`, or none)
-- Description (what the skill does and when to use it)
-- "When to use" guidance if available
+If a skill exists for your task, using it is not optional — skills encode solutions to known problems.
 
-## Quick Reference
+## Common Mistakes
 
-| Command | Purpose |
-|---------|---------|
-| `find-skills` | List all available skills |
-| `find-skills \| grep <term>` | Search for specific skills |
-| `use-skill <name>` | Load and use a specific skill |
+**Don't:**
+- Skip checking for skills because "this is simple" — simple tasks are exactly when you're most likely to miss that a skill exists
+- Assume you remember what skills are available — the list changes, check fresh each time
+- Search only by exact name — grep descriptions too, skills may use different terminology
+
+**Do:**
+- Check at the start of every task, before writing code or asking clarifying questions
+- Search broadly (e.g., `grep -i plan` finds `writing-plans`, `executing-plans`, etc.)
+- If in doubt whether a skill applies, load it and check — it costs little to verify
 
 ## Related Skills
 
-- **using-a-skill** - Load and apply a specific skill
-- **using-superpowers** - Introduction to the skills system
-- **writing-skills** - Create new skills
+- **using-a-skill** - How to load and apply a skill once found
+- **using-superpowers** - Introduction to the full skills system
+- **writing-skills** - Create new skills using TDD

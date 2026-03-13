@@ -1,14 +1,14 @@
 ---
 name: requesting-code-review
-description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements. Also use when stuck on a problem (fresh perspective), before refactoring (baseline check), or after fixing a complex bug. If you just finished building something and haven't reviewed it yet, use this skill.
 metadata:
   when_to_use: when completing tasks, implementing major features, or before merging, to verify work meets requirements
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # Requesting Code Review
 
-Dispatch superpowers:code-reviewer subagent to catch issues before they cascade.
+Dispatch a code-reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation — never your session's history. This keeps the reviewer focused on the work product, not your thought process, and preserves your own context for continued work.
 
 **Core principle:** Review early, review often.
 
@@ -34,20 +34,20 @@ HEAD_SHA=$(git rev-parse HEAD)
 
 **2. Dispatch code-reviewer subagent:**
 
-Use Task tool with superpowers:code-reviewer type, fill template at `code-reviewer.md`
+Use the `task` tool with subagent type `general`. Provide the prompt from `code-reviewer.md` with these placeholders filled in:
 
 **Placeholders:**
 - `{WHAT_WAS_IMPLEMENTED}` - What you just built
-- `{PLAN_OR_REQUIREMENTS}` - What it should do
-- `{BASE_SHA}` - Starting commit
-- `{HEAD_SHA}` - Ending commit
-- `{DESCRIPTION}` - Brief summary
+- `{PLAN_OR_REQUIREMENTS}` - What it should do (link to plan/spec if available)
+- `{BASE_SHA}` - Starting commit SHA
+- `{HEAD_SHA}` - Ending commit SHA
+- `{DESCRIPTION}` - Brief summary of changes
 
 **3. Act on feedback:**
-- Fix Critical issues immediately
-- Fix Important issues before proceeding
-- Note Minor issues for later
-- Push back if reviewer is wrong (with reasoning)
+- Fix **Critical** issues immediately — do not proceed until resolved
+- Fix **Important** issues before moving to the next task
+- Note **Minor** issues for later (log in comments or TODO)
+- Push back if reviewer is wrong (with technical reasoning and evidence)
 
 ## Example
 
@@ -59,9 +59,9 @@ You: Let me request code review before proceeding.
 BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | awk '{print $1}')
 HEAD_SHA=$(git rev-parse HEAD)
 
-[Dispatch superpowers:code-reviewer subagent]
+[Dispatch code-reviewer subagent via task tool]
   WHAT_WAS_IMPLEMENTED: Verification and repair functions for conversation index
-  PLAN_OR_REQUIREMENTS: Task 2 from .agents/superpowers/specs/deployment-plan.md
+  PLAN_OR_REQUIREMENTS: Task 2 from .agents/specs/deployment-plan.md
   BASE_SHA: a7981ec
   HEAD_SHA: 3df7661
   DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
@@ -71,7 +71,7 @@ HEAD_SHA=$(git rev-parse HEAD)
   Issues:
     Important: Missing progress indicators
     Minor: Magic number (100) for reporting interval
-  Assessment: Ready to proceed
+  Assessment: Ready to proceed with fixes
 
 You: [Fix progress indicators]
 [Continue to Task 3]
@@ -103,6 +103,8 @@ You: [Fix progress indicators]
 **If reviewer wrong:**
 - Push back with technical reasoning
 - Show code/tests that prove it works
-- Request clarification
+- Request clarification on the specific concern
 
-See template at: requesting-code-review/code-reviewer.md
+## Reviewer Template
+
+Read `code-reviewer.md` (in the same directory as this skill) to get the full prompt to send to the subagent. Fill in all placeholders before dispatching.

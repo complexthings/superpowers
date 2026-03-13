@@ -1,60 +1,78 @@
 ---
 name: using-superpowers
-description: Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions
+description: Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions. CRITICAL: this skill is already loaded in your context — do NOT invoke it again. It defines the foundational rule: if a skill might apply, you must invoke it first.
 ---
 
-<EXTREMELY-IMPORTANT>
-If you think there is even a 1% chance a skill might apply to what you are doing, you ABSOLUTELY MUST invoke the skill.
+# Using Superpowers
 
-IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
+Superpowers is a skills system that gives you access to proven workflows, encoded as SKILL.md files. Skills prevent you from reinventing solved problems and repeating known mistakes. This skill establishes the foundational rule for how to use the entire system.
 
-This is not negotiable. This is not optional. You cannot rationalize your way out of this.
-</EXTREMELY-IMPORTANT>
+## The Core Rule
 
-## How to Access Skills
+**Before any response or action, check whether a skill applies — then invoke it.**
 
-**Use Skill Tool:** Use the `Skill` tool. When you invoke a skill, its content is loaded and presented to you-follow it directly. Never use the Read tool on skill files.
+This means BEFORE writing code, BEFORE asking clarifying questions, BEFORE exploring files. Even a 1% chance a skill might apply means you invoke it to check. If the invoked skill turns out not to fit the situation, you don't need to follow it — but you must check.
 
-**Using your platform's native skill(s) tools:** Most AI coding assistants provide a native `skill` tool. Use it to Discover Skills and load skills by name. When you invoke a skill, its content is loaded and presented to you—follow it directly. Avoid using the Read tool on skill files if it is not necessary and your platform provides native Skill tools.
+Why this matters: skills encode hard-won workflows for tasks like debugging, TDD, and brainstorming. Skipping the check means you may skip a workflow that would have prevented a costly mistake.
 
-# Using Skills
+## How to Invoke Skills in OpenCode
 
-## The Rule
+In OpenCode, the available skills are listed in your system context under `available_skills`. Scan this list before starting any task.
 
-**Invoke relevant or requested skills BEFORE any response or action.** Even a 1% chance a skill might apply means that you should invoke the skill to check. If an invoked skill turns out to be wrong for the situation, you don't need to use it.
+To load a skill, use OpenCode's native `skill` tool with the skill name:
 
-```mermaid
-flowchart TD
-    A(["User message received"])
-    B(["About to EnterPlanMode?"])
-    C{Already brainstormed?}
-    D[Invoke brainstorming skill]
-    E{Might any skill apply?}
-    F[Invoke Skill tool]
-    G["Announce: 'Using [skill] to [purpose]'"]
-    H{Has checklist?}
-    I[Create TodoWrite todo per item]
-    J[Follow skill exactly]
-    K(["Respond (including clarifications)"])
-
-    B --> C
-    C -->|no| D
-    C -->|yes| E
-    D --> E
-
-    A --> E
-    E -->|"yes, even 1%"| F
-    E -->|definitely not| K
-    F --> G
-    G --> H
-    H -->|yes| I
-    H -->|no| J
-    I --> J
+```
+skill("brainstorming")
+skill("systematic-debugging")
+skill("test-driven-development")
 ```
 
-## Red Flags
+When a skill is invoked, its full content is loaded into context. Follow it directly.
 
-These thoughts mean STOP—you're rationalizing:
+**Announce when using a skill:**
+> "Using Skill: [name] to [purpose]"
+
+This keeps the conversation clear and lets the user know which workflow you're following.
+
+## How to Discover Skills
+
+**Primary method (OpenCode):** Scan the `available_skills` list in your system context. It's always there — review it at the start of every conversation.
+
+**CLI fallback:**
+```bash
+superpowers-agent find-skills              # list all skills
+superpowers-agent find-skills | grep test  # filter by topic
+superpowers-agent execute <skill-name>     # load and follow a skill
+```
+
+## Skill Priority
+
+When multiple skills could apply, invoke in this order:
+
+1. **Process skills first** (brainstorming, systematic-debugging, test-driven-development) — these determine HOW to approach the task
+2. **Implementation skills second** (domain-specific guides) — these guide execution
+
+Examples:
+- "Let's build X" → invoke `brainstorming` first, then domain implementation skills
+- "Fix this bug" → invoke `systematic-debugging` first, then domain-specific skills
+
+## Tool Mapping
+
+When skill instructions reference tools you don't have, use your OpenCode equivalents:
+
+| Skill references | OpenCode equivalent |
+|-----------------|---------------------|
+| `TodoWrite` | `todowrite` |
+| `Task` / subagent dispatch | `task` tool with subagent_type |
+| `Skill` tool | OpenCode native `skill` tool |
+| File read/write/edit | `read`, `write`, `edit` |
+| Terminal commands | `bash` |
+| Search | `grep`, `glob` |
+| Web fetching | `webfetch` |
+
+## Red Flags — You're Rationalizing
+
+These thoughts mean STOP and check for a skill first:
 
 | Thought | Reality |
 |---------|---------|
@@ -71,24 +89,32 @@ These thoughts mean STOP—you're rationalizing:
 | "This feels productive" | Undisciplined action wastes time. Skills prevent this. |
 | "I know what that means" | Knowing the concept ≠ using the skill. Invoke it. |
 
-## Skill Priority
-
-When multiple skills could apply, use this order:
-
-1. **Process skills first** (brainstorming, debugging) - these determine HOW to approach the task
-2. **Implementation skills second** (frontend-design, mcp-builder) - these guide execution
-
-"Let's build X" → brainstorming first, then implementation skills.
-"Fix this bug" → debugging first, then domain-specific skills.
-
 ## Skill Types
 
-**Rigid** (TDD, debugging): Follow exactly. Don't adapt away discipline.
+**Rigid skills** (TDD, systematic-debugging): Follow exactly. The structure is the value — adapting away the discipline defeats the purpose.
 
-**Flexible** (patterns): Adapt principles to context.
+**Flexible skills** (patterns, guides): Adapt principles to context. The skill itself will indicate when flexibility is appropriate.
 
-The skill itself tells you which.
+## Checklists
+
+If a skill contains a checklist, create a `todowrite` entry for each item. Mental tracking causes steps to get skipped. Every time.
 
 ## User Instructions
 
-Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip workflows.
+Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip workflows. A specific instruction is when skill discipline matters most.
+
+## Version Monitoring
+
+Superpowers version in AGENTS.md: `^^SAV:7.0.6^^`
+
+If `superpowers-agent` commands display a different version, notify the user:
+```
+superpowers-agent update && superpowers-agent bootstrap && superpowers-agent setup-skills
+```
+
+## Related Skills
+
+- **finding-skills** — Detailed guide for discovering and filtering available skills
+- **using-a-skill** — How to load and apply a specific skill by name
+- **brainstorming** — Required before any creative work or feature implementation
+- **writing-skills** — How to create new skills using TDD

@@ -1,10 +1,9 @@
 {
-  "version": "1.0.0",
-  "name": "meta/create-skill-json",
-  "title": "Create skill.json",
-  "helpers": [],
+  "version": "1.1.0",
+  "name": "superpowers:meta/create-skill-json",
+  "title": "create-skill-json",
   "aliases": [
-    "meta/create-skill-json",
-    "create-skill-json"
+    "create-skill-json",
+    "meta/create-skill-json"
   ]
 }

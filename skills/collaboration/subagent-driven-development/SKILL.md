@@ -3,12 +3,14 @@ name: subagent-driven-development
 description: Use when executing implementation plans with independent tasks in the current session
 metadata:
   when_to_use: when executing implementation plans with independent tasks in the current session, using fresh subagents with review gates
-  version: 2.1.0
+  version: 2.2.0
 ---
 
 # Subagent-Driven Development
 
 Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review.
+
+**Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history — you construct exactly what they need. This also preserves your own context for coordination work.
 
 **Core principle:** Fresh subagent per task + two-stage review (spec then quality) = high quality, fast iteration
 
@@ -58,7 +60,6 @@ flowchart TD
     FINAL --> FINISH[Use finishing-a-development-branch skill]
 ```
 
-
 ## Model Selection
 
 Use the least powerful model that can handle each role to conserve cost and increase speed.
@@ -91,6 +92,7 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 4. If the plan itself is wrong, escalate to the human
 
 **Never** ignore an escalation or force the same model to retry without changes. If the implementer said it's stuck, something needs to change.
+
 ## Prompt Templates
 
 - `./implementer-prompt.md` - Dispatch implementer subagent
@@ -227,14 +229,16 @@ Done!
 - Don't rush them into implementation
 
 **If reviewer finds issues:**
-- Implementer (same subagent) fixes them
+- Dispatch the implementer subagent again with reviewer feedback and the original task text
+- Ask it to fix the specific issues found
 - Reviewer reviews again
 - Repeat until approved
 - Don't skip the re-review
 
-**If subagent fails task:**
-- Dispatch fix subagent with specific instructions
+**If subagent reports BLOCKED or cannot complete the task:**
+- Dispatch a new fix subagent with specific, targeted instructions
 - Don't try to fix manually (context pollution)
+- See "Handling Implementer Status" for escalation options
 
 ## Integration
 
