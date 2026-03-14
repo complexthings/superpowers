@@ -6,13 +6,39 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
-## v7.1.3 (March 13, 2026)
+## v8.0.0 (March 13, 2026)
 
 ### Changed
 
 - **Bootstrap no longer installs agent prompt/command files** — The six legacy install functions (`installCopilotPrompts`, `installCursorCommands`, `installCodexPrompts`, `installGeminiCommands`, `installClaudeCommands`, `installOpencodeCommands`) have been removed from the bootstrap flow. Skills are now delivered exclusively via symlinks, which are already synced during bootstrap.
 - **Bootstrap cleans up legacy files** — A new `removeLegacyPrompts` step runs during bootstrap to delete any prompt/command files previously installed by older versions (across Copilot, Cursor, Codex, Gemini, Claude Code, and OpenCode directories). This is safe to run repeatedly; missing files are silently skipped.
 - **Removed `install-<agent>-prompts/commands` CLI commands** — The individual `install-copilot-prompts`, `install-cursor-commands`, `install-codex-prompts`, `install-gemini-commands`, `install-claude-commands`, and `install-opencode-commands` sub-commands have been removed from the CLI. Only `install-cursor-hooks`, `install-aliases`, and `install-opencode-plugin` (internal) remain.
+- **OpenCode plugin generates bootstrap content dynamically** — The `.opencode/plugins/superpowers-agent.js` plugin now generates the AGENTS.md bootstrap block at runtime instead of reading a static template file.
+- **`setup-skills` is now a skill** — Project initialization is delivered as `skills/setup-skills/SKILL.md` instead of per-platform command files. The `superpowers-agent setup-skills` CLI command remains.
+- **`update` command simplified** — Removed the `plans` directory update step from `runUpdate`; only skill/integration updates are performed.
+
+### Removed
+
+- **All per-platform prompt/command files deleted from repo** — The following file trees are gone:
+  - `.codex/prompts/` (brainstorm, create-meta-prompt, setup-skills, skills, use-skill, write-skill)
+  - `.cursor/commands/` (brainstorm-with-superpowers, create-meta-prompt, setup-skills, skills, use-skill, write-a-skill)
+  - `.gemini/commands/` (brainstorm-with-superpowers, create-meta-prompt, setup-skills, skills, use-skill, write-a-skill)
+  - `.github/prompts/` (brainstorming, execute-plan, setup-skills, write-plan)
+  - `.opencode/command/` (brainstorm, execute-plan, setup-skills, write-plan)
+  - `commands/` directory (brainstorm, create-meta-prompt, execute-plan, finding-skills, setup-skills, skills, use-skill, using-a-skill, write-plan)
+- **Cursor hooks removed** — `hooks/cursor/` (before-submit-prompt.sh, detect-new-conversation.sh, hooks.json, inject-bootstrap.sh) deleted; Cursor integration is now symlink-only.
+- **`CLAUDE.md` and `GEMINI.md` root files deleted** — Agent-specific root instruction files removed in favour of the unified `AGENTS.md`.
+- **`.github/copilot-instructions.md` template removed** — No longer needed now that bootstrap does not install Copilot instructions.
+- **`skills/meta/writing-skills/` removed** — Entire skill directory (SKILL.md, anthropic-best-practices.md, examples/, graphviz-conventions.dot, persuasion-principles.md, render-graphs.js, skill.json) deleted.
+- **`skills/meta/testing-skills-with-subagents/` removed** — Entire skill directory (SKILL.md, examples/, skill.json) deleted.
+- **`skills/meta/gardening-skills-wiki/` removed** — Entire skill directory (SKILL.md, analyze-search-gaps.sh, check-index-coverage.sh, check-links.sh, check-naming.sh, garden.sh, skill.json) deleted.
+- **`skills/commands/` stub files removed** — brainstorm.md, execute-plan.md, write-plan.md deleted.
+- **`.agents/superpowers-agent-backup.js` removed** — Legacy backup file deleted.
+- **Plan documents removed** — Four design/plan documents under `.agents/superpowers/specs/` deleted (agents-json-auto-install-design, agents-json-auto-install-plan, bootstrap-force-agent-flags, force-agent-create-missing-dir).
+
+### Added
+
+- **`skills/setup-skills/` skill** — New `SKILL.md` for project initialization, replacing the deleted per-platform command files.
 
 ---
 
