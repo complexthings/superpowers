@@ -85,7 +85,7 @@ bash install.sh
 The installer will:
 1. Install to `~/.agents/superpowers` (global, works everywhere)
 2. Set up universal aliases: `superpowers` and `superpowers-agent`
-3. Install slash commands for GitHub Copilot, Cursor, Windsurf
+3. Sync skill symlinks for all detected agents
 4. Optionally update project files (AGENTS.md, CLAUDE.md, GEMINI.md)
 
 **After installation, you can use Superpowers from anywhere:**
@@ -95,31 +95,9 @@ superpowers find-skills
 superpowers execute systematic-debugging
 ```
 
-**Installed slash commands:**
-- `/brainstorm` (or `/brainstorm-with-superpowers`) - Interactive design refinement
-- `/write-skill` (or `/write-a-skill`) - Create new skills with TDD
-- `/skills` - Discover available skills
-- `/execute` - Load and apply a specific skill
-- `/write-plan` - Create implementation plans
-- `/execute-plan` - Execute plans in batches
-
 ## Manual Installation
 
 If you prefer manual installation or need project-specific setup, see [.agents/INSTALL.md](.agents/INSTALL.md).
-
-### Alternative: Claude Code Plugin
-
-For Claude Code users, Jesse Vincent's original implementation is available via plugin:
-
-```bash
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
-```
-
-Claude Code commands:
-- `/superpowers:brainstorm` - Interactive design refinement
-- `/superpowers:write-plan` - Create implementation plan
-- `/superpowers:execute-plan` - Execute plan in batches
 
 **Learn more:** [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/) by Jesse Vincent
 
@@ -375,7 +353,51 @@ If symlink creation fails on Windows, you'll see a warning with instructions.
 
 ## Slash Commands & Skill Priority
 
-Superpowers ships slash-command prompts for OpenCode, Claude Code, GitHub Copilot, Cursor, Gemini, and Codex so every agent can load the exact same skill definitions. Each command is a thin wrapper around `superpowers execute <name>`, so skill discovery always walks the same hierarchy before running anything. This section is the canonical reference for where those commands live in the repo and how the loader resolves conflicts.
+Superpowers delivers skills as symlinks into each agent's native skill directory. Each agent discovers and loads skills using its native skill tool — no separate prompt/command files are installed.
+
+**Skill priority pipeline (first match wins):**
+1. `./skills/` or `.agents/skills/` inside the workspace (project-specific overrides)
+2. `.claude/skills/` inside the repo if present (repo-wide Claude overrides)
+3. Personal skills in `~/.agents/skills/` (user-level customizations)
+4. Bundled Superpowers skills in `~/.agents/superpowers/skills/` (system defaults)
+
+When any agent invokes a skill — no matter which tool it originates from — the CLI enforces the ordering above. Add a `brainstorming` skill under `./skills/` and every tool immediately picks it up without modifying any prompt files.
+
+### OpenCode
+
+| Command | Description | Source file |
+| --- | --- | --- |
+| `/brainstorm` | Refine ideas into designs through Socratic questioning | `.opencode/command/brainstorm.md` |
+| `/write-plan` | Create detailed implementation plans | `.opencode/command/write-plan.md` |
+| `/execute-plan` | Execute plans in batches with review checkpoints | `.opencode/command/execute-plan.md` |
+| `/write-skill` | Create new skills following TDD methodology | `.opencode/command/write-skill.md` |
+| `/skills` | Discover and search available skills | `.opencode/command/skills.md` |
+| `/execute` | Load a specific skill by name | `.opencode/command/execute.md` |
+| `/setup-skills` | Initialize project with skills documentation | `.opencode/command/setup-skills.md` |
+| `/meta-prompt` | Create structured prompts for Do/Plan/Research/Refine workflows | `.opencode/command/meta-prompt.md` |
+
+Docs: [OpenCode custom commands](https://opencode.ai/docs/commands/)
+
+### GitHub Copilot
+
+Copilot skills are available via the native skill tool. Docs: [VS Code Copilot prompt files](https://code.visualstudio.com/docs/copilot/customization/prompt-files#_create-a-prompt-file)
+
+### Cursor
+
+Cursor skills are available via the native skill tool. Docs: [Cursor custom commands](https://cursor.com/docs/agent/chat/commands#creating-commands)
+
+### Gemini
+
+Gemini skills are available via the native skill tool. Docs: [Gemini CLI custom slash commands](https://cloud.google.com/blog/topics/developers-practitioners/gemini-cli-custom-slash-commands)
+
+### Claude Code
+
+Claude Code skills are available via the native skill tool. Docs: [Claude Code custom slash commands](https://code.claude.com/docs/en/slash-commands#custom-slash-commands)
+
+### Codex
+
+Codex skills are available via the native skill tool. Docs: [OpenAI Codex custom slash commands](https://developers.openai.com/codex/guides/slash-commands#create-your-own-slash-commands-with-custom-prompts)
+
 
 **Skill priority pipeline (first match wins):**
 1. `./skills/` or `.agents/skills/` inside the workspace (project-specific overrides)
@@ -758,7 +780,7 @@ superpowers-agent dir test-driven-development
 ## How It Works
 
 **For Agent-Agnostic Installation:**
-1. **Bootstrap Process** - Installs prompts and instructions globally
+1. **Bootstrap Process** - Installs agent integrations and syncs skill symlinks globally
 2. **Skill Discovery** - Finds skills across system, personal, and project locations
 3. **Priority Resolution** - Project skills override personal skills override system skills
 4. **Universal Integration** - Works with OpenCode, GitHub Copilot, Cursor, Gemini, and other AI assistants
@@ -807,7 +829,7 @@ superpowers-agent bootstrap
 **Auto-update behavior:**
 - ✓ Fetches latest changes from GitHub main branch
 - ✓ Only updates if repository is clean (no local modifications)
-- ✓ Intelligently reinstalls only changed integrations (cursor, copilot, etc.)
+- ✓ Intelligently reinstalls only changed integrations (cursor hooks, opencode plugin, etc.)
 - ✓ Skips update if not on main branch or network unavailable
 
 **Skip auto-update for a single run:**
@@ -898,4 +920,3 @@ MIT License - see LICENSE file for details
 
 - **Issues**: https://github.com/complexthings/superpowers/issues
 - **Original Project**: https://github.com/obra/superpowers
-- **Marketplace** (Claude Code): https://github.com/obra/superpowers-marketplace

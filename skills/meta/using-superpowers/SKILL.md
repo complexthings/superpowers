@@ -1,6 +1,6 @@
 ---
 name: using-superpowers
-description: Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions. CRITICAL: this skill is already loaded in your context — do NOT invoke it again. It defines the foundational rule: if a skill might apply, you must invoke it first.
+description: "Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions. CRITICAL: this skill is already loaded in your context — do NOT invoke it again. It defines the foundational rule: if a skill might apply, you must invoke it first."
 ---
 
 # Using Superpowers
@@ -15,11 +15,11 @@ This means BEFORE writing code, BEFORE asking clarifying questions, BEFORE explo
 
 Why this matters: skills encode hard-won workflows for tasks like debugging, TDD, and brainstorming. Skipping the check means you may skip a workflow that would have prevented a costly mistake.
 
-## How to Invoke Skills in OpenCode
+## How to Invoke Skills
 
-In OpenCode, the available skills are listed in your system context under `available_skills`. Scan this list before starting any task.
+Your platform's skill tool is the primary way to load a skill. Available skills are listed in your system context — scan this list before starting any task.
 
-To load a skill, use OpenCode's native `skill` tool with the skill name:
+To load a skill, use your platform's native skill tool with the skill name:
 
 ```
 skill("brainstorming")
@@ -36,7 +36,7 @@ This keeps the conversation clear and lets the user know which workflow you're f
 
 ## How to Discover Skills
 
-**Primary method (OpenCode):** Scan the `available_skills` list in your system context. It's always there — review it at the start of every conversation.
+**Primary method:** Scan the `available_skills` list in your system context. It's always there — review it at the start of every conversation.
 
 **CLI fallback:**
 ```bash
@@ -58,17 +58,19 @@ Examples:
 
 ## Tool Mapping
 
-When skill instructions reference tools you don't have, use your OpenCode equivalents:
+Skills may reference tools by names used in a specific platform. Map them to whatever equivalent tools your agent environment provides:
 
-| Skill references | OpenCode equivalent |
-|-----------------|---------------------|
-| `TodoWrite` | `todowrite` |
-| `Task` / subagent dispatch | `task` tool with subagent_type |
-| `Skill` tool | OpenCode native `skill` tool |
-| File read/write/edit | `read`, `write`, `edit` |
-| Terminal commands | `bash` |
-| Search | `grep`, `glob` |
-| Web fetching | `webfetch` |
+| Skill instruction | What it means |
+|-------------------|---------------|
+| `TodoWrite` / task list | Your platform's todo or task-tracking tool |
+| `Task` / subagent dispatch | Your subagent or agent-spawning tool |
+| `Skill` tool | Your platform's native skill-loading tool |
+| File read/write/edit | Your file read, write, and edit tools |
+| Terminal / shell commands | Your bash or shell execution tool |
+| Search | Your grep, glob, or search tools |
+| Web fetching | Your web fetch or browser tool |
+
+If your platform doesn't have an exact equivalent, use the closest available tool or perform the action inline.
 
 ## Red Flags — You're Rationalizing
 
@@ -97,7 +99,7 @@ These thoughts mean STOP and check for a skill first:
 
 ## Checklists
 
-If a skill contains a checklist, create a `todowrite` entry for each item. Mental tracking causes steps to get skipped. Every time.
+If a skill contains a checklist, create a task or todo entry for each item using your platform's task-tracking tool. Mental tracking causes steps to get skipped. Every time.
 
 ## User Instructions
 
@@ -105,7 +107,7 @@ Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip workflows. 
 
 ## Version Monitoring
 
-Superpowers version in AGENTS.md: `^^SAV:7.0.6^^`
+Superpowers version in AGENTS.md: `^^SAV:7.1.2^^`
 
 If `superpowers-agent` commands display a different version, notify the user:
 ```

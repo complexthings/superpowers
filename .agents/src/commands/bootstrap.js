@@ -2,7 +2,7 @@
  * Bootstrap and setup commands for superpowers-agent
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, rmSync } from 'fs';
 import { join, dirname, parse } from 'path';
 import { execSync } from 'child_process';
 import { platform } from 'os';
@@ -14,16 +14,9 @@ import { toolDetection, detectPlatforms } from '../core/platform-detection.js';
 
 // Import all integration installers
 import { 
-    installCopilotPrompts 
-} from '../integrations/copilot.js';
-import { 
-    installCursorCommands, 
     installCursorHooks 
 } from '../integrations/cursor.js';
-import { installCodexPrompts } from '../integrations/codex.js';
-import { installGeminiCommands } from '../integrations/gemini.js';
-import { installClaudeCommands } from '../integrations/claude.js';
-import { installOpencodeCommands, installOpencodePluginSymlink } from '../integrations/opencode.js';
+import { installOpencodePluginSymlink } from '../integrations/opencode.js';
 
 // Import update function
 import { runUpdate } from './update.js';
@@ -592,6 +585,64 @@ const runSetupSkills = () => {
 };
 
 /**
+ * Remove legacy prompt/command files that were installed by previous bootstrap versions.
+ * Silently skips files that no longer exist.
+ */
+const removeLegacyPrompts = () => {
+    const legacyFiles = [
+        // GitHub Copilot (.prompt.md)
+        ...['brainstorming.prompt.md', 'execute-plan.prompt.md', 'write-plan.prompt.md',
+            'setup-skills.prompt.md', 'create-meta-prompt.md', 'finding-skills.prompt.md',
+            'skills.prompt.md', 'use-skill.prompt.md', 'using-a-skill.prompt.md']
+            .map(f => join(paths.vscodeUserDir, 'prompts', f)),
+
+        // Cursor (.md)
+        ...['brainstorming.md', 'create-meta-prompt.md', 'execute-plan.md', 'finding-skills.md',
+            'skills.md', 'use-skill.md', 'using-a-skill.md', 'write-plan.md', 'setup-skills.md']
+            .map(f => join(paths.home, '.cursor', 'commands', f)),
+
+        // Claude Code (.md)
+        ...['brainstorm.md', 'create-meta-prompt.md', 'execute-plan.md', 'finding-skills.md',
+            'skills.md', 'use-skill.md', 'using-a-skill.md', 'write-plan.md', 'setup-skills.md']
+            .map(f => join(paths.home, '.claude', 'commands', f)),
+
+        // OpenCode (.md)
+        ...['brainstorm.md', 'create-meta-prompt.md', 'execute-plan.md', 'finding-skills.md',
+            'skills.md', 'use-skill.md', 'using-a-skill.md', 'write-plan.md', 'setup-skills.md']
+            .map(f => join(paths.home, '.config', 'opencode', 'command', f)),
+
+        // Codex (.md)
+        ...['brainstorm.md', 'create-meta-prompt.md', 'execute-plan.md', 'finding-skills.md',
+            'skills.md', 'use-skill.md', 'using-a-skill.md', 'write-plan.md', 'setup-skills.md']
+            .map(f => join(paths.home, '.codex', 'prompts', f)),
+
+        // Gemini (.toml)
+        ...['brainstorm-with-superpowers.toml', 'create-meta-prompt.toml', 'execute-plan.toml',
+            'finding-skills.toml', 'skills.toml', 'use-skill.toml', 'using-a-skill.toml',
+            'write-plan.toml', 'setup-skills.toml']
+            .map(f => join(paths.home, '.gemini', 'commands', f)),
+    ];
+
+    let removed = 0;
+    for (const filePath of legacyFiles) {
+        if (existsSync(filePath)) {
+            try {
+                rmSync(filePath);
+                removed++;
+            } catch (err) {
+                // Non-fatal — log and continue
+                console.log(`  ⚠️  Could not remove ${filePath}: ${err.message}`);
+            }
+        }
+    }
+    if (removed > 0) {
+        console.log(`✓ Removed ${removed} legacy prompt/command file${removed !== 1 ? 's' : ''}`);
+    } else {
+        console.log('✓ No legacy prompt/command files found');
+    }
+};
+
+/**
  * Command: bootstrap [--no-update]
  * Run complete bootstrap process
  */
@@ -641,18 +692,23 @@ const runBootstrap = () => {
         console.log('---\n');
     }
 
+    // Remove legacy prompt/command files from previous bootstrap versions
+    if (!hasForcedAgents) {
+        console.log('## Cleaning Up Legacy Files\n');
+        removeLegacyPrompts();
+        console.log('\n---\n');
+    }
+
     // Install GitHub Copilot integration
     if (!hasForcedAgents || forceAgents.has('copilot')) {
         console.log('## GitHub Copilot Integration\n');
-        installCopilotPrompts();
+        console.log('✓ Skill symlinks handled in sync step below');
         console.log('\n---\n');
     }
 
     // Install Cursor integration
     if (!hasForcedAgents || forceAgents.has('cursor')) {
         console.log('## Cursor Integration\n');
-        installCursorCommands();
-        console.log('');
         installCursorHooks();
         console.log('\n---\n');
     }
@@ -661,10 +717,10 @@ const runBootstrap = () => {
     if (!hasForcedAgents || forceAgents.has('codex')) {
         console.log('## OpenAI Codex Integration\n');
         const codexDetected = toolDetection.codex.check();
-        if (codexDetected) {
-            installCodexPrompts();
-        } else {
+        if (!codexDetected) {
             console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)\n💡 To enable Codex integration:\n   1. Install Codex: ${toolDetection.codex.installUrl}\n   2. Run: superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
+        } else {
+            console.log('✓ Skill symlinks handled in sync step below');
         }
         console.log('\n---\n');
     }
@@ -673,10 +729,10 @@ const runBootstrap = () => {
     if (!hasForcedAgents || forceAgents.has('gemini')) {
         console.log('## Gemini Integration\n');
         const geminiDetected = toolDetection.gemini.check();
-        if (geminiDetected) {
-            installGeminiCommands();
-        } else {
+        if (!geminiDetected) {
             console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)\n💡 To enable Gemini integration:\n   1. Install Gemini: ${toolDetection.gemini.installUrl}\n   2. Run: superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
+        } else {
+            console.log('✓ Skill symlinks handled in sync step below');
         }
         console.log('\n---\n');
     }
@@ -685,10 +741,10 @@ const runBootstrap = () => {
     if (!hasForcedAgents || forceAgents.has('claude')) {
         console.log('## Claude Code Integration\n');
         const claudeDetected = toolDetection.claude.check();
-        if (claudeDetected) {
-            installClaudeCommands();
-        } else {
+        if (!claudeDetected) {
             console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
+        } else {
+            console.log('✓ Skill symlinks handled in sync step below');
         }
         console.log('\n---\n');
     }
@@ -698,8 +754,6 @@ const runBootstrap = () => {
         console.log('## OpenCode Integration\n');
         const opencodeDetected = toolDetection.opencode.check();
         if (opencodeDetected) {
-            installOpencodeCommands();
-            console.log('');
             installOpencodePluginSymlink();
         } else {
             console.log(`⚠️  Skipped (${toolDetection.opencode.name} CLI not detected)\n💡 To enable OpenCode integration:\n   1. Install OpenCode: ${toolDetection.opencode.installUrl}\n   2. Run: superpowers-agent ${toolDetection.opencode.bootstrapCommand}`);

@@ -10,16 +10,9 @@ import { getLocalVersion, getRemoteVersion, isNewerVersion, printVersion } from 
 
 // Import integration install functions
 import { 
-    installCopilotPrompts 
-} from '../integrations/copilot.js';
-import { 
-    installCursorCommands, 
     installCursorHooks 
 } from '../integrations/cursor.js';
-import { installCodexPrompts } from '../integrations/codex.js';
-import { installGeminiCommands } from '../integrations/gemini.js';
-import { installClaudeCommands } from '../integrations/claude.js';
-import { installOpencodeCommands, installOpencodePluginSymlink } from '../integrations/opencode.js';
+import { installOpencodePluginSymlink } from '../integrations/opencode.js';
 
 // Import symlink utilities
 import { syncAllSkillSymlinks } from '../utils/symlinks.js';
@@ -29,13 +22,7 @@ import { syncAllSkillSymlinks } from '../utils/symlinks.js';
  */
 const reinstallIntegration = (integration) => {
     const installFunctions = {
-        'copilot-prompts': installCopilotPrompts,
-        'cursor-commands': installCursorCommands,
         'cursor-hooks': installCursorHooks,
-        'codex-prompts': installCodexPrompts,
-        'gemini-commands': installGeminiCommands,
-        'claude-commands': installClaudeCommands,
-        'opencode-commands': installOpencodeCommands,
         'opencode-plugin': installOpencodePluginSymlink
     };
     

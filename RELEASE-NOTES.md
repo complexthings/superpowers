@@ -6,6 +6,16 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v7.1.3 (March 13, 2026)
+
+### Changed
+
+- **Bootstrap no longer installs agent prompt/command files** — The six legacy install functions (`installCopilotPrompts`, `installCursorCommands`, `installCodexPrompts`, `installGeminiCommands`, `installClaudeCommands`, `installOpencodeCommands`) have been removed from the bootstrap flow. Skills are now delivered exclusively via symlinks, which are already synced during bootstrap.
+- **Bootstrap cleans up legacy files** — A new `removeLegacyPrompts` step runs during bootstrap to delete any prompt/command files previously installed by older versions (across Copilot, Cursor, Codex, Gemini, Claude Code, and OpenCode directories). This is safe to run repeatedly; missing files are silently skipped.
+- **Removed `install-<agent>-prompts/commands` CLI commands** — The individual `install-copilot-prompts`, `install-cursor-commands`, `install-codex-prompts`, `install-gemini-commands`, `install-claude-commands`, and `install-opencode-commands` sub-commands have been removed from the CLI. Only `install-cursor-hooks`, `install-aliases`, and `install-opencode-plugin` (internal) remain.
+
+---
+
 ## v7.1.2 (March 5, 2026)
 
 ### Fixed
