@@ -18,11 +18,15 @@ Before starting any task, discover what skills are available so you don't reinve
 
 ## How to Find Skills
 
-### OpenCode: Native Skill Tool (Primary Method)
+### Native Skill Tool (Primary Method — All Platforms)
 
-In OpenCode, the available_skills list appears in your system context — scan it before starting any task. This is the fastest way to see what's available at a glance.
+Most AI coding assistants expose a native skill or tool mechanism. Use it first:
 
-To load a specific skill by name, use the native `skill` tool directly in your response.
+- **If your platform has a native `skill` tool**: use it to list or load skills by name — this is the fastest path
+- **If skills appear in your system context** (e.g., an `<available_skills>` block or similar): scan that list before starting any task
+- **If your platform supports `@skill` mentions or tool invocations**: use those to activate a skill directly
+
+When in doubt, check whatever mechanism your platform provides to discover available skills before doing anything else.
 
 ### CLI: superpowers-agent find-skills
 
@@ -61,9 +65,9 @@ Skills are discovered from multiple locations. Higher priority overrides lower w
 | Priority | Location | Scope |
 |----------|----------|-------|
 | 1 (highest) | `.agents/skills/` in project | Project-specific |
-| 1 (highest) | `.claude/skills/` in project | Claude project skills |
+| 1 (highest) | Platform project skill dir (e.g. `.claude/skills/`) | Project-specific |
 | 2 | `~/.agents/skills/` | Personal, cross-project |
-| 3 | `~/.config/opencode/skill/` | OpenCode system skills |
+| 3 | Platform system skill directory | Platform system skills |
 | 4 (lowest) | `~/.agents/superpowers/skills/` | Superpowers community skills |
 
 Project skills always win. When a project skill and a system skill share the same name, the project version is used.
@@ -72,7 +76,7 @@ Project skills always win. When a project skill and a system skill share the sam
 
 Once you identify a relevant skill:
 
-1. Load it via the native `skill` tool (OpenCode) or `superpowers-agent execute <name>`
+1. Load it using your platform's native skill tool, or via `superpowers-agent execute <name>`
 2. Announce: "Using Skill: [name] to [purpose]"
 3. Follow the skill's instructions exactly
 

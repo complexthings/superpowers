@@ -36,18 +36,8 @@ import {
 
 // Import integration installers
 import { 
-    installCopilotPrompts 
-} from './integrations/copilot.js';
-
-import { 
-    installCursorCommands, 
     installCursorHooks 
 } from './integrations/cursor.js';
-
-import { installCodexPrompts } from './integrations/codex.js';
-import { installGeminiCommands } from './integrations/gemini.js';
-import { installClaudeCommands } from './integrations/claude.js';
-import { installOpencodeCommands } from './integrations/opencode.js';
 
 // Import use-skill command
 import { runUseSkill } from './skills/executor.js';
@@ -88,13 +78,7 @@ const commands = {
     'get-helpers': runGetHelpers,
     
     // Integration install commands
-    'install-copilot-prompts': installCopilotPrompts,
-    'install-cursor-commands': installCursorCommands,
     'install-cursor-hooks': installCursorHooks,
-    'install-codex-prompts': installCodexPrompts,
-    'install-gemini-commands': installGeminiCommands,
-    'install-claude-commands': installClaudeCommands,
-    'install-opencode-commands': installOpencodeCommands,
     'install-aliases': installAliases,
     
     // Default help
@@ -118,13 +102,7 @@ Usage:
   superpowers-agent path <skill-name>                               # Get skill file path
   superpowers-agent execute <skill-name>                            # Execute a skill
   superpowers-agent get-helpers <skill> <search-term>               # Get helper file path
-  superpowers-agent install-copilot-prompts                         # Install GitHub Copilot prompts
-  superpowers-agent install-cursor-commands                         # Install Cursor commands
   superpowers-agent install-cursor-hooks                            # Install Cursor hooks
-  superpowers-agent install-codex-prompts                           # Install Codex prompts
-  superpowers-agent install-gemini-commands                         # Install Gemini commands
-  superpowers-agent install-claude-commands                         # Install Claude commands
-  superpowers-agent install-opencode-commands                       # Install OpenCode commands
   superpowers-agent install-aliases                                 # Install universal aliases (superpowers, superpowers-agent)
 
 Documentation: https://github.com/complexthings/superpowers

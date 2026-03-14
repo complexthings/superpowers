@@ -6,3 +6,4 @@ docs/*
 .agents/prompts/*
 *.backup
 .install_success
+.agents/workspaces/*
