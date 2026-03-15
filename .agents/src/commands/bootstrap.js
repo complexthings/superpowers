@@ -22,7 +22,7 @@ import { installOpencodePluginSymlink } from '../integrations/opencode.js';
 import { runUpdate } from './update.js';
 
 // Import symlink utilities
-import { syncAllSkillSymlinks, syncProjectSkillSymlinks } from '../utils/symlinks.js';
+import { syncAllSkillSymlinks, syncProjectSkillSymlinks, syncRepoSkillSymlinks } from '../utils/symlinks.js';
 
 /**
  * Generate tool mappings by reading the generic TOOLS.md.template
@@ -798,6 +798,17 @@ const runBootstrap = () => {
     console.log('## Syncing Skill Symlinks\n');
     const forceCreate = process.argv.includes('--force');
     syncAllSkillSymlinks({ force: forceCreate, forceAgents });
+
+    // Sync repo skills into ~/.agents/skills/
+    console.log('\n## Syncing Repo Skills -> ~/.agents/skills/\n');
+    const repoSkillResults = syncRepoSkillSymlinks();
+    if (repoSkillResults.created > 0 || repoSkillResults.updated > 0) {
+        console.log(`  ✓ ${repoSkillResults.created} created, ${repoSkillResults.updated} updated, ${repoSkillResults.existed} already current`);
+    } else if (repoSkillResults.errors.length > 0) {
+        for (const err of repoSkillResults.errors) console.log(`  ⚠️  ${err}`);
+    } else {
+        console.log(`  ✓ ${repoSkillResults.existed} skill symlinks already up to date`);
+    }
     console.log('\n---\n');
 
     console.log('# Bootstrap Complete!\n');

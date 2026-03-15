@@ -15,7 +15,7 @@ import {
 import { installOpencodePluginSymlink } from '../integrations/opencode.js';
 
 // Import symlink utilities
-import { syncAllSkillSymlinks } from '../utils/symlinks.js';
+import { syncAllSkillSymlinks, syncRepoSkillSymlinks } from '../utils/symlinks.js';
 
 /**
  * Reinstall a specific integration
@@ -141,6 +141,17 @@ const runUpdate = (options = {}) => {
     console.log('\n---\n');
     console.log('## Syncing Skill Symlinks\n');
     syncAllSkillSymlinks();
+
+    // 9a. Sync repo skills into ~/.agents/skills/
+    console.log('\n## Syncing Repo Skills -> ~/.agents/skills/\n');
+    const repoSkillResults = syncRepoSkillSymlinks();
+    if (repoSkillResults.created > 0 || repoSkillResults.updated > 0) {
+        console.log(`  ✓ ${repoSkillResults.created} created, ${repoSkillResults.updated} updated, ${repoSkillResults.existed} already current`);
+    } else if (repoSkillResults.errors.length > 0) {
+        for (const err of repoSkillResults.errors) console.log(`  ⚠️  ${err}`);
+    } else {
+        console.log(`  ✓ ${repoSkillResults.existed} skill symlinks already up to date`);
+    }
     
     // 10. Sync OpenCode plugin symlink
     console.log('\n---\n');

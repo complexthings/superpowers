@@ -6,7 +6,7 @@
  */
 
 import { existsSync, readdirSync, lstatSync, symlinkSync, unlinkSync, mkdirSync, readlinkSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, basename } from 'path';
 import { homedir, platform } from 'os';
 import { paths } from '../core/paths.js';
 import { readConfigFile, writeConfigFile } from '../core/config.js';
@@ -487,6 +487,121 @@ export const cleanupStaleSymlinks = () => {
     }
     
     return removed;
+};
+
+/**
+ * Recursively collect all directories that contain a SKILL.md file.
+ *
+ * @param {string} dir - Directory to scan
+ * @param {string[]} results - Accumulator (populated in place)
+ */
+const collectSkillDirs = (dir, results = []) => {
+    let entries;
+    try {
+        entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+        return results;
+    }
+
+    let hasSkillMd = false;
+    const subdirs = [];
+
+    for (const entry of entries) {
+        if (!entry.isDirectory() && entry.name === 'SKILL.md') {
+            hasSkillMd = true;
+        }
+        if (entry.isDirectory() && !entry.name.startsWith('.')) {
+            subdirs.push(join(dir, entry.name));
+        }
+    }
+
+    if (hasSkillMd) {
+        results.push(dir);
+    }
+
+    for (const subdir of subdirs) {
+        collectSkillDirs(subdir, results);
+    }
+
+    return results;
+};
+
+/**
+ * Sync repo skill symlinks into ~/.agents/skills/
+ *
+ * Scans ./skills in the superpowers repo recursively for any directory
+ * containing a SKILL.md file. For each match, creates a symlink:
+ *   ~/.agents/skills/<leaf-directory-name> -> <absolute-path-to-skill-directory>
+ *
+ * - If the symlink already exists and points to the correct source: leave it.
+ * - If the symlink exists but points elsewhere: update it.
+ * - If no symlink exists: create it.
+ *
+ * @returns {{ created: number, existed: number, updated: number, errors: string[] }}
+ */
+export const syncRepoSkillSymlinks = () => {
+    const repoSkillsDir = paths.homeSuperpowersSkills; // <repo>/skills
+    const targetDir = paths.homePersonalSkills;        // ~/.agents/skills
+
+    if (!existsSync(repoSkillsDir)) {
+        return { created: 0, existed: 0, updated: 0, errors: [`Skills directory not found: ${repoSkillsDir}`] };
+    }
+
+    // Ensure ~/.agents/skills exists
+    if (!existsSync(targetDir)) {
+        try {
+            mkdirSync(targetDir, { recursive: true });
+        } catch (error) {
+            return { created: 0, existed: 0, updated: 0, errors: [`Failed to create ${targetDir}: ${error.message}`] };
+        }
+    }
+
+    const skillDirs = collectSkillDirs(repoSkillsDir);
+    const results = { created: 0, existed: 0, updated: 0, errors: [] };
+
+    for (const skillDir of skillDirs) {
+        const leafName = basename(skillDir);
+        const linkPath = join(targetDir, leafName);
+
+        // Already points to the correct source — nothing to do
+        if (symlinkPointsTo(linkPath, skillDir)) {
+            results.existed++;
+            continue;
+        }
+
+        // Stale symlink or wrong target — remove and recreate
+        if (isSymlink(linkPath)) {
+            try {
+                unlinkSync(linkPath);
+                results.updated++;
+            } catch (error) {
+                results.errors.push(`Failed to remove stale symlink ${linkPath}: ${error.message}`);
+                continue;
+            }
+        } else if (existsSync(linkPath)) {
+            // Exists but is not a symlink — skip to avoid data loss
+            results.errors.push(`Skipped ${linkPath}: path exists and is not a symlink`);
+            continue;
+        }
+
+        // Create the symlink
+        const plat = platform();
+        try {
+            if (plat === 'win32') {
+                symlinkSync(skillDir, linkPath, 'junction');
+            } else {
+                symlinkSync(skillDir, linkPath, 'dir');
+            }
+            const shortLink = linkPath.replace(homedir(), '~');
+            const shortSrc = skillDir.replace(homedir(), '~');
+            console.log(`  ✓ ${shortLink} -> ${shortSrc}`);
+            results.created++;
+        } catch (error) {
+            results.errors.push(`Failed to create symlink ${linkPath}: ${error.message}`);
+        }
+    }
+
+    return results;
 };
 
 /**
