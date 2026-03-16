@@ -6,6 +6,24 @@ Release history for the agent-agnostic fork of Superpowers.
 
 ---
 
+## v8.2.0 (March 16, 2026)
+
+### Changed
+
+- **Update checking uses npm registry** — `checkForUpdates` and `getRemoteVersion` now query `https://registry.npmjs.org/@complexthings/superpowers-agent/latest` instead of fetching from the Git repository. The `update` command tells users to run `npm install -g` rather than attempting `git pull`.
+- **`getLocalVersion` reads from `.agents/package.json`** — Version resolution now reads the CLI tool's own `package.json` with a `0.0.0` fallback (previously hardcoded `5.4.0`).
+- **Bootstrap update check simplified** — Bootstrap no longer attempts auto-update via git pull; it shows the npm install command when an update is available.
+
+### Added
+
+- **Husky pre-commit hook enforces version parity** — A pre-commit hook compares `version` in `./package.json` and `.agents/package.json`. On mismatch, it syncs both to the highest version, updates lockfiles, rebuilds the CLI, and stages all changes.
+
+### Removed
+
+- **Git-based update infrastructure** — `isRepoClean`, git fetch/pull logic, commit comparison, and `determineReinstalls`-driven integration reinstall removed from the update flow. `isOnMainBranch` retained as a deprecated no-op for backward compatibility.
+
+---
+
 ## v8.0.0 (March 13, 2026)
 
 ### Changed

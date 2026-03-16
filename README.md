@@ -6,6 +6,11 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
+**v8.2.0 (March 16, 2026):**
+
+- **npm registry update checking** — `update` and `check-updates` now query the npm registry instead of the Git repo. Run `npm install -g @complexthings/superpowers-agent` to update.
+- **Version parity hook** — A Husky pre-commit hook ensures `./package.json` and `.agents/package.json` stay in sync, auto-syncing to the highest version and rebuilding the CLI on mismatch.
+
 **v8.0.0 (March 13, 2026):**
 
 - **Skills-only delivery** — All per-platform prompt/command files (`.opencode/command/`, `.cursor/commands/`, `.gemini/commands/`, `.github/prompts/`, `.codex/prompts/`, `commands/`) have been removed. 

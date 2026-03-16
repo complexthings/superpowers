@@ -8,3 +8,5 @@ docs/*
 .install_success
 .agents/workspaces/*
 .ant-colony/
+node_modules/
+.agents/node_modules/

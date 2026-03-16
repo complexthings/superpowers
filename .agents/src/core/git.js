@@ -1,113 +1,29 @@
-import { execSync } from 'child_process';
-import { paths } from './paths.js';
+import { getLocalVersion, getRemoteVersion, isNewerVersion } from '../utils/output.js';
 
 /**
- * Check if repository is clean (no uncommitted changes)
+ * @deprecated No longer relevant post-npm migration. Returns false.
  */
-export const isRepoClean = () => {
-    try {
-        const output = execSync('git status --porcelain --untracked-files=no', {
-            cwd: paths.superpowersRepo,
-            encoding: 'utf8',
-            stdio: 'pipe',
-            timeout: 3000
-        });
-        return output.trim().length === 0;
-    } catch {
-        return false;
-    }
-};
+export const isOnMainBranch = () => false;
 
 /**
- * Check if currently on main branch
+ * Check for available updates from the npm registry
  */
-export const isOnMainBranch = () => {
+export const checkForUpdates = async () => {
     try {
-        const branch = execSync('git rev-parse --abbrev-ref HEAD', {
-            cwd: paths.superpowersRepo,
-            encoding: 'utf8',
-            stdio: 'pipe',
-            timeout: 3000
-        });
-        return branch.trim() === 'main';
-    } catch {
-        return false;
-    }
-};
-
-/**
- * Check for available updates from origin/main
- */
-export const checkForUpdates = () => {
-    try {
-        // Fetch latest from origin
-        execSync('git fetch origin', {
-            cwd: paths.superpowersRepo,
-            timeout: 5000,
-            stdio: 'pipe'
-        });
-
-        // Check if repo is clean
-        const hasLocalChanges = !isRepoClean();
-
-        // Get current and latest commits
-        const currentCommit = execSync('git rev-parse HEAD', {
-            cwd: paths.superpowersRepo,
-            encoding: 'utf8',
-            stdio: 'pipe'
-        }).trim();
-
-        const latestCommit = execSync('git rev-parse origin/main', {
-            cwd: paths.superpowersRepo,
-            encoding: 'utf8',
-            stdio: 'pipe'
-        }).trim();
-
-        const hasUpdates = currentCommit !== latestCommit;
-
-        if (!hasUpdates) {
-            return {
-                hasUpdates: false,
-                hasLocalChanges,
-                currentCommit,
-                latestCommit,
-                commitsBehind: 0,
-                changedFiles: []
-            };
-        }
-
-        // Count commits behind
-        const commitsBehind = parseInt(execSync('git rev-list --count HEAD..origin/main', {
-            cwd: paths.superpowersRepo,
-            encoding: 'utf8',
-            stdio: 'pipe'
-        }).trim(), 10);
-
-        // Get changed files
-        const changedFilesOutput = execSync('git diff --name-only HEAD origin/main', {
-            cwd: paths.superpowersRepo,
-            encoding: 'utf8',
-            stdio: 'pipe'
-        });
-
-        const changedFiles = changedFilesOutput.trim().split('\n').filter(f => f.length > 0);
+        const localVersion = getLocalVersion();
+        const remoteVersion = await getRemoteVersion();
+        const hasUpdates = isNewerVersion(remoteVersion, localVersion);
 
         return {
-            hasUpdates: true,
-            hasLocalChanges,
-            currentCommit,
-            latestCommit,
-            commitsBehind,
-            changedFiles
+            hasUpdates,
+            localVersion,
+            remoteVersion
         };
     } catch {
         return {
             hasUpdates: false,
-            hasLocalChanges: false,
-            currentCommit: '',
-            latestCommit: '',
-            commitsBehind: 0,
-            changedFiles: [],
+            localVersion: getLocalVersion(),
+            remoteVersion: '',
             error: true
         };
     }

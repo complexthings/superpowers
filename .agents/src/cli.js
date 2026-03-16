@@ -115,7 +115,13 @@ const command = process.argv[2] || 'default';
 const handler = commands[command] || commands['default'];
 
 try {
-    handler();
+    const result = handler();
+    if (result && typeof result.then === 'function') {
+        result.catch(error => {
+            console.error(`Error: ${error.message}`);
+            process.exit(1);
+        });
+    }
 } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);

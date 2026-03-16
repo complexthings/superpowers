@@ -646,7 +646,7 @@ const removeLegacyPrompts = () => {
  * Command: bootstrap [--no-update]
  * Run complete bootstrap process
  */
-const runBootstrap = () => {
+const runBootstrap = async () => {
     printVersion();
     console.log('# Superpowers Bootstrap for Agents\n# ==================================\n');
 
@@ -663,26 +663,14 @@ const runBootstrap = () => {
     // Auto-update check
     if (!noUpdate) {
         const config = readConfig();
-        const updateInfo = checkForUpdates();
+        const updateInfo = await checkForUpdates();
         
         if (updateInfo.error) {
             console.log('## Update Check\n\n⚠️  Could not check for updates (network issue)\n\n---\n');
         } else if (updateInfo.hasUpdates) {
-            if (config.auto_update && !updateInfo.hasLocalChanges && isOnMainBranch()) {
-                console.log('## Auto-Update\n');
-                runUpdate();
-                console.log('\n---\n');
-            } else {
-                console.log('## Update Available\n');
-                if (updateInfo.hasLocalChanges) {
-                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: local changes detected\n    To update, commit/stash changes then run: `superpowers-agent update`');
-                } else if (!isOnMainBranch()) {
-                    console.log('⚠️  Your superpowers installation is behind the latest version.\n    Cannot auto-update: not on main branch\n    To update, switch to main then run: `superpowers-agent update`');
-                } else {
-                    console.log(`⚠️  Your superpowers installation is behind the latest version.\n    To update, run: \`superpowers-agent update\`\n    Or enable auto-update: \`superpowers-agent config-set auto_update true\``);
-                }
-                console.log('\n---\n');
-            }
+            console.log('## Update Available\n');
+            console.log(`⚠️  Update available: v${updateInfo.localVersion} → v${updateInfo.remoteVersion}\n    To update, run: \`npm install -g @complexthings/superpowers-agent\``);
+            console.log('\n---\n');
         }
     }
 

@@ -23,9 +23,9 @@ export const getLocalVersion = () => {
         }
         
         const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
-        return pkg.version || '5.4.0';
-    } catch (error) {
-        return '5.4.0'; // Fallback to current version
+        return pkg.version || '0.0.0';
+    } catch {
+        return '0.0.0'; // Fallback ensures any real version is detected as newer
     }
 };
 
@@ -38,14 +38,13 @@ export const printVersion = () => {
 };
 
 /**
- * Fetch remote version from GitHub
+ * Fetch latest published version from npm registry
  * @returns {Promise<string>} Remote version number
  */
 export const getRemoteVersion = async () => {
     try {
-        const url = 'https://raw.githubusercontent.com/complexthings/superpowers/main/.agents/package.json';
+        const url = 'https://registry.npmjs.org/@complexthings/superpowers-agent/latest';
         
-        // Use execSync with curl for compatibility with older Node versions
         const response = execSync(`curl -sS "${url}"`, {
             encoding: 'utf8',
             timeout: 10000
@@ -53,7 +52,6 @@ export const getRemoteVersion = async () => {
         
         const pkg = JSON.parse(response);
         
-        // If version field doesn't exist, return current version (no update available)
         if (!pkg.version) {
             return getLocalVersion();
         }

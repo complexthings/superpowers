@@ -1,7 +1,46 @@
-# If .agents/package.json was changed, regenerate bun.lock
-if git diff --cached --name-only | grep -q '^\.agents/package\.json$'; then
-  echo "📦 .agents/package.json changed — updating bun.lock..."
-  export PATH="$HOME/.bun/bin:$PATH"
-  cd .agents && bun install
-  git add bun.lock
+#!/usr/bin/env bash
+set -e
+
+export PATH="$HOME/.bun/bin:$PATH"
+
+ROOT_VERSION=$(node -p "require('./package.json').version")
+AGENTS_VERSION=$(node -p "require('./.agents/package.json').version")
+
+if [ "$ROOT_VERSION" = "$AGENTS_VERSION" ]; then
+  echo "✓ Versions in sync (v$ROOT_VERSION)"
+  exit 0
 fi
+
+echo "⚠️  Version mismatch: root=v$ROOT_VERSION, .agents/=v$AGENTS_VERSION"
+
+# Determine highest version
+HIGHEST=$(node -e "
+  const a = '$ROOT_VERSION'.split('.').map(Number);
+  const b = '$AGENTS_VERSION'.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (a[i] > b[i]) { console.log('$ROOT_VERSION'); process.exit(); }
+    if (b[i] > a[i]) { console.log('$AGENTS_VERSION'); process.exit(); }
+  }
+  console.log('$ROOT_VERSION');
+")
+
+echo "📦 Syncing both to v$HIGHEST..."
+
+# Update both package.json files
+node -e "
+  const fs = require('fs');
+  for (const p of ['./package.json', './.agents/package.json']) {
+    const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
+    pkg.version = '$HIGHEST';
+    fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
+  }
+"
+
+# Sync lockfiles and rebuild
+npm i --package-lock-only 2>/dev/null
+cd .agents && bun install && bun run build && cd ..
+
+# Stage all affected files
+git add package.json package-lock.json .agents/package.json .agents/bun.lock .agents/superpowers-agent
+
+echo "✓ Synced to v$HIGHEST and staged changes"
