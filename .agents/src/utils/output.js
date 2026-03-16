@@ -13,11 +13,16 @@ const __dirname = dirname(__filename);
  */
 export const getLocalVersion = () => {
     try {
-        // After bundling, __dirname is where the compiled file lives (.agents/)
-        // So package.json is in the same directory
+        // Try multiple paths to find package.json:
+        // 1. Same directory (development when __dirname = src/utils/)
+        // 2. One level up (bundled: .agents/ -> package root)
+        // 3. Two levels up (development: src/utils/ -> package root)
         let packagePath = join(__dirname, 'package.json');
         
-        // During development/source, it's two levels up from src/utils/
+        if (!existsSync(packagePath)) {
+            packagePath = join(__dirname, '..', 'package.json');
+        }
+        
         if (!existsSync(packagePath)) {
             packagePath = join(__dirname, '..', '..', 'package.json');
         }

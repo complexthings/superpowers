@@ -67,19 +67,25 @@ export const paths = {
     get homeCodexSkills() { return join(this.home, '.codex', 'skills'); },
     get bootstrap() { return join(this.projectRoot, '.agents', 'superpowers-bootstrap.md'); },
     get superpowersRepo() { 
-        // If running from the superpowers repo itself, use current location
-        // Otherwise use installed location
-        // Navigate from src/core/ up to repo root
-        const currentRepoCheck = join(__dirname, '..', '..', '..', 'skills');
-        if (existsSync(currentRepoCheck) && existsSync(join(__dirname, '..', '..', '..', '.github', 'prompts'))) {
-            return join(__dirname, '..', '..', '..');
+        // Development: src/core/ -> 3 up = repo root
+        const devRoot = join(__dirname, '..', '..', '..');
+        if (existsSync(join(devRoot, 'skills')) && existsSync(join(devRoot, '.agents', 'superpowers-agent'))) {
+            return devRoot;
+        }
+        // Bundled: .agents/ -> 1 up = package root
+        const bundledRoot = join(__dirname, '..');
+        if (existsSync(join(bundledRoot, 'skills')) && existsSync(join(bundledRoot, '.agents', 'superpowers-agent'))) {
+            return bundledRoot;
         }
         return join(this.home, '.agents', 'superpowers');
     },
     get homeSuperpowersSkills() { return join(this.superpowersRepo, 'skills'); },
     get isSuperpowersRepo() {
-        // Check if we're running from within the superpowers repo
-        const currentRepoCheck = join(__dirname, '..', '..', '..', 'skills');
-        return existsSync(currentRepoCheck) && existsSync(join(__dirname, '..', '..', '..', '.github', 'prompts'));
+        const devRoot = join(__dirname, '..', '..', '..');
+        if (existsSync(join(devRoot, 'skills')) && existsSync(join(devRoot, '.agents', 'superpowers-agent'))) {
+            return true;
+        }
+        const bundledRoot = join(__dirname, '..');
+        return existsSync(join(bundledRoot, 'skills')) && existsSync(join(bundledRoot, '.agents', 'superpowers-agent'));
     }
 };

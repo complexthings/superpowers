@@ -4,12 +4,13 @@
 
 import { checkForUpdates } from '../core/git.js';
 import { getLocalVersion, getRemoteVersion, isNewerVersion, printVersion } from '../utils/output.js';
+import { execSync } from 'child_process';
 
 /**
  * Command: update
- * Check for updates and instruct user to upgrade via npm
+ * Check for updates and install if available
  */
-const runUpdate = async () => {
+const runUpdate = async ({ skipReinstall = false } = {}) => {
     console.log('# Checking for Superpowers updates...\n');
 
     const updateInfo = await checkForUpdates();
@@ -25,8 +26,22 @@ const runUpdate = async () => {
     }
 
     console.log(`📦 Update available: v${updateInfo.localVersion} → v${updateInfo.remoteVersion}\n`);
-    console.log('   Run the following to update:\n');
-    console.log('   npm install -g @complexthings/superpowers-agent\n');
+
+    if (skipReinstall) {
+        console.log('   Skipping install (--no-reinstall flag set)');
+        console.log('   Run manually: npm install -g @complexthings/superpowers-agent\n');
+        return;
+    }
+
+    console.log('   Installing update...\n');
+    try {
+        execSync('npm install -g @complexthings/superpowers-agent', { stdio: 'inherit' });
+        console.log('\n✓ Update complete!');
+    } catch (error) {
+        console.log(`\n✗ Update failed: ${error.message}`);
+        console.log('   Try running manually: npm install -g @complexthings/superpowers-agent');
+        process.exit(1);
+    }
 };
 
 /**

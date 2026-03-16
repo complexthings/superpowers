@@ -85,13 +85,16 @@ Install Superpowers globally with one command:
 
 ```bash
 npm install -g @complexthings/superpowers-agent
+superpowers-agent bootstrap
 ```
 
-The installer will:
-1. Install to `~/.agents/superpowers` (global, works everywhere)
-2. Set up universal aliases: `superpowers` and `superpowers-agent`
-3. Sync skill symlinks for all detected agents
-4. Optionally update project files (AGENTS.md)
+## Migration to Superpower Agent `^8.0.0`
+
+```bash
+rm -rf ~/.local/bin/superpowers-agent ~/.local/bin/superpowers ~/.agents/superpowers
+npm install -g @complexthings/superpowers-agent
+superpowers-agent bootstrap
+```
 
 **After installation, you can use Superpowers from anywhere:**
 ```bash
