@@ -95,7 +95,7 @@ export const parseGitUrl = (url) => {
     }
     
     // Check if it's a standard HTTPS git URL
-    const gitMatch = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)(?:\.git)?$/);
+    const gitMatch = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/);
     if (gitMatch) {
         const [, org, repo] = gitMatch;
         return {
