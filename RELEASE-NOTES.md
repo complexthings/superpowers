@@ -1712,7 +1712,6 @@ Special thanks to TÂCHES ([@glittercowboy](https://github.com/glittercowboy)) f
 
 **One-Liner Global Installer**
 - Homebrew-style installation script for quick setup
-- Install globally with: `curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash`
 - Automatically installs to `~/.agents/superpowers` (works from anywhere)
 - Sets up universal CLI aliases during installation
 - Optional project file integration with interactive prompts

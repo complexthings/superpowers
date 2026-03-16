@@ -13,14 +13,7 @@ This guide covers installation options for Superpowers.
 Install Superpowers globally with one command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
-```
-
-**Security Note:** Always review scripts before running:
-```bash
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh -o install.sh
-cat install.sh
-bash install.sh
+npm install -g @complexthings/superpowers-agent
 ```
 
 ### What the Installer Does
@@ -95,7 +88,7 @@ superpowers-agent bootstrap
 Or use the one-liner installer again - it will detect existing installation and update:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
+npm install -g @complexthings/superpowers-agent
 ```
 
 ## Troubleshooting
@@ -157,7 +150,7 @@ mkdir -p ~/.agents
 chmod 755 ~/.agents
 
 # Run installer again
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
+npm install -g @complexthings/superpowers-agent
 ```
 
 ## Uninstalling

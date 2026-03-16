@@ -12,7 +12,7 @@
 If `superpowers-agent` is not available, install it:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
+npm install -g @complexthings/superpowers-agent
 ```
 
 ---

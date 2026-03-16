@@ -28,7 +28,7 @@ If the command prints follow-up instructions, complete them before continuing wi
 Install it first, then rerun:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
+@npm install -g @complexthings/superpowers-agent
 superpowers-agent setup-skills
 ```
 

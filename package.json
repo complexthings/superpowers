@@ -1,0 +1,51 @@
+{
+  "name": "@complexthings/superpowers-agent",
+  "version": "8.1.0",
+  "description": "Superpowers agent CLI — skills system for AI coding agents",
+  "type": "module",
+  "bin": {
+    "superpowers-agent": ".agents/superpowers-agent",
+    "superpowers": ".agents/superpowers-agent"
+  },
+  "files": [
+    ".agents/superpowers-agent",
+    ".agents/templates",
+    ".agents/docs",
+    ".agents/skills",
+    ".agents/prompts",
+    ".agents/plans",
+    ".agents/superpowers-bootstrap.md",
+    "skills",
+    "hooks",
+    ".github",
+    "AGENTS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "postinstall": "node .agents/superpowers-agent bootstrap --no-update 2>/dev/null || true"
+  },
+  "author": {
+    "name": "Greg Harvell",
+    "email": "greg.harvell@complexthings.com",
+    "url": "https://github.com/complexthings"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/complexthings/superpowers.git"
+  },
+  "bugs": {
+    "url": "https://github.com/complexthings/superpowers/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "superpowers",
+    "ai-agent",
+    "skills",
+    "cli",
+    "coding-agent"
+  ]
+}

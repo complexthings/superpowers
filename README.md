@@ -53,7 +53,7 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 **Key Features:**
 
 - 🎯 **Smart Skill Matching** - Just type `superpowers execute brainstorming` instead of full paths
-- 🚀 **One-Line Installer** - `curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash`
+- 🚀 **One-Line Installer** - `npm install -g @complexthings/superpowers-agent`
 - 📦 **Skill Installation** - `add` and `add-repository` commands for Git/local skill installation
 - 🔍 **Helper Discovery** - `get-helpers` finds scripts within skills using substring matching
 - 📝 **Setup Skills** - `setup-skills` skill initializes projects with agent instruction files and skill symlinks
@@ -79,14 +79,7 @@ Plus:
 Install Superpowers globally with one command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh | bash
-```
-
-**Security Note:** Always review scripts before running:
-```bash
-curl -fsSL https://raw.githubusercontent.com/complexthings/superpowers/main/install.sh -o install.sh
-cat install.sh
-bash install.sh
+npm install -g @complexthings/superpowers-agent
 ```
 
 The installer will:

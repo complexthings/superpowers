@@ -7,3 +7,4 @@ docs/*
 *.backup
 .install_success
 .agents/workspaces/*
+.ant-colony/
