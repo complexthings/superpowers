@@ -23,7 +23,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18"
+    "node": "^20 || ^22 || ^24"
   },
   "scripts": {
     "postinstall": "node .agents/superpowers-agent bootstrap --no-update 2>/dev/null || true"
