@@ -10,3 +10,4 @@ docs/*
 .ant-colony/
 node_modules/
 .agents/node_modules/
+.npmrc
