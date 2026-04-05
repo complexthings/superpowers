@@ -14,7 +14,7 @@ import { readConfigFile, writeConfigFile } from '../core/config.js';
 /**
  * Platform configurations for skill symlinks
  */
-const SKILL_PLATFORMS = [
+export const SKILL_PLATFORMS = [
     {
         name: 'claude',
         parentDir: () => join(homedir(), '.claude'),
@@ -264,7 +264,7 @@ const trackSymlink = (platformName, symlinkPath, type = 'skills') => {
 /**
  * Remove symlink tracking from config
  */
-const untrackSymlink = (platformName, symlinkPath, type = 'skills') => {
+export const untrackSymlink = (platformName, symlinkPath, type = 'skills') => {
     const config = readConfigFile(true);
     
     if (!config.symlinks || !config.symlinks[platformName]) {

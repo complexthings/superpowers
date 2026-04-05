@@ -108,6 +108,25 @@ export const addRepositoryToConfig = (alias, url, isGlobal) => {
 };
 
 /**
+ * Get installed skills from config
+ */
+export function getInstalledSkills(isGlobal = true) {
+    const config = readConfigFile(isGlobal);
+    return config.installedSkills || {};
+}
+
+/**
+ * Remove installed skills entry from config
+ */
+export function removeInstalledSkills(key, isGlobal = true) {
+    const config = readConfigFile(isGlobal);
+    if (config.installedSkills) {
+        delete config.installedSkills[key];
+    }
+    writeConfigFile(config, isGlobal);
+}
+
+/**
  * Get installed agents from global config
  */
 export function getInstalledAgents() {

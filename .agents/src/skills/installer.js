@@ -1,9 +1,10 @@
-import { existsSync, readFileSync, mkdirSync, rmSync, cpSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync, rmSync, cpSync, lstatSync } from 'fs';
 import { join, dirname, parse, sep } from 'path';
 import { execSync } from 'child_process';
 import { homedir } from 'os';
-import { getRepositories, addRepositoryToConfig, readConfigFile, writeConfigFile } from '../core/config.js';
-import { syncPersonalSkillSymlinks } from '../utils/symlinks.js';
+import { createInterface } from 'readline';
+import { getRepositories, addRepositoryToConfig, readConfigFile, writeConfigFile, getInstalledSkills, removeInstalledSkills, getInstalledAgents } from '../core/config.js';
+import { syncPersonalSkillSymlinks, SKILL_PLATFORMS, removeSymlink, untrackSymlink } from '../utils/symlinks.js';
 import { installAgents } from '../agents/installer.js';
 
 /**
@@ -254,6 +255,28 @@ export const installSingleSkill = (sourcePath, skillName, installBase, results) 
 };
 
 /**
+ * Track installed skills in config for later removal
+ */
+export const trackInstalledSkills = (source, installBase, results, isGlobal, alias = null) => {
+    const config = readConfigFile(isGlobal);
+    if (!config.installedSkills) config.installedSkills = {};
+
+    const entry = {
+        source,
+        installBase,
+        installedAt: new Date().toISOString(),
+        skills: results.installed.map(s => ({ name: s.name, path: s.path }))
+    };
+
+    config.installedSkills[source] = entry;
+    if (alias && alias !== source) {
+        config.installedSkills[alias] = entry;
+    }
+
+    writeConfigFile(config, isGlobal);
+};
+
+/**
  * Command: add <url-or-path>
  * Install skills from repository or local path
  */
@@ -261,7 +284,7 @@ export const runAdd = () => {
     const args = process.argv.slice(3);
     let urlOrPath = args.find(arg => !arg.startsWith('-'));
     const flags = args.filter(arg => arg.startsWith('-'));
-    
+
     if (!urlOrPath) {
         console.log(`Usage: superpowers-agent add <url-or-path|@alias> [skill-path] [options]
 
@@ -282,27 +305,31 @@ Description:
   Installs skill(s) from a Git repository, local directory, or repository alias.
   Supports repositories with single or multiple skills.
   Reads skill.json to determine skill names and installation paths.
-  
+
   Repository aliases can be added using:
     superpowers-agent add-repository <git-url> [--as=@alias]`);
         return;
     }
-    
+
     console.log('Installing skill(s)...\n');
-    
+
+    const isGlobal = !flags.includes('--project') && !flags.includes('-p');
+
     // Check if urlOrPath is a repository alias
     let repoUrl = null;
     let skillPath = null;
-    
+    let resolvedAlias = null;
+
     if (urlOrPath.startsWith('@')) {
         // It's a repository alias
         const alias = urlOrPath;
+        resolvedAlias = alias;
         skillPath = args.find((arg, i) => i > 0 && !arg.startsWith('-') && arg !== alias);
-        
+
         // Look for alias in config (project first, then global)
         const projectRepos = getRepositories(false);
         const globalRepos = getRepositories(true);
-        
+
         if (projectRepos[alias]) {
             repoUrl = projectRepos[alias];
             console.log(`Using project repository alias: ${alias}`);
@@ -312,7 +339,7 @@ Description:
         } else {
             console.log(`Error: Repository alias not found: ${alias}`);
             console.log(`\nAvailable aliases:`);
-            
+
             const allRepos = { ...globalRepos, ...projectRepos };
             if (Object.keys(allRepos).length === 0) {
                 console.log(`  (none)`);
@@ -325,7 +352,7 @@ Description:
             }
             return;
         }
-        
+
         // Check if repoUrl is a local path or Git URL
         const isLocalPath = existsSync(repoUrl);
         
@@ -468,18 +495,20 @@ Description:
         if (results.installed.length > 0) {
             console.log('\n**Syncing skill symlinks...**');
             syncPersonalSkillSymlinks();
+            // Track installed skills for future removal
+            trackInstalledSkills(parsed.original, installBase, results, isGlobal, resolvedAlias);
         }
-        
+
     } catch (error) {
         // Clean up on error
         if (cleanup && sourcePath) {
             try {
-                const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' + 
+                const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' +
                                sourcePath.split('/.agents/tmp/')[1].split('/')[0];
                 execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
             } catch {}
         }
-        
+
         console.log(`\nError: ${error.message}`);
     }
 };
@@ -523,20 +552,24 @@ Description:
     }
     
     console.log('Updating skill(s)...\n');
-    
+
+    const isGlobal = !flags.includes('--project') && !flags.includes('-p');
+
     // Check if urlOrPath is a repository alias
     let repoUrl = null;
     let skillPath = null;
-    
+    let resolvedAlias = null;
+
     if (urlOrPath.startsWith('@')) {
         // It's a repository alias
         const alias = urlOrPath;
+        resolvedAlias = alias;
         skillPath = args.find((arg, i) => i > 0 && !arg.startsWith('-') && arg !== alias);
-        
+
         // Look for alias in config (project first, then global)
         const projectRepos = getRepositories(false);
         const globalRepos = getRepositories(true);
-        
+
         if (projectRepos[alias]) {
             repoUrl = projectRepos[alias];
             console.log(`Using project repository alias: ${alias}`);
@@ -546,7 +579,7 @@ Description:
         } else {
             console.log(`Error: Repository alias not found: ${alias}`);
             console.log(`\nAvailable aliases:`);
-            
+
             const allRepos = { ...globalRepos, ...projectRepos };
             if (Object.keys(allRepos).length === 0) {
                 console.log(`  (none)`);
@@ -559,7 +592,7 @@ Description:
             }
             return;
         }
-        
+
         // Check if repoUrl is a local path or Git URL
         const isLocalPath = existsSync(repoUrl);
         
@@ -701,8 +734,10 @@ Description:
         if (results.installed.length > 0) {
             console.log('\n**Syncing skill symlinks...**');
             syncPersonalSkillSymlinks();
+            // Track installed skills for future removal
+            trackInstalledSkills(parsed.original, installBase, results, isGlobal, resolvedAlias);
         }
-        
+
     } catch (error) {
         // Clean up on error
         if (cleanup && sourcePath) {
@@ -715,6 +750,287 @@ Description:
         
         console.log(`\nError: ${error.message}`);
     }
+};
+
+/**
+ * Prompt user for confirmation (returns promise resolving to trimmed answer)
+ */
+const confirmPrompt = (question) => new Promise(resolve => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(question, answer => {
+        rl.close();
+        resolve(answer.trim());
+    });
+});
+
+/**
+ * Check if a path is a symlink (works for broken symlinks too)
+ */
+const isSymlinkPath = (p) => {
+    try { return lstatSync(p).isSymbolicLink(); } catch { return false; }
+};
+
+/**
+ * Command: rm <url-or-path|@alias>
+ * Remove skills and symlinks installed via 'add'
+ */
+export const runRm = async () => {
+    const args = process.argv.slice(3);
+    const urlOrPath = args.find(arg => !arg.startsWith('-'));
+    const flags = args.filter(arg => arg.startsWith('-'));
+
+    if (!urlOrPath) {
+        console.log(`Usage: superpowers-agent rm <url-or-path|@alias> [options]
+
+Options:
+  --global, -g   Remove globally installed skills (default)
+  --project, -p  Remove project-installed skills
+
+Examples:
+  superpowers-agent rm https://github.com/example/skills
+  superpowers-agent rm @myrepo
+  superpowers-agent rm ~/my-local-skills`);
+        return;
+    }
+
+    const isGlobal = !flags.includes('--project') && !flags.includes('-p');
+
+    // Resolve alias → URL
+    let resolvedUrl = urlOrPath;
+    let originalAlias = null;
+
+    if (urlOrPath.startsWith('@')) {
+        originalAlias = urlOrPath;
+        const projectRepos = getRepositories(false);
+        const globalRepos = getRepositories(true);
+
+        if (projectRepos[urlOrPath]) {
+            resolvedUrl = projectRepos[urlOrPath];
+        } else if (globalRepos[urlOrPath]) {
+            resolvedUrl = globalRepos[urlOrPath];
+        } else {
+            console.log(`Error: Repository alias not found: ${urlOrPath}`);
+            return;
+        }
+    }
+
+    // Look up tracking in config (try alias key first, then resolved URL)
+    const installedSkills = getInstalledSkills(isGlobal);
+    const trackingEntry = installedSkills[urlOrPath] || installedSkills[resolvedUrl];
+
+    // Determine install base
+    const installBase = trackingEntry?.installBase || getInstallLocation(flags);
+
+    // Build list of skills to remove
+    let skillsToRemove = [];
+
+    if (trackingEntry) {
+        skillsToRemove = trackingEntry.skills;
+    } else {
+        console.log('No tracking data found. Attempting to re-resolve skills from source...\n');
+
+        const parsed = parseGitUrl(resolvedUrl);
+        if (!parsed) {
+            console.log(`Error: Invalid URL or path not found: ${resolvedUrl}`);
+            return;
+        }
+
+        let sourcePath;
+        let cleanup = false;
+
+        try {
+            if (parsed.type === 'git-repo' || parsed.type === 'git-tree') {
+                console.log(`Cloning repository: ${parsed.repoUrl}`);
+                sourcePath = cloneRepository(parsed.repoUrl, parsed.branch);
+                cleanup = true;
+                if (parsed.path) {
+                    sourcePath = join(sourcePath, parsed.path);
+                    if (!existsSync(sourcePath)) {
+                        throw new Error(`Path not found in repository: ${parsed.path}`);
+                    }
+                }
+            } else {
+                sourcePath = parsed.path;
+            }
+
+            const rootSkillJson = readSkillJsonFromPath(sourcePath);
+            if (!rootSkillJson) {
+                throw new Error('No skill.json found in source');
+            }
+
+            const skillNames = (rootSkillJson.skills && Array.isArray(rootSkillJson.skills))
+                ? rootSkillJson.skills
+                : [rootSkillJson.name || parse(sourcePath).base];
+
+            for (const skillName of skillNames) {
+                let installedName = skillName;
+                if (rootSkillJson.skills) {
+                    // Multi-skill repo: read sub-skill's skill.json for the installed name
+                    const subPath = join(sourcePath, skillName);
+                    if (existsSync(subPath)) {
+                        const subJson = readSkillJsonFromPath(subPath);
+                        if (subJson?.name) installedName = subJson.name;
+                    }
+                }
+                skillsToRemove.push({ name: installedName, path: join(installBase, installedName) });
+            }
+
+            if (cleanup) {
+                try {
+                    const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' +
+                                   sourcePath.split('/.agents/tmp/')[1].split('/')[0];
+                    execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+                } catch {}
+            }
+        } catch (error) {
+            if (cleanup && sourcePath) {
+                try {
+                    const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' +
+                                   sourcePath.split('/.agents/tmp/')[1].split('/')[0];
+                    execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
+                } catch {}
+            }
+            console.log(`Error resolving source: ${error.message}`);
+            return;
+        }
+    }
+
+    // Build removal plan
+    const skillDirsToRemove = skillsToRemove.filter(s => existsSync(s.path) || isSymlinkPath(s.path));
+    const platformSymlinksToRemove = [];
+
+    for (const skill of skillsToRemove) {
+        for (const platform of SKILL_PLATFORMS) {
+            const symlinkPath = join(platform.skillsDir(), skill.name);
+            if (existsSync(symlinkPath) || isSymlinkPath(symlinkPath)) {
+                platformSymlinksToRemove.push({ platform: platform.name, path: symlinkPath });
+            }
+        }
+    }
+
+    // Agent symlinks
+    const installedAgents = getInstalledAgents();
+    const agentKey = originalAlias || resolvedUrl;
+    const agentSymlinksToRemove = [];
+
+    if (installedAgents[agentKey]) {
+        for (const [, agents] of Object.entries(installedAgents[agentKey].agents || {})) {
+            for (const [, agentInfo] of Object.entries(agents)) {
+                if (agentInfo.destination && (existsSync(agentInfo.destination) || isSymlinkPath(agentInfo.destination))) {
+                    agentSymlinksToRemove.push({ path: agentInfo.destination });
+                }
+            }
+        }
+    }
+
+    // Persisted repo
+    const safeName = agentKey.replace(/^@/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const persistedRepoPath = join(homedir(), '.agents', 'repos', safeName);
+    const persistedRepoExists = existsSync(persistedRepoPath);
+
+    // Print removal plan
+    const home = homedir();
+    const shorten = (p) => p.replace(home, '~');
+
+    if (skillDirsToRemove.length === 0 && platformSymlinksToRemove.length === 0 &&
+        agentSymlinksToRemove.length === 0 && !persistedRepoExists) {
+        console.log('Nothing to remove.');
+        return;
+    }
+
+    console.log('Will remove:');
+
+    if (skillDirsToRemove.length > 0) {
+        console.log('  Skills:');
+        for (const s of skillDirsToRemove) console.log(`    ${shorten(s.path)}`);
+    }
+
+    if (platformSymlinksToRemove.length > 0) {
+        console.log('  Platform symlinks:');
+        for (const s of platformSymlinksToRemove) console.log(`    ${shorten(s.path)}`);
+    }
+
+    if (agentSymlinksToRemove.length > 0) {
+        console.log('  Agents:');
+        for (const a of agentSymlinksToRemove) console.log(`    ${shorten(a.path)}`);
+    }
+
+    if (persistedRepoExists) {
+        console.log('  Persisted repo:');
+        console.log(`    ${shorten(persistedRepoPath)}`);
+    }
+
+    // Confirm
+    const answer = await confirmPrompt('\nProceed? [y/N] ');
+    if (answer.toLowerCase() !== 'y') {
+        console.log('Aborted.');
+        return;
+    }
+
+    // 1. Platform symlinks
+    for (const s of platformSymlinksToRemove) {
+        const result = removeSymlink(s.path);
+        if (result.removed) {
+            console.log(`Removed symlink: ${shorten(s.path)}`);
+            untrackSymlink(s.platform, s.path, 'skills');
+        } else if (result.error === 'Symlink does not exist') {
+            console.log(`Already removed: ${shorten(s.path)}`);
+        } else {
+            console.log(`Warning: ${shorten(s.path)}: ${result.error}`);
+        }
+    }
+
+    // 2. Agent symlinks
+    for (const a of agentSymlinksToRemove) {
+        const result = removeSymlink(a.path);
+        if (result.removed) {
+            console.log(`Removed agent: ${shorten(a.path)}`);
+        } else if (result.error === 'Symlink does not exist') {
+            console.log(`Already removed: ${shorten(a.path)}`);
+        } else {
+            console.log(`Warning: ${shorten(a.path)}: ${result.error}`);
+        }
+    }
+
+    // 3. Persisted repo
+    if (persistedRepoExists) {
+        try {
+            rmSync(persistedRepoPath, { recursive: true, force: true });
+            console.log(`Removed persisted repo: ${shorten(persistedRepoPath)}`);
+        } catch (error) {
+            console.log(`Warning: Failed to remove persisted repo: ${error.message}`);
+        }
+    }
+
+    // 4. Skill directories
+    for (const s of skillDirsToRemove) {
+        if (!existsSync(s.path)) {
+            console.log(`Already removed: ${shorten(s.path)}`);
+            continue;
+        }
+        try {
+            rmSync(s.path, { recursive: true, force: true });
+            console.log(`Removed skill: ${shorten(s.path)}`);
+        } catch (error) {
+            console.log(`Warning: Failed to remove ${shorten(s.path)}: ${error.message}`);
+        }
+    }
+
+    // 5. Config cleanup
+    removeInstalledSkills(urlOrPath, isGlobal);
+    if (resolvedUrl !== urlOrPath) {
+        removeInstalledSkills(resolvedUrl, isGlobal);
+    }
+
+    if (installedAgents[agentKey]) {
+        const config = readConfigFile(true);
+        if (config.installedAgents) {
+            delete config.installedAgents[agentKey];
+            writeConfigFile(config, true);
+        }
+    }
+
+    console.log('\nDone.');
 };
 
 /**

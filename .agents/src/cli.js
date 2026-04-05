@@ -28,10 +28,11 @@ import {
     installAliases
 } from './commands/bootstrap.js';
 
-import { 
-    runAdd, 
+import {
+    runAdd,
     runAddRepository,
-    runPull
+    runPull,
+    runRm
 } from './skills/installer.js';
 
 // Import integration installers
@@ -73,6 +74,7 @@ const commands = {
     'add-repository': runAddRepository,
     'list-repositories': runListRepositories,
     'pull': runPull,
+    'rm': runRm,
     'dir': runDir,
     'path': runPath,
     'get-helpers': runGetHelpers,
@@ -98,6 +100,7 @@ Usage:
   superpowers-agent add-repository <git-url> [--as=@alias] [opts]  # Add repository alias
   superpowers-agent list-repositories                              # List configured repository aliases
   superpowers-agent pull <url-or-path|@alias> [path] [options]     # Update skills
+  superpowers-agent rm <url-or-path|@alias> [options]             # Remove skills
   superpowers-agent dir <skill-name>                                # Get skill directory
   superpowers-agent path <skill-name>                               # Get skill file path
   superpowers-agent execute <skill-name>                            # Execute a skill
