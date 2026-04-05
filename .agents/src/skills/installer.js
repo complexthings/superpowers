@@ -363,8 +363,8 @@ Description:
                 console.log(`Repository path: ${repoUrl}`);
                 console.log(`Skill path: ${skillPath}\n`);
             } else {
-                // Git URL - construct tree URL
-                urlOrPath = `${repoUrl}/tree/main/${skillPath}`;
+                // Git URL - pass the repo URL as-is; subpath is applied after clone
+                urlOrPath = repoUrl;
                 console.log(`Repository URL: ${repoUrl}`);
                 console.log(`Skill path: ${skillPath}\n`);
             }
@@ -377,14 +377,19 @@ Description:
             }
         }
     }
-    
+
     // Parse URL/path
     const parsed = parseGitUrl(urlOrPath);
     if (!parsed) {
         console.log(`Error: Invalid URL or path not found: ${urlOrPath}`);
         return;
     }
-    
+
+    // If resolved from an alias with a subpath, apply it to the parsed result
+    if (skillPath && parsed.type === 'git-repo' && !parsed.path) {
+        parsed.path = skillPath;
+    }
+
     // Determine installation location
     const installBase = getInstallLocation(flags);
     console.log(`Install location: ${installBase}\n`);
@@ -603,8 +608,8 @@ Description:
                 console.log(`Repository path: ${repoUrl}`);
                 console.log(`Skill path: ${skillPath}\n`);
             } else {
-                // Git URL - construct tree URL
-                urlOrPath = `${repoUrl}/tree/main/${skillPath}`;
+                // Git URL - pass the repo URL as-is; subpath is applied after clone
+                urlOrPath = repoUrl;
                 console.log(`Repository URL: ${repoUrl}`);
                 console.log(`Skill path: ${skillPath}\n`);
             }
@@ -617,14 +622,19 @@ Description:
             }
         }
     }
-    
+
     // Parse URL/path
     const parsed = parseGitUrl(urlOrPath);
     if (!parsed) {
         console.log(`Error: Invalid URL or path not found: ${urlOrPath}`);
         return;
     }
-    
+
+    // If resolved from an alias with a subpath, apply it to the parsed result
+    if (skillPath && parsed.type === 'git-repo' && !parsed.path) {
+        parsed.path = skillPath;
+    }
+
     // Determine installation location
     const installBase = getInstallLocation(flags);
     console.log(`Install location: ${installBase}\n`);

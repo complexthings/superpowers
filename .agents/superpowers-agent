@@ -221,10 +221,10 @@ Description:
 `);let Y=!X.includes("--project")&&!X.includes("-p"),Z=null,q=null,H=null;if(Q.startsWith("@")){let B=Q;H=B,q=$.find((L,T)=>T>0&&!L.startsWith("-")&&L!==B);let V=h(!1),_=h(!0);if(V[B])Z=V[B],console.log(`Using project repository alias: ${B}`);else if(_[B])Z=_[B],console.log(`Using global repository alias: ${B}`);else{console.log(`Error: Repository alias not found: ${B}`),console.log(`
 Available aliases:`);let L={..._,...V};if(Object.keys(L).length===0)console.log("  (none)"),console.log(`
 Add a repository using:`),console.log("  superpowers-agent add-repository <git-url>");else for(let[T,x]of Object.entries(L))console.log(`  ${T} -> ${x}`);return}let w=F(Z);if(q)if(w)Q=N(Z,q),console.log(`Repository path: ${Z}`),console.log(`Skill path: ${q}
-`);else Q=`${Z}/tree/main/${q}`,console.log(`Repository URL: ${Z}`),console.log(`Skill path: ${q}
+`);else Q=Z,console.log(`Repository URL: ${Z}`),console.log(`Skill path: ${q}
 `);else if(Q=Z,w)console.log(`Repository path: ${Z}
 `);else console.log(`Repository URL: ${Z}
-`)}let W=t$(Q);if(!W){console.log(`Error: Invalid URL or path not found: ${Q}`);return}let K=e$(X);console.log(`Install location: ${K}
+`)}let W=t$(Q);if(!W){console.log(`Error: Invalid URL or path not found: ${Q}`);return}if(q&&W.type==="git-repo"&&!W.path)W.path=q;let K=e$(X);console.log(`Install location: ${K}
 `);let E,G=!1;try{if(W.type==="git-repo"||W.type==="git-tree"){if(console.log(`Cloning repository: ${W.repoUrl}`),W.branch)console.log(`Branch: ${W.branch}`);if(E=$Q(W.repoUrl,W.branch),G=!0,W.path){if(E=N(E,W.path),!F(E))throw Error(`Path not found in repository: ${W.path}`)}console.log("")}else E=W.path;let B=Z$(E);if(!B)throw Error("No skill.json found in source directory");let V={installed:[],errors:[],source:W.original};if(B.skills&&Array.isArray(B.skills)){console.log(`Found ${B.skills.length} skill(s) to install
 `);for(let L of B.skills)b$(E,L,K,V)}else{let L=B.name||V$(E).base;b$(N$(E),V$(E).base,K,V)}let _=oQ(E,W),w=N(_,"agents.json");if(F(w)){let L=_;if(G){let T;try{T=JSON.parse(C$(w,"utf8"))}catch{}let x=T?.repository||W.original,f=rQ(_,x);if(f)L=f}o$(L,{isUpdate:!1})}if(G&&E)try{let L=E.split("/.agents/tmp/")[0]+"/.agents/tmp/"+E.split("/.agents/tmp/")[1].split("/")[0];j(`rm -rf "${L}"`,{stdio:"pipe"})}catch{}if(console.log(`
 **Successfully installed skills:**`),console.log(`- Source: ${V.source}`),V.installed.length>0)for(let L of V.installed)console.log(`  - Installed: ${L.name} at ${L.path}`),console.log(`    ${L.title}`);if(V.errors.length>0){console.log(`
@@ -258,10 +258,10 @@ Description:
 `);let Y=!X.includes("--project")&&!X.includes("-p"),Z=null,q=null,H=null;if(Q.startsWith("@")){let B=Q;H=B,q=$.find((L,T)=>T>0&&!L.startsWith("-")&&L!==B);let V=h(!1),_=h(!0);if(V[B])Z=V[B],console.log(`Using project repository alias: ${B}`);else if(_[B])Z=_[B],console.log(`Using global repository alias: ${B}`);else{console.log(`Error: Repository alias not found: ${B}`),console.log(`
 Available aliases:`);let L={..._,...V};if(Object.keys(L).length===0)console.log("  (none)"),console.log(`
 Add a repository using:`),console.log("  superpowers-agent add-repository <git-url>");else for(let[T,x]of Object.entries(L))console.log(`  ${T} -> ${x}`);return}let w=F(Z);if(q)if(w)Q=N(Z,q),console.log(`Repository path: ${Z}`),console.log(`Skill path: ${q}
-`);else Q=`${Z}/tree/main/${q}`,console.log(`Repository URL: ${Z}`),console.log(`Skill path: ${q}
+`);else Q=Z,console.log(`Repository URL: ${Z}`),console.log(`Skill path: ${q}
 `);else if(Q=Z,w)console.log(`Repository path: ${Z}
 `);else console.log(`Repository URL: ${Z}
-`)}let W=t$(Q);if(!W){console.log(`Error: Invalid URL or path not found: ${Q}`);return}let K=e$(X);console.log(`Install location: ${K}
+`)}let W=t$(Q);if(!W){console.log(`Error: Invalid URL or path not found: ${Q}`);return}if(q&&W.type==="git-repo"&&!W.path)W.path=q;let K=e$(X);console.log(`Install location: ${K}
 `);let E,G=!1;try{if(W.type==="git-repo"||W.type==="git-tree"){if(console.log(`Cloning repository: ${W.repoUrl}`),W.branch)console.log(`Branch: ${W.branch}`);if(E=$Q(W.repoUrl,W.branch),G=!0,W.path){if(E=N(E,W.path),!F(E))throw Error(`Path not found in repository: ${W.path}`)}console.log("")}else E=W.path;let B=Z$(E);if(!B)throw Error("No skill.json found in source directory");let V={installed:[],errors:[],source:W.original};if(B.skills&&Array.isArray(B.skills)){console.log(`Found ${B.skills.length} skill(s) to update
 `);for(let L of B.skills)b$(E,L,K,V)}else{let L=B.name||V$(E).base;b$(N$(E),V$(E).base,K,V)}let _=oQ(E,W),w=N(_,"agents.json");if(F(w)){let L=_;if(G){let T;try{T=JSON.parse(C$(w,"utf8"))}catch{}let x=T?.repository||W.original,f=rQ(_,x);if(f)L=f}o$(L,{isUpdate:!0})}if(G&&E)try{let L=E.split("/.agents/tmp/")[0]+"/.agents/tmp/"+E.split("/.agents/tmp/")[1].split("/")[0];j(`rm -rf "${L}"`,{stdio:"pipe"})}catch{}if(console.log(`
 **Successfully updated skills:**`),console.log(`- Source: ${V.source}`),V.installed.length>0)for(let L of V.installed)console.log(`  - Updated: ${L.name} at ${L.path}`),console.log(`    ${L.title}`);if(V.errors.length>0){console.log(`
