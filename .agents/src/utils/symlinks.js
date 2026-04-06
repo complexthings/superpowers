@@ -18,38 +18,32 @@ export const SKILL_PLATFORMS = [
     {
         name: 'claude',
         parentDir: () => join(homedir(), '.claude'),
-        skillsDir: () => join(homedir(), '.claude', 'skills'),
-        superpowersTarget: 'superpowers'
+        skillsDir: () => join(homedir(), '.claude', 'skills')
     },
     {
         name: 'copilot',
         parentDir: () => join(homedir(), '.copilot'),
-        skillsDir: () => join(homedir(), '.copilot', 'skills'),
-        superpowersTarget: 'superpowers'
+        skillsDir: () => join(homedir(), '.copilot', 'skills')
     },
     {
         name: 'opencode',
         parentDir: () => join(homedir(), '.config', 'opencode'),
-        skillsDir: () => join(homedir(), '.config', 'opencode', 'skill'),
-        superpowersTarget: 'superpowers'
+        skillsDir: () => join(homedir(), '.config', 'opencode', 'skill')
     },
     {
         name: 'cursor',
         parentDir: () => join(homedir(), '.cursor'),
-        skillsDir: () => join(homedir(), '.cursor', 'skills'),
-        superpowersTarget: 'superpowers'
+        skillsDir: () => join(homedir(), '.cursor', 'skills')
     },
     {
         name: 'gemini',
         parentDir: () => join(homedir(), '.gemini'),
-        skillsDir: () => join(homedir(), '.gemini', 'skills'),
-        superpowersTarget: 'superpowers'
+        skillsDir: () => join(homedir(), '.gemini', 'skills')
     },
     {
         name: 'codex',
         parentDir: () => join(homedir(), '.codex'),
-        skillsDir: () => join(homedir(), '.codex', 'skills'),
-        superpowersTarget: 'superpowers'
+        skillsDir: () => join(homedir(), '.codex', 'skills')
     }
 ];
 
@@ -290,31 +284,6 @@ export const getTrackedSymlinks = () => {
 };
 
 /**
- * Sync superpowers skills symlink for a specific platform
- */
-const syncSuperpowersForPlatform = (platform, options = {}) => {
-    const source = paths.homeSuperpowersSkills;
-    const target = join(platform.skillsDir(), platform.superpowersTarget);
-    
-    const result = createSymlink(source, target);
-    
-    if (result.created) {
-        trackSymlink(platform.name, target, 'superpowers');
-        const shortSource = source.replace(homedir(), '~');
-        const shortTarget = target.replace(homedir(), '~');
-        console.log(`  ✓ Created ${shortTarget} -> ${shortSource}`);
-        return { created: true };
-    } else if (result.existed) {
-        return { created: false, existed: true };
-    } else if (result.error) {
-        console.log(`  ⚠️  ${platform.name} superpowers: ${result.error}`);
-        return { created: false, error: result.error };
-    }
-    
-    return { created: false };
-};
-
-/**
  * Sync personal skills symlinks for a specific platform
  */
 const syncPersonalSkillsForPlatform = (platform, options = {}) => {
@@ -328,7 +297,7 @@ const syncPersonalSkillsForPlatform = (platform, options = {}) => {
     let skills;
     try {
         skills = readdirSync(personalSkillsDir, { withFileTypes: true })
-            .filter(d => d.isDirectory() && !d.name.startsWith('.'))
+            .filter(d => (d.isDirectory() || d.isSymbolicLink()) && !d.name.startsWith('.'))
             .map(d => d.name);
     } catch {
         return { created: 0, existed: 0 };
@@ -407,11 +376,8 @@ export const syncAllSkillSymlinks = (options = {}) => {
         }
         
         console.log(`${platform.name}:`);
-        
-        // Sync superpowers skills
-        syncSuperpowersForPlatform(platform, options);
-        
-        // Sync personal skills
+
+        // Sync personal skills (flat per-skill symlinks)
         syncPersonalSkillsForPlatform(platform, options);
     }
 };

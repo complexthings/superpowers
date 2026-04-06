@@ -2,7 +2,7 @@
  * Bootstrap and setup commands for superpowers-agent
  */
 
-import { existsSync, readFileSync, writeFileSync, rmSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, rmSync, lstatSync } from 'fs';
 import { join, dirname, parse } from 'path';
 import { execSync } from 'child_process';
 import { platform } from 'os';
@@ -22,7 +22,7 @@ import { installOpencodePluginSymlink } from '../integrations/opencode.js';
 import { runUpdate } from './update.js';
 
 // Import symlink utilities
-import { syncAllSkillSymlinks, syncProjectSkillSymlinks, syncRepoSkillSymlinks } from '../utils/symlinks.js';
+import { syncAllSkillSymlinks, syncProjectSkillSymlinks, syncRepoSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
 
 /**
  * Generate tool mappings by reading the generic TOOLS.md.template
@@ -643,6 +643,33 @@ const removeLegacyPrompts = () => {
 };
 
 /**
+ * Remove the legacy `superpowers` directory-level symlink from each platform's
+ * skills directory. This was created by the old syncSuperpowersForPlatform()
+ * behavior and causes skill paths to nest as `superpowers/<skill>` instead of
+ * appearing flat at the top level.
+ */
+const removeLegacySuperpowersDirSymlinks = () => {
+    let removed = 0;
+    for (const plat of SKILL_PLATFORMS) {
+        const skillsDir = plat.skillsDir();
+        const legacyLink = join(skillsDir, 'superpowers');
+        try {
+            const stat = lstatSync(legacyLink);
+            if (stat.isSymbolicLink()) {
+                rmSync(legacyLink);
+                console.log(`✓ Removed legacy superpowers symlink from ${skillsDir.replace(paths.home, '~')}`);
+                removed++;
+            }
+        } catch {
+            // Path doesn't exist — nothing to do
+        }
+    }
+    if (removed === 0) {
+        console.log('✓ No legacy superpowers directory symlinks found');
+    }
+};
+
+/**
  * Command: bootstrap [--no-update]
  * Run complete bootstrap process
  */
@@ -782,13 +809,13 @@ const runBootstrap = async () => {
         console.log('\n---\n');
     }
 
-    // Sync skill symlinks for Claude and Copilot
-    console.log('## Syncing Skill Symlinks\n');
-    const forceCreate = process.argv.includes('--force');
-    syncAllSkillSymlinks({ force: forceCreate, forceAgents });
+    // Remove legacy superpowers directory-level symlinks before syncing
+    console.log('## Cleaning Up Legacy Superpowers Dir Symlinks\n');
+    removeLegacySuperpowersDirSymlinks();
+    console.log('\n---\n');
 
-    // Sync repo skills into ~/.agents/skills/
-    console.log('\n## Syncing Repo Skills -> ~/.agents/skills/\n');
+    // Sync repo skills into ~/.agents/skills/ FIRST
+    console.log('## Syncing Repo Skills -> ~/.agents/skills/\n');
     const repoSkillResults = syncRepoSkillSymlinks();
     if (repoSkillResults.created > 0 || repoSkillResults.updated > 0) {
         console.log(`  ✓ ${repoSkillResults.created} created, ${repoSkillResults.updated} updated, ${repoSkillResults.existed} already current`);
@@ -798,6 +825,11 @@ const runBootstrap = async () => {
         console.log(`  ✓ ${repoSkillResults.existed} skill symlinks already up to date`);
     }
     console.log('\n---\n');
+
+    // Sync skill symlinks for all platforms
+    console.log('## Syncing Skill Symlinks\n');
+    const forceCreate = process.argv.includes('--force');
+    syncAllSkillSymlinks({ force: forceCreate, forceAgents });
 
     console.log('# Bootstrap Complete!\n');
     console.log('✓ All integrations installed');

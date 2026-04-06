@@ -223,7 +223,8 @@ export const installSingleSkill = (sourcePath, skillName, installBase, results) 
         return;
     }
     
-    const targetName = skillJson.name || skillName;
+    const rawTargetName = skillJson.name || skillName;
+    const targetName = rawTargetName.split('/').pop() || rawTargetName;
     const targetPath = join(installBase, targetName);
     
     // Create parent directory if needed
