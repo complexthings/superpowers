@@ -6,6 +6,10 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
+**v8.4.0 (April 6, 2026):**
+
+- **`superpowers-agent rm` command** — new CLI command for removing installed skills and agents from your system
+
 **v8.2.0 (March 16, 2026):**
 
 - **npm registry update checking** — `update` and `check-updates` now query the npm registry instead of the Git repo. Run `npm install -g @complexthings/superpowers-agent` to update.
@@ -472,6 +476,7 @@ superpowers-agent get-helpers <skill> <term>  # Find helper files in skill
 ```bash
 superpowers-agent add <url-or-path>        # Install skill(s) from Git or local
 superpowers-agent add @alias path/to/skill # Install from repository alias
+superpowers-agent rm <skill-name>          # Remove an installed skill or agent
 ```
 
 **Repository Management:**
