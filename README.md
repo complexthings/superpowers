@@ -2,9 +2,18 @@
 
 A comprehensive skills library of proven techniques, patterns, and workflows for AI coding assistants.
 
-**This is a fork and extension of Jesse Vincent's incredible [Superpowers for Claude Code](https://github.com/obra/superpowers).** Jesse's groundbreaking work and [his amazing blog post](https://blog.fsck.com/2025/10/09/superpowers/) introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Cursor, Gemini, and other AI coding assistants.
+**This is a fork and extension of Jesse Vincent's incredible [Superpowers for Claude Code](https://github.com/obra/superpowers).** Jesse's groundbreaking work and [his amazing blog post](https://blog.fsck.com/2025/10/09/superpowers/) introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, and OpenCode.
 
 ## What's New
+
+**v9.0.0 (May 28, 2026):**
+
+- **Claude persona installation** — `.claude/agents/<name>.md` personas now install into `~/.claude/agents/` via `add`/`pull` (previously silently skipped)
+- ⚠️ **No more `postinstall`** — the npm `postinstall` script was removed for supply-chain hardening. Fresh installs now require a **one-time manual** `superpowers-agent bootstrap`; `superpowers-agent update` self-runs bootstrap thereafter
+- ⚠️ **Removed Cursor, Codex & Gemini support** — supported platforms are now **GitHub Copilot, Claude Code, and OpenCode** only. Integration modules, detection, the `install-cursor-hooks` command, and `GEMINI.md` generation were removed
+- ⚠️ **Skills live only in `~/.agents/skills`** — per-platform skill symlinking has been removed. A one-time `skill.json`-gated cleaner runs during `bootstrap` to scrub deprecated symlink directories (including legacy Cursor/Codex/Gemini) without touching agent personas
+- **Fixed `copilot-instructions.md`** — `setup-skills` now correctly creates and idempotently updates `.github/copilot-instructions.md`
+- **`bun test` harness** — added a Bun test runner, smoke test, and `test` script following the `.agents/tests/<feature>.test.js` convention
 
 **v8.4.0 (April 6, 2026):**
 
@@ -77,7 +86,7 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 - **Utility Commands** - `find-skills` to discover available skills, `execute` to load them
 
 Plus:
-- **Universal Prompts** - Work across Claude, GitHub Copilot, Cursor, Gemini, and other AI assistants
+- **Universal Skills** - Work across GitHub Copilot, Claude Code, and OpenCode
 - **Automatic Integration** - Skills activate automatically when relevant
 - **Consistent Workflows** - Systematic approaches to common engineering tasks
 
@@ -275,90 +284,28 @@ superpowers-agent add https://github.com/example/agents-repo.git
 superpowers-agent pull @my-agents
 ```
 
-### Skill Symlinks for IDE Integration
+### Skill Storage
 
-Superpowers automatically creates symlinks to make skills available to all major AI coding assistants in their native skill directories.
+As of v9.0.0, Superpowers no longer creates per-platform skill symlinks. Skills live in just two canonical locations and the supported agents discover them there directly:
 
-**How it works:**
+- **Global skills** — bundled Superpowers skills in `~/.agents/superpowers/skills/` and personal skills in `~/.agents/skills/`
+- **Project skills** — `.agents/skills/` inside a project (created/managed by `setup-skills`)
 
-When you run `superpowers-agent bootstrap` or `superpowers-agent setup-skills`:
+**Stale symlink cleanup:**
 
-1. **Global symlinks** (via `bootstrap`) sync skills to user-level directories:
-   - `~/.claude/skills/superpowers` -> `~/.agents/superpowers/skills/`
-   - `~/.copilot/skills/superpowers` -> `~/.agents/superpowers/skills/`
-   - `~/.config/opencode/skill/superpowers` -> `~/.agents/superpowers/skills/`
-   - `~/.cursor/skills/superpowers` -> `~/.agents/superpowers/skills/`
-   - `~/.gemini/skills/superpowers` -> `~/.agents/superpowers/skills/`
-   - `~/.codex/skills/superpowers` -> `~/.agents/superpowers/skills/`
+A one-time, `skill.json`-gated cleaner runs during `superpowers-agent bootstrap`. It scrubs deprecated per-platform skill symlink directories left behind by older versions — including legacy Cursor, Codex, and Gemini directories — without touching agent personas in `~/.claude/agents/` or the supported platforms.
 
-2. **Project symlinks** (via `setup-skills`) sync project skills to agent directories:
-   - `.claude/skills` -> `.agents/skills`
-   - `.github/skills` -> `.agents/skills`
-   - `.opencode/skill` -> `.agents/skills`
-   - `.cursor/skills` -> `.agents/skills`
-   - `.gemini/skills` -> `.agents/skills`
-   - `.codex/skills` -> `.agents/skills`
+## Skill Priority
 
-3. **Personal skills** (installed via `superpowers-agent add`) are symlinked individually to all platforms.
-
-**Behavior:**
-- Symlinks are only created if the parent directory exists
-- Use `--force` flag to create parent directories: `superpowers-agent bootstrap --force`
-- Use `--force-<agent>` flags to re-install only specific agent integrations (e.g. `--force-copilot`, `--force-cursor`, `--force-claude`)
-- Symlinks are tracked in `~/.agents/config.json` for management
-
-**Windows Notes:**
-
-On Windows, symlinks require either:
-- Developer Mode enabled (Settings > Update & Security > For developers)
-- Running as administrator
-
-If symlink creation fails on Windows, you'll see a warning with instructions.
-
-**Configuration:**
-```json
-// ~/.agents/config.json
-{
-  "symlinks": {
-    "claude": {
-      "superpowers": "~/.claude/skills/superpowers",
-      "skills": ["~/.claude/skills/my-skill"]
-    },
-    "copilot": {
-      "superpowers": "~/.copilot/skills/superpowers",
-      "skills": []
-    },
-    "opencode": {
-      "superpowers": "~/.config/opencode/skill/superpowers",
-      "skills": []
-    },
-    "cursor": {
-      "superpowers": "~/.cursor/skills/superpowers",
-      "skills": []
-    },
-    "gemini": {
-      "superpowers": "~/.gemini/skills/superpowers",
-      "skills": []
-    },
-    "codex": {
-      "superpowers": "~/.codex/skills/superpowers",
-      "skills": []
-    }
-  }
-}
-```
-
-## Slash Commands & Skill Priority
-
-Superpowers delivers skills as symlinks into each agent's native skill directory. Each agent discovers and loads skills using its native skill tool — no separate prompt/command files are installed.
+Each supported agent discovers and loads skills using its native skill tool. No separate prompt/command files are installed.
 
 **Skill priority pipeline (first match wins):**
-1. `./skills/` or `.agents/skills/` inside the workspace (project-specific overrides)
+1. `.agents/skills/` inside the workspace (project-specific overrides)
 2. `.claude/skills/` inside the repo if present (repo-wide Claude overrides)
 3. Personal skills in `~/.agents/skills/` (user-level customizations)
 4. Bundled Superpowers skills in `~/.agents/superpowers/skills/` (system defaults)
 
-When any agent invokes a skill — no matter which tool it originates from — the CLI enforces the ordering above. Add a `brainstorming` skill under `./skills/` and every tool immediately picks it up without modifying any prompt files.
+When any agent invokes a skill — no matter which supported tool it originates from — the CLI enforces the ordering above. Add a `brainstorming` skill under `.agents/skills/` and every supported tool immediately picks it up.
 
 ### OpenCode
 
@@ -366,22 +313,11 @@ Skills are available via OpenCode's native `skill` tool. The `.opencode/plugins/
 
 ### GitHub Copilot
 
-Skills are available via the native skill tool. 
-
-### Cursor
-
-Skills are available via the native skill tool. 
-### Gemini
-
-Skills are available via the native skill tool. 
+Skills are available via the native skill tool.
 
 ### Claude Code
 
-Skills are available via the native skill tool. 
-
-### Codex
-
-Skills are available via the native skill tool. 
+Skills are available via the native skill tool. Claude agent personas defined in `.claude/agents/<name>.md` are installed into `~/.claude/agents/` via `add`/`pull`.
 
 ## What's Inside
 
@@ -452,7 +388,7 @@ The `tests/` directory contains agent-agnostic test scripts for validating skill
 ./tests/skill-triggering/run-all.sh
 
 # Configure for your agent
-export AGENT_CLI="opencode"  # or "claude", "cursor", etc.
+export AGENT_CLI="opencode"  # or "claude", "copilot", etc.
 ./tests/skill-triggering/run-test.sh prompts/test-name.txt
 ```
 
@@ -611,7 +547,7 @@ superpowers-agent add @baici
 1. **Bootstrap Process** - Installs agent integrations and syncs skill symlinks globally
 2. **Skill Discovery** - Finds skills across system, personal, and project locations
 3. **Priority Resolution** - Project skills override personal skills override system skills
-4. **Universal Integration** - Works with OpenCode, GitHub Copilot, Cursor, Gemini, and other AI assistants
+4. **Universal Integration** - Works with GitHub Copilot, Claude Code, and OpenCode
 
 **For OpenCode:**
 1. **Plugin System** - The `.opencode/plugins/superpowers-agent.js` plugin injects bootstrap context dynamically at session start
@@ -669,11 +605,11 @@ Use `--force-<agent>` flags to target individual agents without running the full
 # Re-install only GitHub Copilot integration
 superpowers-agent bootstrap --force-copilot
 
-# Re-install Copilot and Gemini together
-superpowers-agent bootstrap --force-copilot --force-gemini
+# Re-install Copilot and Claude together
+superpowers-agent bootstrap --force-copilot --force-claude
 ```
 
-Supported flags: `--force-copilot`, `--force-cursor`, `--force-codex`, `--force-gemini`, `--force-claude`, `--force-opencode`
+Supported flags: `--force-copilot`, `--force-claude`, `--force-opencode`
 
 > When `--force-<agent>` flags are used, universal alias installation and `AGENTS.md` platform generation are skipped. Skill symlink sync still runs. If the agent's directory does not exist (e.g. `~/.copilot`), it will be created automatically.
 
@@ -727,7 +663,7 @@ This project builds on [Jesse Vincent's Superpowers for Claude Code](https://git
 - OpenCode plugin architecture pattern
 - Test infrastructure for skill validation
 
-This fork extends that vision to support agent-agnostic workflows across multiple AI coding assistants including GitHub Copilot, Cursor, Gemini, OpenCode, and Codex.
+This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, and OpenCode.
 
 ## License
 
