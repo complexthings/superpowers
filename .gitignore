@@ -1,6 +1,6 @@
 .worktrees/
 .private-journal/
-docs/*
+docs/superpowers/*
 .config.json
 .DS_Store
 .agents/prompts/*

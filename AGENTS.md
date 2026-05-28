@@ -58,3 +58,100 @@ Skills encode proven techniques that prevent mistakes. Not using them means repe
 
 <!-- SUPERPOWERS_SKILLS_END -->
 
+## What This Project Is
+
+**Superpowers Agent** is a CLI (`superpowers-agent`, alias `superpowers`) that manages reusable markdown-based "skills" for AI coding assistants. It delivers skills to Claude, GitHub Copilot, Cursor, Gemini, OpenCode, and Codex. Skills live in `skills/` (this repo) and `.agents/skills/`, and bootstrap symlinks them into each assistant's config directory. Published to npm as `@complexthings/superpowers-agent`.
+
+## Build & Development
+
+The CLI source lives in `.agents/` and is built with **Bun** (`packageManager: bun@1.3.8`). Run scripts from the `.agents/` directory:
+
+```bash
+cd .agents
+bun run build            # Build minified ESM bundle → .agents/superpowers-agent
+bun run watch            # Build in watch mode
+bun run dev              # Run CLI from source (bun src/cli.js)
+bun run dev:link         # Symlink the `superpowers-agent` bin to the dev source
+bun run production:link  # Symlink the bin to the built bundle
+```
+
+The build (`.agents/build.js`) uses the `Bun.build` API, so it must run under **bun**, not node. Output is `.agents/superpowers-agent` — a polyglot shebang script that execs `bun` if present, otherwise `node`.
+
+The CLI has **no runtime dependencies** (pure Node.js/Bun built-ins). The only dev dependency is `husky`. Node engines: `^20 || ^22 || ^24`.
+
+## Testing
+
+There is **no automated test runner** and no `test` script. Verification is manual: run the CLI commands directly, or drive the saved prompt scenarios in `.agents/prompts/`. State this plainly rather than inventing a test command.
+
+## Architecture
+
+### Source (`.agents/src/`)
+
+| Layer | Files | Responsibility |
+|-------|-------|---------------|
+| CLI entry | `cli.js` | Command dispatch table |
+| Commands | `commands/bootstrap.js`, `update.js`, `simple-commands.js` | Command implementations |
+| Core | `core/config.js`, `paths.js`, `platform-detection.js`, `git.js` | Config, path resolution, platform detection, git helpers |
+| Skills | `skills/finder.js`, `locator.js`, `installer.js`, `executor.js`, `parser.js` | Skill discovery, install, execution pipeline |
+| Agents | `agents/installer.js`, `agents/platforms.js` | Install agent definitions (`.github/agents/*.agent.md`, `.opencode/agents/*.md`) into platform dirs |
+| Integrations | `integrations/claude.js`, `codex.js`, `copilot.js`, `cursor.js`, `gemini.js`, `opencode.js` | Per-platform symlink/config setup |
+| Utils | `utils/symlinks.js`, `frontmatter.js`, `output.js`, `file-ops.js` | Shared helpers |
+
+### Skill Discovery Priority (highest → lowest)
+
+1. `.agents/skills/` — project-level
+2. `~/.agents/skills/` — personal cross-project
+3. `~/.agents/superpowers/skills/` — bundled community skills
+
+### CLI Commands
+
+From `.agents/src/cli.js` dispatch table:
+
+- **Core:** `bootstrap [--no-update] [--force]`, `version`, `check-updates`, `update [--no-reinstall]`
+- **Config:** `config-get`, `config-set <key> <value>`
+- **Skills:** `setup-skills`, `find-skills [pattern]`, `use-skill <name>`, `execute <name>`, `dir <name>`, `path <name>`, `get-helpers <skill> <search-term>`
+- **Install/manage skills:** `add <url-or-path|@alias> [path]`, `add-repository <git-url> [--as=@alias]`, `list-repositories`, `pull <url-or-path|@alias>`, `rm <url-or-path|@alias>`
+- **Integrations:** `install-cursor-hooks`, `install-aliases`
+
+### Key Flows
+
+- **`bootstrap`** → detects installed AI platforms → symlinks skills into each platform's skills dir → writes platform config files
+- **`find-skills [pattern]`** → searches all three skill tiers → returns name/path/description
+- **`execute <skill-name>`** → locates skill → outputs SKILL.md content for the agent to follow
+- **`add <url-or-path|@alias>`** → clones a git repo or copies a local path → installs skills into `~/.agents/superpowers/skills/`
+- **`update`** → checks the npm registry for a newer version → reports if an update is available
+
+### Skill Structure
+
+Each skill is a directory with a `SKILL.md` file:
+
+```
+skills/
+└── <category>/
+    └── <skill-name>/
+        ├── SKILL.md         # Frontmatter (name, description) + instructions
+        ├── scripts/         # Optional support scripts
+        └── resources/       # Optional templates/data
+```
+
+`SKILL.md` frontmatter fields: `name`, `description`, and optional `metadata` (e.g. `version`). The set of bundled skills and their lockfile state are tracked in `skill.json` and `skills-lock.json` at the repo root.
+
+## Versioning & Publishing
+
+The `.husky/pre-commit` hook keeps the root `package.json` and `.agents/package.json` versions in sync: on commit it picks the higher of the two, writes both, refreshes lockfiles, rebuilds the bundle (`cd .agents && bun install && bun run build`), and stages the affected files. Don't hand-edit one version without the other.
+
+The package is published to npm as `@complexthings/superpowers-agent` (registry auth via the `COMPLEX_THINGS_NPM_TOKEN` in `.npmrc`). The current version is whatever `package.json` reports — do not hardcode it elsewhere.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked as GitHub issues on `complexthings/superpowers`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles use their default label strings (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root (created lazily). See `docs/agents/domain.md`.

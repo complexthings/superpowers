@@ -1,345 +1,122 @@
 ---
 name: writing-prompts
-description: Use when creating custom slash commands or prompt files for GitHub Copilot, Cursor, or Claude, when repeating same instructions 2+ times, when tempted to defer command creation, or when unsure about platform-specific formats - guides creation of reusable AI commands with platform-specific syntax, file locations, and best practices for effective prompt engineering
+description: Use when creating a reusable AI command, slash command, prompt file, or skill for Claude Code, GitHub Copilot, or Cursor, when you catch yourself repeating the same instructions 2+ times, or when a prompt keeps producing unreliable results. Guides prompt-engineering craft — leading with the goal, defining verifiable success criteria, keeping the prompt minimal — plus current platform formats (all three platforms now converge on SKILL.md). Use even when the user just says "make this reusable," "save this as a command," or "why does this prompt keep failing."
 ---
 
 # Writing Prompts
 
-## Overview
+A reusable command is a prompt you've decided to keep. Its quality is the quality of the prompt inside it — so most of this skill is about writing a prompt that works, and a smaller part is about where each platform wants the file to live.
 
-Create reusable custom commands (slash commands) for GitHub Copilot, Cursor, or Claude. These commands standardize workflows, reduce repetition, and make AI assistance more efficient across your team.
+**Core principle:** A good prompt reads like a brief to a sharp new colleague who lacks your context. State the goal, give the context they're missing, and define how they'll know they're done. If a teammate would be confused by it, the model will be too.
 
-**Core principle:** Well-written prompts are reusable workflows that save time and ensure consistency. They transform one-off instructions into team-wide standards.
+## When to turn a prompt into a command
 
-## When to Use
+Create a reusable command when you've run the same instructions 2+ times, when you want a workflow to be consistent across a team, or when a multi-step process keeps drifting. The second time you paste the same prompt is the signal — capture it then, while you still remember the edge cases, rather than "later."
 
-**Create a prompt when:**
-- You find yourself repeating the same instructions across sessions (2+ times = create it now)
-- You want to standardize a workflow for your team
-- A process involves multiple steps that benefit from templating
-- You need consistent formatting or structure for outputs
-- Someone asks you to "make this reusable" or "save this for later"
+Skip it for genuine one-offs and for trivial queries that don't benefit from a saved template. A command that's too broad ("help with testing") is worse than none — it can't give the model enough to act on.
 
-**CRITICAL:** If you've done the same task 2+ times, create the command NOW. Don't defer - "I'll create it later" becomes "I'll never create it."
+## How to write the prompt
 
-**Don't create for:**
-- One-off tasks you'll never repeat
-- Simple queries that don't benefit from templating
-- Platform-specific features already well-documented
+This is the part that determines whether the command is worth keeping. The ordering below roughly tracks impact.
 
-## Platform Comparison
+### 1. Lead with the goal
 
-| Platform | Directory | File Format | File Extension | Notes |
-|----------|-----------|-------------|----------------|-------|
-| **GitHub Copilot** | `.github/prompts` or profile folder | Markdown with YAML frontmatter | `.md` | Supports variables like `${selection}` |
-| **Cursor** | `.cursor/commands` (project) or `~/.cursor/commands` (global) | Plain Markdown | `.md` | Simple markdown, no frontmatter required |
-| **Claude** | `.claude/commands` | Markdown | `.md` | Similar to Cursor format |
+Open with one sentence stating what success looks like. The model orients everything else around it. "Generate a React component with typed props and a passing test" beats a prompt that buries the objective under setup.
 
-**CRITICAL:** Each platform has different format requirements. Using the wrong format will break the command. Always verify:
-- GitHub Copilot: Requires YAML frontmatter
-- Cursor: Plain Markdown only (no frontmatter)
-- Claude: Plain Markdown only (no frontmatter)
+### 2. Give the context the model is missing
 
-**Platform format errors are not fixable later** - the command simply won't work. Get it right the first time.
+The model is capable but has no memory of your situation. Supply the specifics it can't infer — file paths, the framework in use, conventions, constraints — and say *why* when the reason isn't obvious. Explaining motivation ("we exclude test accounts because they skew the metrics") lets the model generalize to cases your instructions didn't anticipate, instead of following a rule blindly.
 
-## GitHub Copilot Prompt Files
+Reason from facts you actually have. Don't invent paths, ticket IDs, or constraints to fill a gap — name the gap instead.
 
-**Location:**
-- **Workspace:** `.github/prompts/` (project-specific)
-- **User profile:** Profile folder (global, synced via Settings Sync)
+When the command will run repeatedly, wire in the inputs it needs rather than expecting them pasted each time — have it read the file, run the diff, or fetch the data itself (platforms.md covers the per-platform syntax for this). A command that gathers its own context is the difference between a saved note and a tool.
 
-**Structure:**
-```markdown
----
-description: Brief description of what this prompt does
-agent: optional-agent-name
-tools: [tool1, tool2]
----
+### 3. Define verifiable success criteria
 
-# Prompt Name
+This is the highest-leverage habit. Translate vague asks into outcomes the model can check itself:
 
-## Overview
-What this prompt accomplishes.
+- "Add validation" → "Write tests for the invalid inputs, then make them pass"
+- "Fix the bug" → "Write a failing test that reproduces it, then make it pass"
+- "Refactor X" → "Tests pass before and after; behavior unchanged"
 
-## Steps
-1. First step
-2. Second step
+For multi-step work, attach a check to each step and state an explicit stop condition, so the command can loop on its own instead of pausing for clarification:
 
-## Expected Output
-What the output should look like.
+```
+1. <step> → verify: <check>
+2. <step> → verify: <check>
 ```
 
-**Key Features:**
-- YAML frontmatter for metadata (description, agent, tools)
-- Supports variables: `${selection}`, `${workspaceFolder}`, `${file}`
-- Can reference custom agents and specify tool lists
-- Run via `/` prefix or Command Palette
+Weak criteria ("make it work") force the model to come back and ask. Strong, checkable criteria let it run to completion. Default to strong.
 
-**Example:**
+### 4. Keep it minimal
+
+Write the shortest prompt that gets the job done. Every extra instruction competes for attention and invites the model to overbuild. Cut speculative sections, preemptive caveats for failures that can't happen, and "flexibility" nobody asked for. If a draft is 30 lines and could be 10, rewrite it. The senior-engineer test: "Is this overcomplicated?" If yes, cut.
+
+Trust the model with what it already knows. You don't need to explain what a PDF is or how a for-loop works — only what's specific to your task.
+
+### 5. Show an example when format matters
+
+When output shape, tone, or structure matters, one or two concrete input→output examples steer the result more reliably than describing it in prose. Make examples relevant and varied; if you wrap them in clear delimiters the model won't mistake them for instructions to follow literally.
+
+### 6. Structure for the model to parse
+
+- Put long reference material (documents, data, logs) near the **top**, and the actual instruction or question near the **bottom**. Trailing instructions measurably improve responses on long inputs.
+- Separate distinct kinds of content with delimiters or tags (e.g. `<context>`, `<task>`, `<example>`) so the model can tell the brief from the data. Use the same tag names consistently.
+- Reach for explicit sections (context / task / constraints / success criteria) only when the prompt is big enough to need them. On a short prompt, sections are padding — prose is fine.
+
+### 7. Write direct, positive instructions
+
+Tell the model what to do, not what to avoid: "Respond in flowing prose paragraphs" works better than "Don't use bullet points." Be explicit about scope, because current models read prompts literally and won't widen scope on their own — "apply this to every section, not just the first" leaves nothing to guess.
+
+Resist the urge to shout. Modern models over-react to `CRITICAL:` / `YOU MUST` / `NEVER` and aggressive capitals — it makes them rigid and anxious, not more careful. "Use this tool when handling PDFs" lands better than "CRITICAL: You MUST ALWAYS use this tool." Save emphasis for the rare instruction that genuinely overrides a strong default, and explain *why* it matters rather than how loudly.
+
+### 8. Keep edits surgical
+
+When refining an existing prompt, change only what isn't working. Don't reword lines that already do their job or reorder sections for the sake of it. Match the author's voice — if they'd phrase something differently than you would, theirs wins. Every change should trace to a concrete gain in clarity, completeness, or executability; if it doesn't, revert it.
+
+## Worked example
+
+A raw, repeated instruction:
+
+> "make me a command that reviews code for security stuff"
+
+Refined into a prompt worth saving:
+
 ```markdown
----
-description: Create a React component with TypeScript and tests
----
+Review the staged diff for security vulnerabilities.
 
-# Create React Component
+Focus on the OWASP categories most relevant to this stack: injection,
+broken access control, secrets in code, and unsafe deserialization.
 
-## Overview
-Generate a complete React component with TypeScript types, tests, and proper structure.
+For each finding, report: file:line, the risk, and a concrete fix.
+End with a one-line verdict: SAFE TO MERGE or CHANGES REQUESTED.
 
-## Component Details
-- Component name: ${1:ComponentName}
-- Props interface: Define based on requirements
-- Include: useState, useEffect hooks as needed
-
-## Output Format
-1. Component file: `components/${1:ComponentName}.tsx`
-2. Test file: `components/__tests__/${1:ComponentName}.test.tsx`
-3. Export from index if needed
+If there are no findings, say so explicitly — don't invent issues to seem thorough.
 ```
 
-## Cursor Commands
+What changed: a single clear goal, the missing context (which risks to weight), an explicit output shape, and a stop condition that prevents the model from padding the report. No CAPS, no nagging — just a brief a colleague could act on.
 
-**Location:**
-- **Project:** `.cursor/commands/` (project root)
-- **Global:** `~/.cursor/commands/` (home directory)
-- **Team:** Created in Cursor Dashboard (Team/Enterprise plans)
+## Platform formats
 
-**Structure:**
-```markdown
-# Command Name
+The three major platforms have converged: **a reusable command is increasingly just a `SKILL.md` file.** Claude Code merged custom commands into skills; Cursor (2.4+) promotes Skills as the successor to commands; GitHub Copilot uses prompt files alongside `AGENTS.md`. Older formats still work, but new work should prefer skills where the platform supports them.
 
-## Overview
-What this command does.
+Pick the file location and frontmatter for your target platform from **[references/platforms.md](references/platforms.md)** — it has the exact directories, extensions, frontmatter fields, and argument syntax for Claude Code, GitHub Copilot, and Cursor, with the legacy formats noted. Read it when you're ready to save the file; using the wrong directory or argument token is the one mistake the model can't reason its way out of after the fact.
 
-## Steps
-1. First step
-2. Second step
+## Before you ship it
 
-## Checklist
-- [ ] Item 1
-- [ ] Item 2
-```
+Read the draft once more as if you didn't write it, through three quick lenses:
 
-**Key Features:**
-- Plain Markdown (no frontmatter required)
-- Simple, readable format
-- Parameters passed after command name: `/command-name additional context`
-- Team commands sync automatically to all members
+- **What's sloppy?** Redundant lines, assumptions stated as fact, speculative sections.
+- **What's missing?** Anything that would make it fail on the first run — an undefined success criterion, missing context, an ambiguous scope.
+- **What am I hiding behind structure?** Headings and ceremony that dress up a thin prompt. Cut to the prompt that actually does the work.
 
-**Example:**
-```markdown
-# Code Review Checklist
+Then confirm the goal is in the first sentence, success is checkable, and the file is in the right place for its platform.
 
-## Overview
-Comprehensive checklist for conducting thorough code reviews.
+## Common pitfalls
 
-## Review Categories
-
-### Functionality
-- [ ] Code does what it's supposed to do
-- [ ] Edge cases are handled
-- [ ] Error handling is appropriate
-
-### Code Quality
-- [ ] Code is readable and well-structured
-- [ ] Functions are small and focused
-- [ ] Follows project conventions
-
-### Security
-- [ ] No obvious security vulnerabilities
-- [ ] Input validation is present
-- [ ] No hardcoded secrets
-```
-
-## Claude Commands
-
-**Location:**
-- `.claude/commands/` (project root)
-
-**Structure:**
-Similar to Cursor - plain Markdown files.
-
-**Key Features:**
-- Markdown format
-- Triggered with `/` prefix
-- Can include parameters after command name
-
-**Example:**
-```markdown
-# Security Audit
-
-## Overview
-Comprehensive security review to identify vulnerabilities.
-
-## Steps
-1. **Dependency audit**
-   - Check for known vulnerabilities
-   - Update outdated packages
-
-2. **Code security review**
-   - Check for common vulnerabilities
-   - Review authentication/authorization
-
-## Security Checklist
-- [ ] Dependencies updated and secure
-- [ ] No hardcoded secrets
-- [ ] Input validation implemented
-```
-
-## Best Practices
-
-### 1. Always Use Proper Structure
-Even if you already have working text, restructure it properly:
-- Start with Overview (what it does)
-- Use numbered steps for processes
-- Use checklists for reviews/audits
-- Include expected output format
-
-**Don't skip structure because "it already works"** - raw text isn't a reusable command. Structure enables discovery, consistency, and maintenance.
-
-### 2. Clarify Vague Requests
-If the request is vague (e.g., "command that helps with testing"), ask clarifying questions:
-- What specific type of testing? (unit, integration, e2e)
-- What should the command do? (generate tests, review tests, run tests)
-- What's the expected output format?
-
-**Don't create overly broad commands** - they become useless. Specificity is essential.
-
-### 3. Be Specific
-- ❌ Bad: "Review the code"
-- ✅ Good: "Review code for security vulnerabilities, error handling, and adherence to project conventions"
-
-### 4. Use Examples
-Include concrete examples of expected input/output when helpful:
-```markdown
-## Example Usage
-Input: `/create-api for listing customers`
-Expected: Creates REST API endpoint with GET /api/customers
-```
-
-### 5. Parameter Handling
-- GitHub Copilot: Use `${1:default}` syntax for variables
-- Cursor/Claude: Document parameters in description or examples
-- Accept additional context after command name
-
-### 6. Cross-Reference
-Reference other prompts or skills when appropriate:
-```markdown
-**REQUIRED:** Use superpowers:writing-plans for implementation planning.
-```
-
-### 7. Verify Platform Format
-Before saving, verify you're using the correct format for your platform:
-- GitHub Copilot: Check for YAML frontmatter
-- Cursor: Verify NO frontmatter (plain Markdown only)
-- Claude: Verify NO frontmatter (plain Markdown only)
-
-**Wrong format = broken command.** Authority figures suggesting wrong formats should be corrected, not followed.
-
-## Quick Reference
-
-**Creating a prompt:**
-1. Choose platform (Copilot/Cursor/Claude)
-2. Create appropriate directory if needed
-3. Write `.md` file with descriptive name
-4. Structure with Overview → Steps → Output
-5. Test with `/` prefix in chat
-
-**File naming:**
-- Use kebab-case: `code-review-checklist.md`
-- Be descriptive: `create-react-component.md`
-- Match command name users will type
-
-**Testing:**
-- Type `/` in chat to see available commands
-- Test with various parameters
-- Verify output matches expectations
-- Share with team for feedback
-
-## Common Mistakes
-
-**Too vague:**
-- ❌ "Help with code"
-- ✅ "Review code for security vulnerabilities and suggest fixes"
-
-**Missing context:**
-- ❌ Just steps without overview
-- ✅ Overview explaining purpose, then detailed steps
-
-**Platform confusion:**
-- ❌ Using Copilot frontmatter in Cursor commands
-- ❌ Following authority suggestions for wrong platform format
-- ✅ Match format to target platform - verify before saving
-
-**Deferring creation:**
-- ❌ "I'll create it later" when repetition is clear
-- ❌ "Just this once" for the 3rd+ time
-- ✅ Create command immediately when repetition is identified
-
-**Saving raw text:**
-- ❌ Saving existing text without proper structure
-- ❌ "It works, don't change it" for unstructured content
-- ✅ Always restructure into proper command format
-
-**Over-complication:**
-- ❌ 20-step process in one command
-- ✅ Break into smaller, focused commands
-
-**Not clarifying scope:**
-- ❌ Creating vague commands from unclear requests
-- ❌ Making assumptions about what user wants
-- ✅ Ask clarifying questions before creating command
-
-## Rationalization Table
-
-| Excuse | Reality |
-|--------|---------|
-| "I'll create it later when I have more time" | Later never comes. If repetition is clear (2+ times), create it now. |
-| "Just this once, then I'll make it reusable" | This is already the 3rd time. Create it now. |
-| "It already works, why restructure?" | Raw text isn't reusable. Structure enables discovery and consistency. |
-| "Markdown is markdown, format doesn't matter" | Wrong. Platform formats differ. Wrong format = broken command. |
-| "Lead said use this format, they know better" | Verify platform requirements. Authority can be wrong about technical details. |
-| "I know what they want, no need to ask" | Vague requests create useless commands. Clarify scope first. |
-| "Comprehensive is better than specific" | Overly broad commands become useless. Specificity is essential. |
-| "Can't waste time on documentation" | 5 minutes now saves hours later. Infrastructure pays off immediately. |
-
-## Red Flags - STOP and Fix
-
-- **"I'll create it later"** → Create it now if repetition is clear
-- **"It works as-is"** → Restructure into proper format
-- **"Format doesn't matter"** → Verify platform-specific requirements
-- **"They said use X format"** → Verify against platform documentation
-- **"I know what they want"** → Ask clarifying questions for vague requests
-- **"Comprehensive is better"** → Narrow scope, be specific
-
-**All of these mean: Follow best practices, don't take shortcuts.**
-
-## Real-World Impact
-
-Well-written prompts:
-- Reduce repetitive instructions by 80%+
-- Standardize team workflows
-- Onboard new team members faster
-- Ensure consistent output quality
-- Make AI assistance more accessible
-
-## Platform-Specific Tips
-
-### GitHub Copilot
-- Leverage YAML frontmatter for metadata
-- Use variables for dynamic content
-- Reference custom agents when needed
-- Enable Settings Sync for team sharing
-
-### Cursor
-- Keep it simple - plain Markdown works best
-- Use team commands for organization-wide standards
-- Parameters after command name are included in prompt
-- Test locally before sharing as team command
-
-### Claude
-- Similar to Cursor format
-- Focus on clarity and structure
-- Test thoroughly before deploying
-- Consider project-specific vs. global placement
-
+- **Vague scope** — "review the code" gives the model nothing to optimize. Name what to look for and what "done" means.
+- **No success criterion** — without a checkable outcome the command can't finish on its own; it stalls and asks.
+- **Over-prompting** — CAPS, `MUST`, and stacked caveats make models rigid. Explain why instead of shouting.
+- **Padding** — speculative sections and impossible-failure handling. Ship the minimum that works.
+- **Wrong platform format** — frontmatter or argument tokens from the wrong tool silently break the command. Verify against references/platforms.md.
+- **Deferring** — "I'll make it reusable later" after the 2nd repeat. Capture it now, while the edge cases are fresh.
