@@ -16,6 +16,13 @@ const AGENT_PLATFORMS = {
         sourceExt: '.md',
         getDestDir: () => join(homedir(), '.config', 'opencode', 'agents'),
         destExt: '.md'
+    },
+    claude: {
+        name: 'claude',
+        sourceDir: '.claude/agents',
+        sourceExt: '.md',
+        getDestDir: () => join(homedir(), '.claude', 'agents'),
+        destExt: '.md'
     }
 };
 
