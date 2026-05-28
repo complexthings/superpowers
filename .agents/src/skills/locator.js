@@ -16,11 +16,10 @@ export const locateSkill = (skillName) => {
         'claude': [paths.projectClaudeSkills, paths.homeClaudeSkills],
         'copilot': [paths.projectCopilotSkills, paths.homeCopilotSkills],
         'opencode': [paths.projectOpencodeSkills, paths.homeOpencodeSkills],
-        'gemini': [paths.projectGeminiSkills, paths.homeGeminiSkills],
         'project': [paths.projectAgentsSkills],
         'personal': [paths.homePersonalSkills]
     };
-    
+
     // Build search order
     let searchOrder;
     if (type) {
@@ -38,13 +37,11 @@ export const locateSkill = (skillName) => {
                 { type: 'claude', dir: paths.projectClaudeSkills },
                 { type: 'copilot', dir: paths.projectCopilotSkills },
                 { type: 'opencode', dir: paths.projectOpencodeSkills },
-                { type: 'gemini', dir: paths.projectGeminiSkills },
                 // Personal tier
                 { type: 'personal', dir: paths.homePersonalSkills },
                 { type: 'personalClaude', dir: paths.homeClaudeSkills },
                 { type: 'personalCopilot', dir: paths.homeCopilotSkills },
                 { type: 'personalOpencode', dir: paths.homeOpencodeSkills },
-                { type: 'personalGemini', dir: paths.homeGeminiSkills },
                 // Superpowers tier
                 { type: 'superpowers', dir: paths.homeSuperpowersSkills }
             ];
@@ -55,13 +52,11 @@ export const locateSkill = (skillName) => {
                 { type: 'claude', dir: paths.projectClaudeSkills },
                 { type: 'copilot', dir: paths.projectCopilotSkills },
                 { type: 'opencode', dir: paths.projectOpencodeSkills },
-                { type: 'gemini', dir: paths.projectGeminiSkills },
                 // Personal tier
                 { type: 'personal', dir: paths.homePersonalSkills },
                 { type: 'personalClaude', dir: paths.homeClaudeSkills },
                 { type: 'personalCopilot', dir: paths.homeCopilotSkills },
                 { type: 'personalOpencode', dir: paths.homeOpencodeSkills },
-                { type: 'personalGemini', dir: paths.homeGeminiSkills },
                 // Superpowers tier
                 { type: 'superpowers', dir: paths.homeSuperpowersSkills }
             ];
@@ -111,7 +106,6 @@ export const locateSkillByNameOrAlias = (skillIdentifier) => {
         'claude': [paths.projectClaudeSkills, paths.homeClaudeSkills],
         'copilot': [paths.projectCopilotSkills, paths.homeCopilotSkills],
         'opencode': [paths.projectOpencodeSkills, paths.homeOpencodeSkills],
-        'gemini': [paths.projectGeminiSkills, paths.homeGeminiSkills],
         'project': [paths.projectAgentsSkills],
         'personal': [paths.homePersonalSkills]
     };
@@ -132,13 +126,11 @@ export const locateSkillByNameOrAlias = (skillIdentifier) => {
                 { type: 'claude', dir: paths.projectClaudeSkills },
                 { type: 'copilot', dir: paths.projectCopilotSkills },
                 { type: 'opencode', dir: paths.projectOpencodeSkills },
-                { type: 'gemini', dir: paths.projectGeminiSkills },
                 // Personal tier
                 { type: 'personal', dir: paths.homePersonalSkills },
                 { type: 'personalClaude', dir: paths.homeClaudeSkills },
                 { type: 'personalCopilot', dir: paths.homeCopilotSkills },
                 { type: 'personalOpencode', dir: paths.homeOpencodeSkills },
-                { type: 'personalGemini', dir: paths.homeGeminiSkills },
                 // Superpowers tier
                 { type: 'superpowers', dir: paths.homeSuperpowersSkills }
             ];
@@ -149,19 +141,17 @@ export const locateSkillByNameOrAlias = (skillIdentifier) => {
                 { type: 'claude', dir: paths.projectClaudeSkills },
                 { type: 'copilot', dir: paths.projectCopilotSkills },
                 { type: 'opencode', dir: paths.projectOpencodeSkills },
-                { type: 'gemini', dir: paths.projectGeminiSkills },
                 // Personal tier
                 { type: 'personal', dir: paths.homePersonalSkills },
                 { type: 'personalClaude', dir: paths.homeClaudeSkills },
                 { type: 'personalCopilot', dir: paths.homeCopilotSkills },
                 { type: 'personalOpencode', dir: paths.homeOpencodeSkills },
-                { type: 'personalGemini', dir: paths.homeGeminiSkills },
                 // Superpowers tier
                 { type: 'superpowers', dir: paths.homeSuperpowersSkills }
             ];
         }
     }
-    
+
     // Search through all skill directories for matching aliases
     for (const { type: sourceType, dir } of searchOrder) {
         if (!existsSync(dir)) continue;

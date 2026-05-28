@@ -35,10 +35,6 @@ export const checkForUpdates = async () => {
 export const determineReinstalls = (changedFiles) => {
     const integrationMap = {
         '.github/prompts/': 'copilot-prompts',
-        '.cursor/commands/': 'cursor-commands',
-        'hooks/cursor/': 'cursor-hooks',
-        '.codex/prompts/': 'codex-prompts',
-        '.gemini/commands/': 'gemini-commands',
         'commands/': 'claude-commands',
         '.opencode/command/': 'opencode-commands',
         '.opencode/plugins/': 'opencode-plugin'

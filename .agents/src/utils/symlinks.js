@@ -29,21 +29,6 @@ export const SKILL_PLATFORMS = [
         name: 'opencode',
         parentDir: () => join(homedir(), '.config', 'opencode'),
         skillsDir: () => join(homedir(), '.config', 'opencode', 'skill')
-    },
-    {
-        name: 'cursor',
-        parentDir: () => join(homedir(), '.cursor'),
-        skillsDir: () => join(homedir(), '.cursor', 'skills')
-    },
-    {
-        name: 'gemini',
-        parentDir: () => join(homedir(), '.gemini'),
-        skillsDir: () => join(homedir(), '.gemini', 'skills')
-    },
-    {
-        name: 'codex',
-        parentDir: () => join(homedir(), '.codex'),
-        skillsDir: () => join(homedir(), '.codex', 'skills')
     }
 ];
 
@@ -76,38 +61,10 @@ const PROJECT_SKILL_PLATFORMS = [
         skillsDir: (projectRoot) => join(projectRoot, '.opencode', 'skill'), // singular!
         detect: (projectRoot) => {
             const hasOpencode = existsSync(join(projectRoot, '.opencode'));
-            const hasAgentsMd = existsSync(join(projectRoot, 'AGENTS.md')) || 
+            const hasAgentsMd = existsSync(join(projectRoot, 'AGENTS.md')) ||
                                existsSync(join(projectRoot, '.agents', 'AGENTS.md')) ||
                                existsSync(join(projectRoot, '.opencode', 'AGENTS.md'));
             return hasOpencode && hasAgentsMd;
-        }
-    },
-    {
-        name: 'cursor',
-        agentDir: (projectRoot) => join(projectRoot, '.cursor'),
-        skillsDir: (projectRoot) => join(projectRoot, '.cursor', 'skills'),
-        detect: (projectRoot) => existsSync(join(projectRoot, '.cursor'))
-    },
-    {
-        name: 'gemini',
-        agentDir: (projectRoot) => join(projectRoot, '.gemini'),
-        skillsDir: (projectRoot) => join(projectRoot, '.gemini', 'skills'),
-        detect: (projectRoot) => {
-            const hasGemini = existsSync(join(projectRoot, '.gemini'));
-            const hasGeminiMd = existsSync(join(projectRoot, 'GEMINI.md')) || 
-                               existsSync(join(projectRoot, '.agents', 'GEMINI.md'));
-            return hasGemini && hasGeminiMd;
-        }
-    },
-    {
-        name: 'codex',
-        agentDir: (projectRoot) => join(projectRoot, '.codex'),
-        skillsDir: (projectRoot) => join(projectRoot, '.codex', 'skills'),
-        detect: (projectRoot) => {
-            const hasCodex = existsSync(join(projectRoot, '.codex'));
-            const hasAgentsMd = existsSync(join(projectRoot, 'AGENTS.md')) ||
-                               existsSync(join(projectRoot, '.agents', 'AGENTS.md'));
-            return hasCodex && hasAgentsMd;
         }
     }
 ];

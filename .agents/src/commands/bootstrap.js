@@ -12,10 +12,7 @@ import { checkForUpdates, isOnMainBranch } from '../core/git.js';
 import { printVersion, getLocalVersion } from '../utils/output.js';
 import { toolDetection, detectPlatforms } from '../core/platform-detection.js';
 
-// Import all integration installers
-import { 
-    installCursorHooks 
-} from '../integrations/cursor.js';
+// Import integration installers
 import { installOpencodePluginSymlink } from '../integrations/opencode.js';
 
 // Import update function
@@ -431,33 +428,25 @@ const runSetupSkills = () => {
 
     // Detect platforms
     const projectPlatforms = [];
-    
+
     const rootCopilotPath = join(projectRoot, '.github', 'copilot-instructions.md');
     const globalCopilotPath = join(paths.home, '.github', 'copilot-instructions.md');
     if (existsSync(rootCopilotPath) || existsSync(globalCopilotPath) || toolDetection.copilot.check()) {
         projectPlatforms.push('github-copilot');
     }
-    
+
     const rootClaudeMdPath = join(projectRoot, 'CLAUDE.md');
     const dotAgentsClaudeMdPath = join(agentsDir, 'CLAUDE.md');
     if (existsSync(rootClaudeMdPath) || existsSync(dotAgentsClaudeMdPath) || toolDetection.claude.check()) {
         projectPlatforms.push('claude-code');
     }
-    
-    const rootGeminiMdPath = join(projectRoot, 'GEMINI.md');
-    const dotAgentsGeminiMdPath = join(agentsDir, 'GEMINI.md');
-    if (existsSync(rootGeminiMdPath) || existsSync(dotAgentsGeminiMdPath) || toolDetection.gemini.check()) {
-        projectPlatforms.push('gemini');
-    }
-    
-    if (toolDetection.cursor.check()) projectPlatforms.push('cursor');
+
     if (toolDetection.opencode.check()) projectPlatforms.push('opencode');
-    if (toolDetection.codex.check()) projectPlatforms.push('codex');
-    
+
     console.log(`\nDetected platforms for project: ${projectPlatforms.join(', ') || 'none'}\n`);
-    
-    // Update AGENTS.md
-    const agentsPlatforms = projectPlatforms.filter(p => ['github-copilot', 'cursor', 'opencode', 'codex'].includes(p));
+
+    // Update AGENTS.md (targets GitHub Copilot and OpenCode only)
+    const agentsPlatforms = projectPlatforms.filter(p => ['github-copilot', 'opencode'].includes(p));
     const agentsResult = updatePlatformFile(agentsMdPath, template, agentsPlatforms, !agentsMdExists);
     
     if (agentsResult.created) {
@@ -486,24 +475,6 @@ const runSetupSkills = () => {
         console.log('ℹ️  Skipped CLAUDE.md (does not exist)');
     } else if (claudeResult.error) {
         console.log('⚠️  Failed to update CLAUDE.md');
-    }
-
-    // Update GEMINI.md if it exists (prefer root, then .agents/)
-    const geminiMdPath = existsSync(rootGeminiMdPath) ? rootGeminiMdPath : dotAgentsGeminiMdPath;
-    const geminiResult = updatePlatformFile(geminiMdPath, template, ['gemini'], false);
-    if (geminiResult.created) {
-        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
-        console.log(`✓ Created GEMINI.md with Gemini tool mappings (${geminiMdLocation})`);
-    } else if (geminiResult.updated) {
-        const geminiMdLocation = geminiMdPath === rootGeminiMdPath ? 'root' : '.agents/';
-        console.log(`✓ Updated GEMINI.md with Gemini tool mappings (${geminiMdLocation})`);
-        if (geminiResult.backup) {
-            console.log(`  Backed up to ${parse(geminiResult.backup).base}`);
-        }
-    } else if (geminiResult.skipped) {
-        console.log('ℹ️  Skipped GEMINI.md (does not exist)');
-    } else if (geminiResult.error) {
-        console.log('⚠️  Failed to update GEMINI.md');
     }
 
     // Update .github/copilot-instructions.md with Superpowers instructions when GitHub Copilot is detected
@@ -569,9 +540,6 @@ const runSetupSkills = () => {
     if (claudeResult.updated || claudeResult.created) {
         setupMessage += '\n  - CLAUDE.md with Claude Code skills instructions';
     }
-    if (geminiResult.updated || geminiResult.created) {
-        setupMessage += '\n  - GEMINI.md with Gemini skills instructions';
-    }
     if (copilotResult.updated || copilotResult.created) {
         setupMessage += '\n  - .github/copilot-instructions.md with Superpowers instructions';
     }
@@ -596,11 +564,6 @@ const removeLegacyPrompts = () => {
             'skills.prompt.md', 'use-skill.prompt.md', 'using-a-skill.prompt.md']
             .map(f => join(paths.vscodeUserDir, 'prompts', f)),
 
-        // Cursor (.md)
-        ...['brainstorming.md', 'create-meta-prompt.md', 'execute-plan.md', 'finding-skills.md',
-            'skills.md', 'use-skill.md', 'using-a-skill.md', 'write-plan.md', 'setup-skills.md']
-            .map(f => join(paths.home, '.cursor', 'commands', f)),
-
         // Claude Code (.md)
         ...['brainstorm.md', 'create-meta-prompt.md', 'execute-plan.md', 'finding-skills.md',
             'skills.md', 'use-skill.md', 'using-a-skill.md', 'write-plan.md', 'setup-skills.md']
@@ -610,17 +573,6 @@ const removeLegacyPrompts = () => {
         ...['brainstorm.md', 'create-meta-prompt.md', 'execute-plan.md', 'finding-skills.md',
             'skills.md', 'use-skill.md', 'using-a-skill.md', 'write-plan.md', 'setup-skills.md']
             .map(f => join(paths.home, '.config', 'opencode', 'command', f)),
-
-        // Codex (.md)
-        ...['brainstorm.md', 'create-meta-prompt.md', 'execute-plan.md', 'finding-skills.md',
-            'skills.md', 'use-skill.md', 'using-a-skill.md', 'write-plan.md', 'setup-skills.md']
-            .map(f => join(paths.home, '.codex', 'prompts', f)),
-
-        // Gemini (.toml)
-        ...['brainstorm-with-superpowers.toml', 'create-meta-prompt.toml', 'execute-plan.toml',
-            'finding-skills.toml', 'skills.toml', 'use-skill.toml', 'using-a-skill.toml',
-            'write-plan.toml', 'setup-skills.toml']
-            .map(f => join(paths.home, '.gemini', 'commands', f)),
     ];
 
     let removed = 0;
@@ -681,7 +633,7 @@ const runBootstrap = async () => {
     const noUpdate = process.argv.includes('--no-update');
 
     // Parse --force-<agent> flags
-    const KNOWN_AGENTS = ['copilot', 'cursor', 'codex', 'gemini', 'claude', 'opencode'];
+    const KNOWN_AGENTS = ['copilot', 'claude', 'opencode'];
     const forceAgents = new Set(
         KNOWN_AGENTS.filter(a => process.argv.includes(`--force-${a}`))
     );
@@ -718,37 +670,6 @@ const runBootstrap = async () => {
     if (!hasForcedAgents || forceAgents.has('copilot')) {
         console.log('## GitHub Copilot Integration\n');
         console.log('✓ Skill symlinks handled in sync step below');
-        console.log('\n---\n');
-    }
-
-    // Install Cursor integration
-    if (!hasForcedAgents || forceAgents.has('cursor')) {
-        console.log('## Cursor Integration\n');
-        installCursorHooks();
-        console.log('\n---\n');
-    }
-
-    // Install Codex integration
-    if (!hasForcedAgents || forceAgents.has('codex')) {
-        console.log('## OpenAI Codex Integration\n');
-        const codexDetected = toolDetection.codex.check();
-        if (!codexDetected) {
-            console.log(`⚠️  Skipped (${toolDetection.codex.name} CLI not detected)\n💡 To enable Codex integration:\n   1. Install Codex: ${toolDetection.codex.installUrl}\n   2. Run: superpowers-agent ${toolDetection.codex.bootstrapCommand}`);
-        } else {
-            console.log('✓ Skill symlinks handled in sync step below');
-        }
-        console.log('\n---\n');
-    }
-
-    // Install Gemini integration
-    if (!hasForcedAgents || forceAgents.has('gemini')) {
-        console.log('## Gemini Integration\n');
-        const geminiDetected = toolDetection.gemini.check();
-        if (!geminiDetected) {
-            console.log(`⚠️  Skipped (${toolDetection.gemini.name} CLI not detected)\n💡 To enable Gemini integration:\n   1. Install Gemini: ${toolDetection.gemini.installUrl}\n   2. Run: superpowers-agent ${toolDetection.gemini.bootstrapCommand}`);
-        } else {
-            console.log('✓ Skill symlinks handled in sync step below');
-        }
         console.log('\n---\n');
     }
 

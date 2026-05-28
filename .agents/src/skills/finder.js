@@ -159,14 +159,10 @@ export const throwAmbiguousError = (skillPath, matches, sourceType) => {
         'claude': 'claude skills (.claude/skills/)',
         'copilot': 'copilot skills (.copilot/skills/)',
         'opencode': 'opencode skills (.opencode/skill/)',
-        'cursor': 'cursor skills (.cursor/skills/)',
-        'gemini': 'gemini skills (.gemini/skills/)',
         'personal': 'personal skills (~/.agents/skills/)',
         'personalClaude': 'personal claude skills (~/.claude/skills/)',
         'personalCopilot': 'personal copilot skills (~/.copilot/skills/)',
         'personalOpencode': 'personal opencode skills (~/.config/opencode/skill/)',
-        'personalCursor': 'personal cursor skills (~/.cursor/skills/)',
-        'personalGemini': 'personal gemini skills (~/.gemini/skills/)',
         'superpowers': 'superpowers skills (~/.agents/superpowers/skills/)'
     }[sourceType];
     

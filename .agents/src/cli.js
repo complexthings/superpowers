@@ -35,11 +35,6 @@ import {
     runRm
 } from './skills/installer.js';
 
-// Import integration installers
-import { 
-    installCursorHooks 
-} from './integrations/cursor.js';
-
 // Import use-skill command
 import { runUseSkill } from './skills/executor.js';
 
@@ -80,7 +75,6 @@ const commands = {
     'get-helpers': runGetHelpers,
     
     // Integration install commands
-    'install-cursor-hooks': installCursorHooks,
     'install-aliases': installAliases,
     
     // Default help
@@ -105,7 +99,6 @@ Usage:
   superpowers-agent path <skill-name>                               # Get skill file path
   superpowers-agent execute <skill-name>                            # Execute a skill
   superpowers-agent get-helpers <skill> <search-term>               # Get helper file path
-  superpowers-agent install-cursor-hooks                            # Install Cursor hooks
   superpowers-agent install-aliases                                 # Install universal aliases (superpowers, superpowers-agent)
 
 Documentation: https://github.com/complexthings/superpowers

@@ -18,12 +18,10 @@ const skillTypes = {
     claude: { dir: 'projectClaudeSkills', prefix: 'claude:' },
     copilot: { dir: 'projectCopilotSkills', prefix: 'copilot:' },
     opencode: { dir: 'projectOpencodeSkills', prefix: 'opencode:' },
-    gemini: { dir: 'projectGeminiSkills', prefix: 'gemini:' },
     personal: { dir: 'homePersonalSkills', prefix: '' },
     personalClaude: { dir: 'homeClaudeSkills', prefix: 'claude:' },
     personalCopilot: { dir: 'homeCopilotSkills', prefix: 'copilot:' },
     personalOpencode: { dir: 'homeOpencodeSkills', prefix: 'opencode:' },
-    personalGemini: { dir: 'homeGeminiSkills', prefix: 'gemini:' },
     superpowers: { dir: 'homeSuperpowersSkills', prefix: 'superpowers:' }
 };
 
@@ -59,13 +57,11 @@ const runFindSkills = () => {
         { type: 'claude', dir: paths.projectClaudeSkills, maxDepth: null },
         { type: 'copilot', dir: paths.projectCopilotSkills, maxDepth: null },
         { type: 'opencode', dir: paths.projectOpencodeSkills, maxDepth: null },
-        { type: 'gemini', dir: paths.projectGeminiSkills, maxDepth: null },
         // Personal tier
         { type: 'personal', dir: paths.homePersonalSkills, maxDepth: null },
         { type: 'personalClaude', dir: paths.homeClaudeSkills, maxDepth: null },
         { type: 'personalCopilot', dir: paths.homeCopilotSkills, maxDepth: null },
         { type: 'personalOpencode', dir: paths.homeOpencodeSkills, maxDepth: null },
-        { type: 'personalGemini', dir: paths.homeGeminiSkills, maxDepth: null },
         // Superpowers tier
         { type: 'superpowers', dir: paths.homeSuperpowersSkills, maxDepth: null }
     ];

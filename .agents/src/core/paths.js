@@ -54,17 +54,11 @@ export const paths = {
     get projectAgentsSkills() { return join(this.projectRoot, '.agents', 'skills'); },
     get projectCopilotSkills() { return join(this.projectRoot, '.copilot', 'skills'); },
     get projectOpencodeSkills() { return join(this.projectRoot, '.opencode', 'skill'); },
-    get projectCursorSkills() { return join(this.projectRoot, '.cursor', 'skills'); },
-    get projectGeminiSkills() { return join(this.projectRoot, '.gemini', 'skills'); },
-    get projectCodexSkills() { return join(this.projectRoot, '.codex', 'skills'); },
     get projectSkillsDir() { return join(this.projectRoot, 'skills'); }, // For superpowers repo itself
     get homePersonalSkills() { return join(this.home, '.agents', 'skills'); },
     get homeClaudeSkills() { return join(this.home, '.claude', 'skills'); },
     get homeCopilotSkills() { return join(this.home, '.copilot', 'skills'); },
     get homeOpencodeSkills() { return join(this.home, '.config', 'opencode', 'skill'); },
-    get homeCursorSkills() { return join(this.home, '.cursor', 'skills'); },
-    get homeGeminiSkills() { return join(this.home, '.gemini', 'skills'); },
-    get homeCodexSkills() { return join(this.home, '.codex', 'skills'); },
     get bootstrap() { return join(this.projectRoot, '.agents', 'superpowers-bootstrap.md'); },
     get superpowersRepo() { 
         // Development: src/core/ -> 3 up = repo root
