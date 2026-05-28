@@ -16,6 +16,7 @@
     "url": "https://github.com/complexthings/superpowers.git"
   },
   "scripts": {
+    "test": "bun test",
     "prepare": "cd .. && husky",
     "build": "bun build.js",
     "dev": "bun src/cli.js",
