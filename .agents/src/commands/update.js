@@ -42,6 +42,20 @@ const runUpdate = async ({ skipReinstall = false } = {}) => {
         console.log('   Try running manually: npm install -g @complexthings/superpowers-agent');
         process.exit(1);
     }
+
+    // Run bootstrap via the freshly-installed global binary.
+    // (The current process is still the OLD code after npm install -g, so we
+    // must shell out to the new binary rather than calling runBootstrap().)
+    // Pass --no-update so bootstrap doesn't recurse into another update check.
+    console.log('\n   Running bootstrap to complete setup...\n');
+    try {
+        execSync('superpowers-agent bootstrap --no-update', { stdio: 'inherit' });
+        console.log('\n✓ Bootstrap complete!');
+    } catch (bootstrapError) {
+        console.log(`\n⚠️  Bootstrap step failed: ${bootstrapError.message}`);
+        console.log('   The update installed successfully. Run manually to finish setup:');
+        console.log('   superpowers-agent bootstrap');
+    }
 };
 
 /**

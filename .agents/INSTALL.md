@@ -11,12 +11,14 @@ Quick setup to enable superpowers skills in generic agents.
    git clone https://github.com/complexthings/superpowers.git .
    ```
 
-2. **Run bootstrap to complete installation**:
+2. **Run bootstrap to complete installation** (required — nothing runs automatically):
    ```bash
    superpowers-agent bootstrap
    ```
 
-   This will:
+   Bootstrap is a **required** one-time post-install step. It is not run automatically
+   by npm (there is no `postinstall` hook), so you must run it manually after every
+   fresh install or clone. It will:
    - List all available skills
    - Auto-load the `using-superpowers` skill
    - Install GitHub Copilot prompts to `~/.github/prompts/`

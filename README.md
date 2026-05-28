@@ -85,12 +85,14 @@ Plus:
 
 ## Quick Install (Recommended)
 
-Install Superpowers globally with one command:
+Install Superpowers globally and run the required one-time bootstrap step:
 
 ```bash
 npm install -g @complexthings/superpowers-agent
 superpowers-agent bootstrap
 ```
+
+> **Note:** `superpowers-agent bootstrap` is a **required** one-time step after every fresh install. It is no longer run automatically by npm's `postinstall` hook — you must run it manually. Subsequent `superpowers-agent update` calls will run bootstrap for you automatically.
 
 ## Migration to Superpower Agent `^8.0.0`
 
