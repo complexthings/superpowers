@@ -4,7 +4,7 @@ import { execSync } from 'child_process';
 import { homedir } from 'os';
 import { createInterface } from 'readline';
 import { getRepositories, addRepositoryToConfig, readConfigFile, writeConfigFile, getInstalledSkills, removeInstalledSkills, getInstalledAgents } from '../core/config.js';
-import { syncPersonalSkillSymlinks, SKILL_PLATFORMS, removeSymlink, untrackSymlink } from '../utils/symlinks.js';
+import { SKILL_PLATFORMS, removeSymlink, untrackSymlink } from '../utils/symlinks.js';
 import { installAgents } from '../agents/installer.js';
 
 /**
@@ -497,11 +497,8 @@ Description:
             console.log('  No skills were installed');
         }
         
-        // Sync symlinks for newly installed skills
+        // Track installed skills for future removal
         if (results.installed.length > 0) {
-            console.log('\n**Syncing skill symlinks...**');
-            syncPersonalSkillSymlinks();
-            // Track installed skills for future removal
             trackInstalledSkills(parsed.original, installBase, results, isGlobal, resolvedAlias);
         }
 
@@ -741,11 +738,8 @@ Description:
             console.log('  No skills were updated');
         }
         
-        // Sync symlinks for updated skills
+        // Track installed skills for future removal
         if (results.installed.length > 0) {
-            console.log('\n**Syncing skill symlinks...**');
-            syncPersonalSkillSymlinks();
-            // Track installed skills for future removal
             trackInstalledSkills(parsed.original, installBase, results, isGlobal, resolvedAlias);
         }
 
@@ -753,7 +747,7 @@ Description:
         // Clean up on error
         if (cleanup && sourcePath) {
             try {
-                const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' + 
+                const tmpDir = sourcePath.split('/.agents/tmp/')[0] + '/.agents/tmp/' +
                                sourcePath.split('/.agents/tmp/')[1].split('/')[0];
                 execSync(`rm -rf "${tmpDir}"`, { stdio: 'pipe' });
             } catch {}

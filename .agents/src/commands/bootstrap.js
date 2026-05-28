@@ -19,7 +19,8 @@ import { installOpencodePluginSymlink } from '../integrations/opencode.js';
 import { runUpdate } from './update.js';
 
 // Import symlink utilities
-import { syncAllSkillSymlinks, syncProjectSkillSymlinks, syncRepoSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
+import { syncRepoSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
+import { runStaleSkillSymlinkCleaner } from '../utils/stale-skill-symlink-cleaner.js';
 
 /**
  * Generate tool mappings by reading the generic TOOLS.md.template
@@ -516,24 +517,10 @@ const runSetupSkills = () => {
         console.log('ℹ️  Skipped .github/copilot-instructions.md tool mappings (does not exist)');
     }
 
-    // Sync project skill symlinks to agent-specific directories
-    console.log('\n## Syncing Project Skill Symlinks\n');
-    const symlinkResults = syncProjectSkillSymlinks({ projectRoot });
-    
-    if (symlinkResults.created > 0) {
-        console.log(`\n✓ Created ${symlinkResults.created} project skill symlink(s)`);
-    } else if (symlinkResults.existed > 0) {
-        console.log('ℹ️  Project skill symlinks already exist');
-    } else if (symlinkResults.errors.length > 0) {
-        console.log(`⚠️  Some symlinks could not be created`);
-    } else {
-        console.log('ℹ️  No agent directories detected for symlinking');
-    }
-
     // Build dynamic success message based on what was updated
     let setupMessage = `\n# Setup complete!\n\nYour project now has:
   - .agents/ directory structure`;
-    
+
     if (agentsResult.updated || agentsResult.created) {
         setupMessage += '\n  - AGENTS.md with universal skills instructions';
     }
@@ -542,9 +529,6 @@ const runSetupSkills = () => {
     }
     if (copilotResult.updated || copilotResult.created) {
         setupMessage += '\n  - .github/copilot-instructions.md with Superpowers instructions';
-    }
-    if (symlinkResults.created > 0) {
-        setupMessage += `\n  - ${symlinkResults.created} project skill symlink(s) to agent directories`;
     }
     setupMessage += '\n  - .agents/skills/ ready for project-specific skills';
     setupMessage += '\n  - .agents/docs/SUPERPOWERS.md for detailed reference\n';
@@ -747,10 +731,19 @@ const runBootstrap = async () => {
     }
     console.log('\n---\n');
 
-    // Sync skill symlinks for all platforms
-    console.log('## Syncing Skill Symlinks\n');
-    const forceCreate = process.argv.includes('--force');
-    syncAllSkillSymlinks({ force: forceCreate, forceAgents });
+    // One-time migration: clean up stale per-platform skill symlinks across all
+    // global and project-local platform dirs (including deprecated cursor/codex/gemini).
+    console.log('## Cleaning Up Stale Platform Skill Symlinks\n');
+    const cleanerResults = runStaleSkillSymlinkCleaner({ projectRoot: process.cwd() });
+    if (cleanerResults.removed.length > 0) {
+        console.log(`  ✓ Removed ${cleanerResults.removed.length} stale skill symlink(s):`);
+        for (const p of cleanerResults.removed) {
+            console.log(`    - ${p}`);
+        }
+    } else {
+        console.log('  ✓ No stale platform skill symlinks found');
+    }
+    console.log('\n---\n');
 
     console.log('# Bootstrap Complete!\n');
     console.log('✓ All integrations installed');
