@@ -844,5 +844,6 @@ export {
     runBootstrap,
     runSetupSkills,
     installAliases,
-    updatePlatformFile
+    updatePlatformFile,
+    updateCopilotInstructions
 };
