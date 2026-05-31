@@ -38,6 +38,9 @@ import {
 // Import use-skill command
 import { runUseSkill } from './skills/executor.js';
 
+// Import session-context command (used by platform session-start hooks)
+import { runSessionContext } from './integrations/session-context.js';
+
 /**
  * Command dispatcher
  */
@@ -63,6 +66,7 @@ const commands = {
     // Skill commands
     'setup-skills': runSetupSkills,
     'use-skill': () => runUseSkill(process.argv[3]),
+    'session-context': runSessionContext,
     'execute': runExecute,
     'find-skills': runFindSkills,
     'add': runAdd,
@@ -89,6 +93,7 @@ Usage:
   superpowers-agent config-set <key> <value>                        # Update configuration
   superpowers-agent setup-skills                                    # Initialize project skills
   superpowers-agent use-skill <skill-name>                          # Load a skill
+  superpowers-agent session-context [--format=claude|copilot|raw]   # Print session-start context (used by hooks)
   superpowers-agent find-skills                                     # List available skills
   superpowers-agent add <url-or-path|@alias> [path] [options]      # Install skills
   superpowers-agent add-repository <git-url> [--as=@alias] [opts]  # Add repository alias

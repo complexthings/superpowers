@@ -58,6 +58,12 @@ export const paths = {
     get homePersonalSkills() { return join(this.home, '.agents', 'skills'); },
     get homeClaudeSkills() { return join(this.home, '.claude', 'skills'); },
     get homeCopilotSkills() { return join(this.home, '.copilot', 'skills'); },
+    get claudeSettings() { return join(this.home, '.claude', 'settings.json'); },
+    get copilotHooksDir() {
+        return process.env.COPILOT_HOME
+            ? join(process.env.COPILOT_HOME, 'hooks')
+            : join(this.home, '.copilot', 'hooks');
+    },
     get homeOpencodeSkills() { return join(this.home, '.config', 'opencode', 'skill'); },
     get bootstrap() { return join(this.projectRoot, '.agents', 'superpowers-bootstrap.md'); },
     get superpowersRepo() { 

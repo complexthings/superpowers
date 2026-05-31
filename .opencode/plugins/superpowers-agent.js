@@ -8,21 +8,18 @@
 import { execSync } from 'child_process';
 
 export const SuperpowersAgentPlugin = async ({ client, directory }) => {
-  // Generate bootstrap content once at plugin init via CLI
+  // Generate bootstrap content once at plugin init via CLI.
+  // session-context is the single source of truth for the injected prompt
+  // (using-superpowers + the leveraging-cli-tools directive); --format=raw
+  // already includes the <EXTREMELY_IMPORTANT> wrapper.
   const getBootstrapContent = () => {
     try {
-      const content = execSync('superpowers-agent use-skill using-superpowers', {
+      const content = execSync('superpowers-agent session-context --format=raw', {
         encoding: 'utf8',
         timeout: 10000,
-      });
+      }).trim();
 
-      return `<EXTREMELY_IMPORTANT>
-You have superpowers.
-
-**IMPORTANT: The using-superpowers skill content is included below. It is ALREADY LOADED - you are currently following it. Do NOT use the skill tool to load "using-superpowers" again - that would be redundant.**
-
-${content}
-</EXTREMELY_IMPORTANT>`;
+      return content || null;
     } catch (_err) {
       return null;
     }

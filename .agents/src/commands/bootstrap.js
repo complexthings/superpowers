@@ -14,6 +14,9 @@ import { toolDetection, detectPlatforms } from '../core/platform-detection.js';
 
 // Import integration installers
 import { installOpencodePluginSymlink } from '../integrations/opencode.js';
+import { installClaudeSessionHook } from '../integrations/claude.js';
+import { installCopilotSessionHook } from '../integrations/copilot.js';
+import { detectTool } from '../utils/file-ops.js';
 
 // Import update function
 import { runUpdate } from './update.js';
@@ -654,6 +657,24 @@ const runBootstrap = async () => {
     if (!hasForcedAgents || forceAgents.has('copilot')) {
         console.log('## GitHub Copilot Integration\n');
         console.log('✓ Skill symlinks handled in sync step below');
+        // Install the sessionStart hook when Copilot CLI is present (or already
+        // configured), or when explicitly forced. Avoids creating ~/.copilot for
+        // people who never use Copilot CLI.
+        const copilotPresent = detectTool('copilot') || existsSync(join(paths.home, '.copilot'));
+        if (copilotPresent || forceAgents.has('copilot')) {
+            const hookResult = installCopilotSessionHook();
+            if (hookResult.created) {
+                console.log(`✓ Installed Copilot sessionStart hook -> ${hookResult.path.replace(paths.home, '~')}`);
+            } else if (hookResult.updated) {
+                console.log(`✓ Updated Copilot sessionStart hook -> ${hookResult.path.replace(paths.home, '~')}`);
+            } else if (hookResult.existed) {
+                console.log('✓ Copilot sessionStart hook already up to date');
+            } else if (hookResult.error) {
+                console.log(`⚠️  Failed to install Copilot sessionStart hook: ${hookResult.message}`);
+            }
+        } else {
+            console.log('ℹ️  Skipped Copilot sessionStart hook (Copilot CLI not detected; run with --force-copilot to install anyway)');
+        }
         console.log('\n---\n');
     }
 
@@ -661,10 +682,22 @@ const runBootstrap = async () => {
     if (!hasForcedAgents || forceAgents.has('claude')) {
         console.log('## Claude Code Integration\n');
         const claudeDetected = toolDetection.claude.check();
-        if (!claudeDetected) {
-            console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: superpowers-agent ${toolDetection.claude.bootstrapCommand}`);
+        if (!claudeDetected && !forceAgents.has('claude')) {
+            console.log(`⚠️  Skipped (${toolDetection.claude.name} CLI not detected)\n💡 To enable Claude Code integration:\n   1. Install Claude Code: ${toolDetection.claude.installUrl}\n   2. Run: superpowers-agent bootstrap --force-claude`);
         } else {
             console.log('✓ Skill symlinks handled in sync step below');
+            // Install/refresh the SessionStart hook in ~/.claude/settings.json so the
+            // using-superpowers + leveraging-cli-tools context is injected every session,
+            // even when Superpowers is installed via npm rather than as a Claude plugin.
+            const hookResult = installClaudeSessionHook();
+            if (hookResult.created) {
+                console.log(`✓ Installed SessionStart hook -> ${paths.claudeSettings.replace(paths.home, '~')}`);
+            } else if (hookResult.updated) {
+                console.log(`✓ ${hookResult.existed ? 'Refreshed' : 'Added'} SessionStart hook in ${paths.claudeSettings.replace(paths.home, '~')}`);
+                if (hookResult.backup) console.log(`  Backed up to ${parse(hookResult.backup).base}`);
+            } else if (hookResult.error) {
+                console.log(`⚠️  Failed to install SessionStart hook: ${hookResult.message}`);
+            }
         }
         console.log('\n---\n');
     }

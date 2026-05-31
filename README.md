@@ -6,6 +6,12 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
+**v9.1.0 (May 30, 2026):**
+
+- **Session-start hooks installed by `bootstrap`** — `bootstrap` now installs a Claude Code `SessionStart` hook into `~/.claude/settings.json` and a GitHub Copilot CLI `sessionStart` hook at `~/.copilot/hooks/superpowers.json`, so the Superpowers context is injected at the start of every session. The Claude merge is idempotent and preserves your other hooks/settings. (This replaces the old Claude Code plugin hook, which has been removed.)
+- **`leveraging-cli-tools` in the injected prompt** — the session-start context now also tells agents to use the `leveraging-cli-tools` skill for code search, parsing, file finding, refactors, and verbose output to cut token cost and latency.
+- **New `session-context` command** — `superpowers-agent session-context [--format=claude|copilot|raw]` is the single source of truth for the injected prompt, shared by the Claude hook, the Copilot hook, and the OpenCode plugin so they never drift.
+
 **v9.0.0 (May 28, 2026):**
 
 - **Claude persona installation** — `.claude/agents/<name>.md` personas now install into `~/.claude/agents/` via `add`/`pull` (previously silently skipped)
@@ -313,11 +319,11 @@ Skills are available via OpenCode's native `skill` tool. The `.opencode/plugins/
 
 ### GitHub Copilot
 
-Skills are available via the native skill tool.
+Skills are available via the native skill tool. `bootstrap` installs a `sessionStart` hook at `~/.copilot/hooks/superpowers.json` (honoring `$COPILOT_HOME`) that injects the Superpowers context — including the `leveraging-cli-tools` directive — at the start of every Copilot CLI session via the hook's `additionalContext` output.
 
 ### Claude Code
 
-Skills are available via the native skill tool. Claude agent personas defined in `.claude/agents/<name>.md` are installed into `~/.claude/agents/` via `add`/`pull`.
+Skills are available via the native skill tool. Claude agent personas defined in `.claude/agents/<name>.md` are installed into `~/.claude/agents/` via `add`/`pull`. `bootstrap` also installs a `SessionStart` hook into `~/.claude/settings.json` that injects the Superpowers context every session (idempotent; preserves your other hooks and settings).
 
 ## What's Inside
 
@@ -433,9 +439,17 @@ superpowers-agent get-config <key>         # Get specific config value
 **Project Setup:**
 ```bash
 superpowers-agent setup-skills             # Initialize project with skills docs
-superpowers-agent bootstrap                # Run complete bootstrap
+superpowers-agent bootstrap                # Run complete bootstrap (installs Claude + Copilot session hooks)
 superpowers-agent update                   # Update to latest version
 ```
+
+**Session Hooks:**
+```bash
+superpowers-agent session-context                    # Print session-start context (raw)
+superpowers-agent session-context --format=claude    # Emit Claude Code SessionStart hook JSON
+superpowers-agent session-context --format=copilot   # Emit GitHub Copilot sessionStart hook JSON
+```
+The platform hooks installed by `bootstrap` call this command; it is the single source of truth for the injected prompt (the `using-superpowers` content plus the `leveraging-cli-tools` directive).
 
 ### Skill Metadata with skill.json
 

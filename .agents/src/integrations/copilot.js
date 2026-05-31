@@ -1,7 +1,68 @@
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 import { paths } from '../core/paths.js';
+
+// Our dedicated personal-hooks file. A standalone file (not merged into the
+// user's other hook files) so it's unambiguously ours and safe to overwrite.
+const COPILOT_HOOK_FILENAME = 'superpowers.json';
+
+const buildCopilotHook = () => ({
+    version: 1,
+    hooks: {
+        sessionStart: [
+            {
+                type: 'command',
+                bash: 'superpowers-agent session-context --format=copilot 2>/dev/null || true',
+                powershell: 'superpowers-agent session-context --format=copilot 2>$null; exit 0',
+                timeoutSec: 15,
+            },
+        ],
+    },
+});
+
+/**
+ * Install (or refresh) the Superpowers sessionStart hook for GitHub Copilot CLI.
+ * Writes a dedicated personal-hooks file at <hooksDir>/superpowers.json. Idempotent:
+ * re-running writes identical content (no-op if already current).
+ *
+ * @param {string} hooksDir - hooks directory (defaults to ~/.copilot/hooks or
+ *   $COPILOT_HOME/hooks). Overridable for tests.
+ * @returns {{created?:boolean, updated?:boolean, existed?:boolean, error?:boolean, message?:string, path?:string}}
+ */
+export const installCopilotSessionHook = (hooksDir = paths.copilotHooksDir) => {
+    const hookPath = join(hooksDir, COPILOT_HOOK_FILENAME);
+    const desired = JSON.stringify(buildCopilotHook(), null, 2) + '\n';
+
+    if (existsSync(hookPath)) {
+        let current;
+        try {
+            current = readFileSync(hookPath, 'utf8');
+        } catch (error) {
+            return { error: true, message: `Failed to read ${hookPath}: ${error.message}` };
+        }
+        if (current === desired) {
+            return { existed: true, path: hookPath };
+        }
+    }
+
+    if (!existsSync(hooksDir)) {
+        try {
+            mkdirSync(hooksDir, { recursive: true });
+        } catch (error) {
+            return { error: true, message: `Failed to create ${hooksDir}: ${error.message}` };
+        }
+    }
+
+    const wasPresent = existsSync(hookPath);
+    try {
+        writeFileSync(hookPath, desired, 'utf8');
+    } catch (error) {
+        return { error: true, message: `Failed to write ${hookPath}: ${error.message}` };
+    }
+
+    return wasPresent ? { updated: true, path: hookPath } : { created: true, path: hookPath };
+};
 
 /**
  * Install GitHub Copilot prompts to VS Code User directory

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.1.0] - 2026-05-30
+
+### Added
+- **Claude Code SessionStart hook installed by `bootstrap`** — `bootstrap` now merges a `SessionStart` hook into `~/.claude/settings.json`, so the Superpowers context is injected at the start of every session. The merge is idempotent and preserves any other hooks and settings (backs up `settings.json` first).
+- **GitHub Copilot CLI `sessionStart` hook** — `bootstrap` installs `~/.copilot/hooks/superpowers.json` (honoring `$COPILOT_HOME`), giving Copilot CLI the same session-start context injection via its `additionalContext` mechanism. Installed when the Copilot CLI is detected or `--force-copilot` is passed.
+- **`leveraging-cli-tools` directive in the injected prompt** — the session-start context now includes an imperative pointer telling agents to use the `leveraging-cli-tools` skill for code search, parsing, file finding, refactors, and verbose output.
+- **`superpowers-agent session-context [--format=claude|copilot|raw]`** — new command that prints the session-start context. It is the single source of truth for the injected prompt, shared by the Claude hook, the Copilot hook, and the OpenCode plugin so they never drift.
+
+### Changed
+- The OpenCode plugin now delegates to `session-context`, so every channel injects the same prompt (including the `leveraging-cli-tools` directive).
+
+### Removed
+- The Claude Code **plugin** hook (`hooks/hooks.json` and `hooks/session-start.sh`) — the `SessionStart` hook that `bootstrap` installs into `~/.claude/settings.json` replaces it. The `hooks/` directory and its `package.json` `files` entry were dropped.
+
 ## [9.0.0] - 2026-05-28
 
 ### Added

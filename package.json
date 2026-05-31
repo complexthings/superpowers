@@ -1,6 +1,6 @@
 {
   "name": "@complexthings/superpowers-agent",
-  "version": "9.0.2",
+  "version": "9.1.0",
   "description": "Superpowers agent CLI — skills system for AI coding agents",
   "type": "module",
   "bin": {
@@ -16,7 +16,6 @@
     ".agents/plans",
     ".agents/superpowers-bootstrap.md",
     "skills",
-    "hooks",
     ".github",
     "AGENTS.md",
     "README.md",
