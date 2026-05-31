@@ -26,21 +26,6 @@ import { syncRepoSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
 import { runStaleSkillSymlinkCleaner } from '../utils/stale-skill-symlink-cleaner.js';
 
 /**
- * Generate tool mappings by reading the generic TOOLS.md.template
- */
-const generateToolMappings = () => {
-    const templatePath = join(paths.superpowersRepo, '.agents', 'templates', 'TOOLS.md.template');
-    if (existsSync(templatePath)) {
-        try {
-            return readFileSync(templatePath, 'utf8').trim();
-        } catch (error) {
-            return '### Using Tools\n\nUse your native skill tool. Fallback: `superpowers-agent find-skills`';
-        }
-    }
-    return '';
-};
-
-/**
  * Update a platform-specific file with skills content
  */
 const updatePlatformFile = (filePath, templateContent, platforms, createIfMissing = true) => {
@@ -51,13 +36,8 @@ const updatePlatformFile = (filePath, templateContent, platforms, createIfMissin
         return { updated: false, created: false, skipped: true };
     }
     
-    // Generate tool mappings from generic template
-    const toolMappings = generateToolMappings();
-    
-    // Replace placeholder in template
-    let content = templateContent.replace(/\{\{TOOL_MAPPINGS\}\}/g, toolMappings);
-    
-    // Replace other placeholders
+    // Replace placeholders in template
+    let content = templateContent;
     const currentDate = new Date().toISOString().split('T')[0];
     content = content.replace(/\{\{DATE\}\}/g, currentDate);
     content = content.replace(/\{\{SUPERPOWERS_PATH\}\}/g, paths.superpowersRepo);

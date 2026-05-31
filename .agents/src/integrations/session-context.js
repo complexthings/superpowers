@@ -19,7 +19,7 @@ const PREAMBLE = `You have superpowers.
 // Imperative, high-priority pointer (per design) — names the skill so the agent loads it.
 const CLI_TOOLS_NUDGE = `---
 
-**YOU MUST read and use the \`leveraging-cli-tools\` skill** the moment a task involves searching code, parsing JSON/YAML, finding files, structural refactors, data wrangling, or any command that floods your context with verbose output (logs, CI logs, test runs). Load it with your skill tool BEFORE you reach for grep/find/sed or before you read large command output. It routes you to high-performance tools (rg, jq, fd, yq, ast-grep, gh, sd) and reduces output to just the signal — cutting token cost and latency 5-50x. Skipping it wastes tokens and time on work the right tool does instantly.`;
+**YOU MUST read and use the \`leveraging-cli-tools\` skill** the moment a task involves using BASH, searching code, parsing JSON/YAML, finding files, structural refactors, data wrangling, or any command that floods your context with verbose output (logs, CI logs, test runs). Load it with your skill tool BEFORE you reach for grep/find/sed or before you read large command output. It routes you to high-performance tools (rg, jq, fd, yq, ast-grep, gh, sd) and reduces output to just the signal — cutting token cost and latency 5-50x. Skipping it wastes tokens and time on work the right tool does instantly.`;
 
 /**
  * Build the raw injected-context text (no platform JSON wrapping).

@@ -15,62 +15,51 @@ This means BEFORE writing code, BEFORE asking clarifying questions, BEFORE explo
 
 Why this matters: skills encode hard-won workflows for tasks like debugging, TDD, and brainstorming. Skipping the check means you may skip a workflow that would have prevented a costly mistake.
 
-## How to Invoke Skills
+## How to Discover and Invoke Skills
 
-Your platform's skill tool is the primary way to load a skill. Available skills are listed in your system context — scan this list before starting any task.
+Skills appear in your context as an available-skills list — scan it at the start of every task. That list is the same workflow library no matter which agent platform you run on (Claude Code, Copilot, OpenCode, Pi, or anything else); only the tools around it differ.
 
-To load a skill, use your platform's native skill tool with the skill name:
+To load a skill's full instructions:
 
+- **If your platform has a native skill-loading tool**, call it with the skill's name.
+- **If it doesn't**, load the skill the way you'd open any file: read its SKILL.md directly with your file-read tool. Find the path in the skills list, or via the CLI fallback below.
+
+Either path has the same result — the skill's content enters your context and you follow it directly. Don't assume a native tool exists; if you can't find one, read the file. The point is to get the skill's content in front of you, not to use any particular mechanism.
+
+**CLI fallback** (use when the skills list isn't already in your context):
+
+```bash
+superpowers-agent find-skills              # list all skills
+superpowers-agent find-skills | grep test  # filter by topic
+superpowers-agent execute <skill-name>     # print a skill to load and follow
 ```
-skill("brainstorming")
-skill("systematic-debugging")
-skill("test-driven-development")
-```
-
-When a skill is invoked, its full content is loaded into context. Follow it directly.
 
 **Announce when using a skill:**
 > "Using Skill: [name] to [purpose]"
 
 This keeps the conversation clear and lets the user know which workflow you're following.
 
-## How to Discover Skills
-
-**Primary method:** Scan the `available_skills` list in your system context. It's always there — review it at the start of every conversation.
-
-**CLI fallback:**
-```bash
-superpowers-agent find-skills              # list all skills
-superpowers-agent find-skills | grep test  # filter by topic
-superpowers-agent execute <skill-name>     # load and follow a skill
-```
-
 ## Skill Priority
 
-When multiple skills could apply, invoke in this order:
+When several skills could apply, load them in order of how much each reframes the problem — broadest understanding first, narrowest execution last. Loading a skill is cheap (you are only reading); committing to the wrong workflow is expensive.
 
-1. **Process skills first** (brainstorming, systematic-debugging, test-driven-development) — these determine HOW to approach the task
-2. **Implementation skills second** (domain-specific guides) — these guide execution
+1. **Domain / context skills first.** A skill about the specific technology or domain you are working in teaches you the territory — and often tells you which approach fits, or that a generic workflow does not. Read it before you commit to a process, and before you brainstorm or plan: knowing the territory makes the brainstorm sharper and can rule a planning skill in or out. A domain skill outranks even an intent-gathering skill like brainstorming.
+2. **Process / approach skills next.** brainstorming, planning, systematic-debugging, test-driven-development — chosen *informed by* what the domain skill told you.
+3. **Implementation skills last.** Step-by-step execution guides, once the approach is set.
 
-Examples:
-- "Let's build X" → invoke `brainstorming` first, then domain implementation skills
-- "Fix this bug" → invoke `systematic-debugging` first, then domain-specific skills
+Why this order: if you lock into a planning or process workflow before reading the domain skill, you may follow steps that do not fit the problem — and by the time you read the domain skill you are already mid-workflow and cannot switch cleanly. Read first, the domain skill can still redirect you to the right process, or tell you to skip one.
 
-## Tool Mapping
+**Worked example** — "Let's build a subscription checkout on Stripe," with a Stripe domain skill, a payment-flow planning skill, and a Stripe-checkout implementation skill available:
 
-Skills may reference tools by names used in a specific platform. Map them to whatever equivalent tools your agent environment provides:
+→ `stripe-payments-domain` (learn the territory; it may change how you plan) → `planning-payment-flows` (map states and failure modes) → `implementing-stripe-checkout` (execute).
 
-| Skill instruction | What it means |
-|-------------------|---------------|
-| `TodoWrite` / task list | Your platform's todo or task-tracking tool |
-| `Task` / subagent dispatch | Your subagent or agent-spawning tool |
-| `Skill` tool | Your platform's native skill-loading tool |
-| File read/write/edit | Your file read, write, and edit tools |
-| Terminal / shell commands | Your bash or shell execution tool |
-| Search | Your grep, glob, or search tools |
-| Web fetching | Your web fetch or browser tool |
+When no domain skill applies, the leading process skill comes first: "Fix this bug" → `systematic-debugging`, then any domain or implementation skill it points you to.
 
-If your platform doesn't have an exact equivalent, use the closest available tool or perform the action inline.
+The first skill you load may change the rest of the plan — reassess after each one rather than committing to the whole sequence up front.
+
+## Mapping Skill Instructions to Your Tools
+
+A skill may name a tool using one platform's vocabulary — a todo tracker, a subagent dispatcher, a file editor, a shell, a search tool, a web fetcher. Map each to the closest equivalent your environment provides and use it. If your platform has no equivalent for something a skill calls for, perform the action inline yourself. The skill's intent is what matters, not the specific tool name it happens to use.
 
 ## Red Flags — You're Rationalizing
 
@@ -107,16 +96,13 @@ Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip workflows. 
 
 ## Version Monitoring
 
-Superpowers version in AGENTS.md: `^^SAV:7.1.2^^`
-
-If `superpowers-agent` commands display a different version, notify the user:
-```
-superpowers-agent update && superpowers-agent bootstrap && superpowers-agent setup-skills
-```
-
-## Related Skills
-
-- **finding-skills** — Detailed guide for discovering and filtering available skills
-- **using-a-skill** — How to load and apply a specific skill by name
-- **brainstorming** — Required before any creative work or feature implementation
-- **writing-skills** — How to create new skills using TDD
+At conversation start (periodically thereafter, e.g. once per day), check your version:
+1. **CURRENT_VERSION** — run a `superpowers-agent version` command and extract `X.Y.Z` from the `X.Y.Z` string in its output.
+2. **NPM_LATEST_VERSION** — run `npm view @complexthings/superpowers-agent version`.
+3. Compare by **semver precedence, not string comparison** (e.g. `9.2.0` > `9.0.1`). If NPM_LATEST_VERSION is newer, tell the user — do not run these yourself:
+   > Your superpowers-agent has updates (`CURRENT_VERSION` → `NPM_LATEST_VERSION`). Run:
+   > ```sh
+   > npm install -g @complexthings/superpowers-agent
+   > superpowers-agent update && superpowers-agent bootstrap && superpowers-agent setup-skills
+   > ```
+   If versions match, or either lookup fails (e.g. no network), continue silently.
