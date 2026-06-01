@@ -921,8 +921,14 @@ Examples:
     if (installedAgents[agentKey]) {
         for (const [, agents] of Object.entries(installedAgents[agentKey].agents || {})) {
             for (const [, agentInfo] of Object.entries(agents)) {
-                if (agentInfo.destination && (existsSync(agentInfo.destination) || isSymlinkPath(agentInfo.destination))) {
-                    agentSymlinksToRemove.push({ path: agentInfo.destination });
+                // Newer configs track every destination in `destinations`; older
+                // ones only have the single `destination` field.
+                const dests = agentInfo.destinations
+                    || (agentInfo.destination ? [agentInfo.destination] : []);
+                for (const dest of dests) {
+                    if (dest && (existsSync(dest) || isSymlinkPath(dest))) {
+                        agentSymlinksToRemove.push({ path: dest });
+                    }
                 }
             }
         }

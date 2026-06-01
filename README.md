@@ -6,6 +6,14 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
+**v9.2.1 (June 1, 2026):**
+
+- **GitHub agents now reach the Copilot CLI** — `add` and `pull` now also symlink GitHub agents (`.github/agents/<name>.agent.md`) into `~/.copilot/agents/`, alongside the existing VS Code `prompts/` install, so the same agents are usable by the GitHub Copilot CLI. `rm` cleans up both locations.
+- **npm-based version monitoring** — the `using-superpowers` skill and `AGENTS.md` template now check for updates by querying the npm registry (`npm view @complexthings/superpowers-agent version`) and comparing by semver precedence, prompting you to update only when npm is actually newer (replaces the old bundled-version-string comparison).
+- **Smarter skill-priority guidance** — `using-superpowers` now tells agents to load domain/context skills first, then process skills (brainstorming, planning, debugging, TDD), then implementation skills, so the domain skill can shape which process fits.
+- **`leveraging-cli-tools` nudge broadened** — the session-start context now also points agents at the skill whenever a task involves using Bash.
+- **Template cleanup** — removed `TOOLS.md.template` and the `{{TOOL_MAPPINGS}}` bootstrap placeholder; tool-equivalence guidance now lives inline in the refreshed `AGENTS.md`/`SUPERPOWERS.md` templates. `AGENTS.md` skill priority simplified to Project → Personal.
+
 **v9.1.0 (May 30, 2026):**
 
 - **Session-start hooks installed by `bootstrap`** — `bootstrap` now installs a Claude Code `SessionStart` hook into `~/.claude/settings.json` and a GitHub Copilot CLI `sessionStart` hook at `~/.copilot/hooks/superpowers.json`, so the Superpowers context is injected at the start of every session. The Claude merge is idempotent and preserves your other hooks/settings. (This replaces the old Claude Code plugin hook, which has been removed.)
@@ -50,29 +58,6 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 - 🔧 **Bun Build System** - Migrated CLI build toolchain from Node.js/npm to Bun for faster builds and simpler dependency management
 - 📋 **Smart Copilot Instructions** - `bootstrap` and `update` now process `~/.github/copilot-instructions.md` as a template, injecting the `using-superpowers` skill content and supporting marker-based idempotent updates with automatic backups
 - 📊 **Mermaid Flowcharts** - Replaced DOT-format flowcharts with Mermaid syntax across 8 skills for better rendering in GitHub, VS Code, and agent contexts
-
-**v6.5.0 (January 24, 2026):**
-
-- 🔄 **Upstream Sync** - Ported advanced features from Jesse Vincent's [obra/superpowers](https://github.com/obra/superpowers) v4.1.1:
-  - **OpenCode Plugin** (`.opencode/plugins/superpowers-agent.js`) - Session bootstrap injection via system prompt transform
-  - **using-superpowers Skill** - Behavioral enforcement with Red Flags rationalization table (12 anti-patterns)
-  - **Two-Stage Code Review** - Spec compliance review + code quality review workflow
-  - **Test Infrastructure** (`tests/`) - Agent-agnostic test scripts for skill triggering
-
-- 🔌 **OpenCode Plugin** - Native plugin for OpenCode that injects superpowers context at every session start using `experimental.chat.system.transform` hook
-
-- 📋 **Two-Stage Review Process** - Updated `subagent-driven-development` skill with spec reviewer and code quality reviewer prompts for comprehensive code review
-
-**v6.4.x (January 23-24, 2026):**
-
-- 📐 **Context Optimization** - Reduced AGENTS.md context size by ~60-70% with separate SUPERPOWERS.md reference file
-- 🔗 **Project-Level Symlinks** - `setup-skills` now creates symlinks from agent directories to `.agents/skills`
-
-**Previous Releases:**
-
-- **v6.3.x** - Codex platform support, native skill tools, extended symlinks for OpenCode/Cursor/Gemini
-- **v6.0.0** - Complete codebase modernization with 90% bundle reduction
-- **v5.4.0** - Dynamic tool mappings, automated platform detection
 
 **Key Features:**
 
@@ -272,8 +257,9 @@ Repositories can include an `agents.json` manifest to automatically install AI a
 
 | Platform | Source Directory | Destination |
 |----------|----------------|-------------|
-| `github` | `.github/agents/<name>.agent.md` | VS Code `prompts/` directory |
+| `github` | `.github/agents/<name>.agent.md` | VS Code `prompts/` directory **and** `~/.copilot/agents/` (GitHub Copilot CLI) |
 | `opencode` | `.opencode/agents/<name>.md` | `~/.config/opencode/agents/` |
+| `claude` | `.claude/agents/<name>.md` | `~/.claude/agents/` |
 
 **How it works:**
 1. After skills are installed, the system checks for `agents.json` at the repository root

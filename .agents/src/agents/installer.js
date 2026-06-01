@@ -1,6 +1,6 @@
 import { readFileSync, existsSync, unlinkSync, lstatSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { getAgentSourcePath, getAgentDestPath, getSupportedPlatforms } from './platforms.js';
+import { getAgentSourcePath, getAgentDestPaths, getSupportedPlatforms } from './platforms.js';
 import { readConfigFile, writeConfigFile } from '../core/config.js';
 import { createSymlink } from '../utils/symlinks.js';
 
@@ -129,16 +129,28 @@ export function installAgents(repoRoot, options = {}) {
         
         for (const agentName of agentNames) {
             const sourcePath = getAgentSourcePath(repoRoot, platformKey, agentName);
-            const destPath = getAgentDestPath(platformKey, agentName);
-            
-            const result = installAgentFile(sourcePath, destPath);
-            
-            if (result.installed) {
+            const destPaths = getAgentDestPaths(platformKey, agentName);
+
+            // An agent may map to more than one destination (e.g. github agents
+            // go to both the VS Code prompts dir and ~/.copilot/agents). Install
+            // each; count the agent as installed if at least one destination took.
+            const installedDests = [];
+            const errors = [];
+            for (const destPath of destPaths) {
+                const result = installAgentFile(sourcePath, destPath);
+                if (result.installed) {
+                    installedDests.push(destPath);
+                } else {
+                    errors.push(result.error);
+                }
+            }
+
+            if (installedDests.length > 0) {
                 console.log(`    ✓ ${agentName}`);
-                trackingBatch.push({ platformKey, agentName, sourcePath, destPath });
+                trackingBatch.push({ platformKey, agentName, sourcePath, destPaths: installedDests });
                 totalInstalled++;
             } else {
-                console.log(`    ✗ ${agentName}: ${result.error}`);
+                console.log(`    ✗ ${agentName}: ${errors.join('; ')}`);
                 totalFailed++;
             }
         }
@@ -153,13 +165,16 @@ export function installAgents(repoRoot, options = {}) {
         }
         config.installedAgents[repoAlias].version = version;
         
-        for (const { platformKey, agentName, sourcePath, destPath } of trackingBatch) {
+        for (const { platformKey, agentName, sourcePath, destPaths } of trackingBatch) {
             if (!config.installedAgents[repoAlias].agents[platformKey]) {
                 config.installedAgents[repoAlias].agents[platformKey] = {};
             }
             config.installedAgents[repoAlias].agents[platformKey][agentName] = {
                 source: sourcePath,
-                destination: destPath,
+                // `destination` kept for backward compatibility with older
+                // configs/readers; `destinations` is the full list to clean up.
+                destination: destPaths[0],
+                destinations: destPaths,
                 installedAt: new Date().toISOString()
             };
         }

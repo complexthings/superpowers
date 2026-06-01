@@ -99,7 +99,7 @@ Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip workflows. 
 At conversation start (periodically thereafter, e.g. once per day), check your version:
 1. **CURRENT_VERSION** — run a `superpowers-agent version` command and extract `X.Y.Z` from the `X.Y.Z` string in its output.
 2. **NPM_LATEST_VERSION** — run `npm view @complexthings/superpowers-agent version`.
-3. Compare by **semver precedence, not string comparison** (e.g. `9.2.0` > `9.0.1`). If NPM_LATEST_VERSION is newer, tell the user — do not run these yourself:
+3. Compare by **semver precedence, not string comparison** (e.g. `9.2.1` > `9.0.1`). If NPM_LATEST_VERSION is newer, tell the user — do not run these yourself:
    > Your superpowers-agent has updates (`CURRENT_VERSION` → `NPM_LATEST_VERSION`). Run:
    > ```sh
    > npm install -g @complexthings/superpowers-agent

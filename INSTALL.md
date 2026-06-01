@@ -1,177 +1,107 @@
-# Installation Guide
+# Installing Superpowers (Agent Guide)
 
-This guide covers installation options for Superpowers.
+Instructions for an AI coding agent (Claude, Gemini, Codex, GitHub Copilot, OpenCode, or any other) to install the `superpowers-agent` CLI and its skills system on the user's machine. Run the commands with your shell/Bash tool, in order.
 
 ## Prerequisites
 
-- **Git** - For cloning the repository
-- **Node.js** (v16 or higher) - For running the superpowers-agent
-- **An AI coding assistant** - GitHub Copilot, Cursor, Claude Desktop, Windsurf, Gemini, etc.
+- **Node.js** `^20 || ^22 || ^24` and **npm** — required to install and run the CLI.
+- **git** — only needed if you later install third-party skills/agents from git repos (`add`/`pull`).
 
-## Quick Installation (Recommended)
+Check first:
 
-Install Superpowers globally with one command:
+```bash
+node --version && npm --version
+```
+
+## 1. Install the CLI
 
 ```bash
 npm install -g @complexthings/superpowers-agent
 ```
 
-### What the Installer Does
+This package has **no `postinstall` script** — installing it does **not** configure anything by itself. You **must** run bootstrap next.
 
-1. **Checks Requirements**: Verifies git, node, and npm are installed
-2. **Installs Globally**: Clones to `~/.agents/superpowers`
-3. **Runs Bootstrap**: Sets up aliases, slash commands, and directories
-4. **Optional Project Integration**: Asks to update AGENTS.md, CLAUDE.md, GEMINI.md if found in current directory
-
-### After Installation
-
-You can use Superpowers from anywhere:
+## 2. Bootstrap (required, once per machine)
 
 ```bash
-superpowers --help
-superpowers find-skills
-superpowers execute systematic-debugging
-```
-
-**Slash commands available in GitHub Copilot, Cursor, Windsurf:**
-- `/brainstorm` or `/brainstorm-with-superpowers`
-- `/write-skill` or `/write-a-skill`
-- `/skills` - Discover available skills
-- `/execute` - Load and apply a specific skill
-- `/write-plan` - Create implementation plans
-- `/execute-plan` - Execute plans in batches
-
-## Manual Installation
-
-If you prefer manual installation or need project-specific setup:
-
-### Global Installation (Recommended)
-
-```bash
-# 1. Clone to global location
-mkdir -p ~/.agents
-git clone https://github.com/complexthings/superpowers.git ~/.agents/superpowers
-
-# 2. Run bootstrap
-~/.agents/superpowers/.agents/superpowers-agent bootstrap
-```
-
-### Project-Specific Installation
-
-```bash
-# 1. Clone to project directory
-mkdir -p .agents
-git clone https://github.com/complexthings/superpowers.git .agents/superpowers
-
-# 2. Run bootstrap
-.agents/superpowers/.agents/superpowers-agent bootstrap
-```
-
-### What Bootstrap Does
-
-The bootstrap process:
-1. **Installs Aliases**: Creates `superpowers` and `superpowers-agent` commands
-2. **Sets up Slash Commands**: Installs GitHub Copilot commands to VS Code user profile
-3. **Creates Instruction Files**: Generates AGENTS.md, CLAUDE.md, GEMINI.md (if not present)
-4. **Lists Skills**: Shows all available skills with descriptions
-
-## Updating Superpowers
-
-If installed globally, run:
-
-```bash
-cd ~/.agents/superpowers
-git pull origin main
 superpowers-agent bootstrap
 ```
 
-Or use the one-liner installer again - it will detect existing installation and update:
+Bootstrap is idempotent (safe to re-run). It:
+
+- Installs the `superpowers` and `superpowers-agent` aliases into `~/.local/bin` (Unix).
+- Checks npm for a newer version and tells you if one exists.
+- Syncs the skills into `~/.agents/skills/` and creates/updates the global `~/.agents/AGENTS.md`.
+- Installs a **session-start hook** for each AI assistant it detects, so the skills context is injected at the start of every session:
+  - **GitHub Copilot CLI** → `~/.copilot/hooks/superpowers.json` (when the Copilot CLI is detected or `~/.copilot` exists).
+  - **Claude Code** → a `SessionStart` hook merged into `~/.claude/settings.json` (backed up first).
+  - **OpenCode** → a plugin symlink (when the OpenCode CLI is detected).
+- Removes legacy/stale files from older versions.
+
+Undetected assistants are skipped. To install an integration anyway, force it:
 
 ```bash
-npm install -g @complexthings/superpowers-agent
+superpowers-agent bootstrap --force-copilot   # also: --force-claude, --force-opencode
+superpowers-agent bootstrap --no-update        # skip the update check
 ```
 
-## Troubleshooting
-
-### Command Not Found: superpowers
-
-If you see "command not found" after installation:
-
-1. **Reload your shell:**
-   ```bash
-   source ~/.zshrc    # or ~/.bashrc, ~/.bash_profile depending on your shell
-   ```
-
-2. **Or restart your terminal**
-
-3. **Check if aliases were installed:**
-   ```bash
-   cat ~/.zshrc | grep superpowers    # or ~/.bashrc
-   ```
-
-### Missing Dependencies
-
-If the installer reports missing dependencies:
-
-**macOS:**
-```bash
-brew install git node
-```
-
-**Linux (Debian/Ubuntu):**
-```bash
-sudo apt-get update
-sudo apt-get install git nodejs npm
-```
-
-**Windows:**
-- Install Git: https://git-scm.com/download/win
-- Install Node.js: https://nodejs.org/
-
-### Slash Commands Not Working
-
-Slash commands require:
-- **VS Code** with GitHub Copilot extension installed
-- Or **Cursor** (built-in Copilot support)
-- Or **Windsurf** (Cascade AI)
-
-If slash commands aren't working:
-1. Check that commands were installed: `ls ~/.github/copilot-instructions.d/`
-2. Restart VS Code/Cursor/Windsurf
-3. Try the full command name: `/brainstorm-with-superpowers`
-
-### Permission Denied
-
-If you get permission errors during installation:
+If bootstrap warns that `~/.local/bin` is not on `PATH`, add it to the user's shell profile (`~/.zshrc`, `~/.bashrc`, etc.) and reload:
 
 ```bash
-# Ensure ~/.agents directory is writable
-mkdir -p ~/.agents
-chmod 755 ~/.agents
-
-# Run installer again
-npm install -g @complexthings/superpowers-agent
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 ```
+
+## 3. Verify
+
+```bash
+superpowers-agent version       # prints the installed version, e.g. 9.2.1
+superpowers-agent find-skills   # lists all available skills
+```
+
+Both succeeding means the install is complete.
+
+## 4. Set up a project (run inside each project directory)
+
+```bash
+cd /path/to/project
+superpowers-agent setup-skills
+```
+
+This initializes the project for skills: creates `.agents/`, `.agents/skills/`, and `.agents/docs/`, and creates or idempotently updates instruction files — `AGENTS.md` (always), `CLAUDE.md` (only if it already exists), and `.github/copilot-instructions.md` (when GitHub Copilot is detected). Existing files are backed up before changes.
+
+## Using skills (any agent)
+
+The skills system is **agent-agnostic** — every assistant uses the same skill library. Even assistants without an auto-installed session hook (e.g. Gemini, Codex, Cursor) can use it through the CLI:
+
+```bash
+superpowers-agent find-skills [PATTERN]   # discover skills (optionally filter by keyword)
+superpowers-agent execute <skill-name>    # print a skill's path/instructions to load and follow
+superpowers-agent path <skill-name>       # print the SKILL.md file path
+```
+
+To load a skill, open the `SKILL.md` it points to with your file-read tool and follow it. When a skill names a tool you don't have (e.g. a specific todo, subagent, or edit tool), substitute your environment's closest equivalent.
+
+## Updating
+
+One command re-installs the latest CLI and re-runs bootstrap:
+
+```bash
+superpowers-agent update
+```
+
+(Equivalent to `npm install -g @complexthings/superpowers-agent` followed by `superpowers-agent bootstrap`.) After updating, re-run `superpowers-agent setup-skills` in any project you want refreshed.
 
 ## Uninstalling
 
-To remove Superpowers:
-
 ```bash
-# Remove installation
-rm -rf ~/.agents/superpowers
-
-# Remove aliases (edit your shell config)
-# Remove lines containing "superpowers" from ~/.zshrc or ~/.bashrc
-
-# Remove slash commands
-rm -rf ~/.github/copilot-instructions.d/superpowers-*.md
+npm uninstall -g @complexthings/superpowers-agent
+rm -f ~/.local/bin/superpowers ~/.local/bin/superpowers-agent   # aliases
+rm -f ~/.copilot/hooks/superpowers.json                          # Copilot CLI hook
+# Remove the Superpowers SessionStart hook block from ~/.claude/settings.json (if present)
 ```
 
-**Learn more:** [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/) by Jesse Vincent
+## Help
 
-## Getting Help
-
-- **Documentation**: https://github.com/complexthings/superpowers
-- **Issues**: https://github.com/complexthings/superpowers/issues
-- **Original Project**: https://github.com/obra/superpowers (Claude Code plugin)
+- Documentation & source: https://github.com/complexthings/superpowers
+- Issues: https://github.com/complexthings/superpowers/issues
+- Original project: [Superpowers for Claude Code](https://github.com/obra/superpowers) by Jesse Vincent

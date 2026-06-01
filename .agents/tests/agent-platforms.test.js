@@ -20,6 +20,7 @@ import {
   getAgentPlatform,
   getAgentSourcePath,
   getAgentDestPath,
+  getAgentDestPaths,
 } from "../src/agents/platforms.js";
 
 // ─── getSupportedPlatforms ───────────────────────────────────────────────────
@@ -113,5 +114,36 @@ describe("getAgentDestPath", () => {
   test("opencode dest path resolves to ~/.config/opencode/agents/<name>.md", () => {
     const expected = join(homedir(), ".config", "opencode", "agents", "my-agent.md");
     expect(getAgentDestPath("opencode", "my-agent")).toBe(expected);
+  });
+});
+
+// ─── getAgentDestPaths ───────────────────────────────────────────────────────
+
+describe("getAgentDestPaths", () => {
+  test("returns [] for unknown platform", () => {
+    expect(getAgentDestPaths("nonexistent-platform", "my-agent")).toEqual([]);
+  });
+
+  test("github resolves to both the VS Code prompts dir and ~/.copilot/agents", () => {
+    const plat = getAgentPlatform("github");
+    const vscodePath = join(plat.getDestDir(), "my-agent.agent.md");
+    const copilotPath = join(homedir(), ".copilot", "agents", "my-agent.agent.md");
+    expect(getAgentDestPaths("github", "my-agent")).toEqual([vscodePath, copilotPath]);
+  });
+
+  test("github primary destination matches getAgentDestPath", () => {
+    expect(getAgentDestPaths("github", "my-agent")[0]).toBe(
+      getAgentDestPath("github", "my-agent")
+    );
+  });
+
+  test("claude resolves to a single ~/.claude/agents path", () => {
+    const expected = join(homedir(), ".claude", "agents", "my-agent.md");
+    expect(getAgentDestPaths("claude", "my-agent")).toEqual([expected]);
+  });
+
+  test("opencode resolves to a single ~/.config/opencode/agents path", () => {
+    const expected = join(homedir(), ".config", "opencode", "agents", "my-agent.md");
+    expect(getAgentDestPaths("opencode", "my-agent")).toEqual([expected]);
   });
 });
