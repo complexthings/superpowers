@@ -11,3 +11,5 @@ docs/superpowers/*
 node_modules/
 .agents/node_modules/
 .npmrc
+.agents/skills/**/*
+!.agents/skills/.gitkeep
