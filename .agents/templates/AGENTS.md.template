@@ -21,7 +21,7 @@ Skills extend your capabilities with proven workflows.
 
 1. **Native skill tool** — load skills via your platform's native skill tool.
 2. **Symlinked skills** — Superpowers skills are symlinked into your platform's skills directory.
-3. **Fallback** — if a skill isn't found via the native tool, run `superpowers-agent find-skills [PATTERN]`.
+3. **Fallback** — if a skill isn't found via the native tool, inspect the configured skill directories and read its `SKILL.md` directly.
 4. **Tool equivalence** — when a skill references a tool you don't have, substitute your equivalent.
 
 ### Why Skills Matter

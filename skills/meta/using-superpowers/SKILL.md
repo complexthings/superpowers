@@ -22,17 +22,11 @@ Skills appear in your context as an available-skills list — scan it at the sta
 To load a skill's full instructions:
 
 - **If your platform has a native skill-loading tool**, call it with the skill's name.
-- **If it doesn't**, load the skill the way you'd open any file: read its SKILL.md directly with your file-read tool. Find the path in the skills list, or via the CLI fallback below.
+- **If it doesn't**, load the skill the way you'd open any file: read its SKILL.md directly with your file-read tool. Find the path in the skills list or configured skill directories.
 
 Either path has the same result — the skill's content enters your context and you follow it directly. Don't assume a native tool exists; if you can't find one, read the file. The point is to get the skill's content in front of you, not to use any particular mechanism.
 
-**CLI fallback** (use when the skills list isn't already in your context):
-
-```bash
-superpowers-agent find-skills              # list all skills
-superpowers-agent find-skills | grep test  # filter by topic
-superpowers-agent execute <skill-name>     # print a skill to load and follow
-```
+If the skills list is not already in your context, inspect the configured project or personal skill directories and open the relevant `SKILL.md` with your file-read tool.
 
 **Announce when using a skill:**
 > "Using Skill: [name] to [purpose]"

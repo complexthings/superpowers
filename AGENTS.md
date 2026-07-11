@@ -24,7 +24,7 @@ Skills extend your capabilities with proven workflows.
 
 1. **Native skill tool** — load skills via your platform's native skill tool.
 2. **Symlinked skills** — Superpowers skills are symlinked into your platform's skills directory.
-3. **Fallback** — if a skill isn't found via the native tool, run `superpowers-agent find-skills [PATTERN]`.
+3. **Fallback** — if a skill isn't found via the native tool, inspect the configured skill directories and read its `SKILL.md` directly.
 4. **Tool equivalence** — when a skill references a tool you don't have, substitute your equivalent.
 
 ### Why Skills Matter
@@ -104,15 +104,14 @@ From `.agents/src/cli.js` dispatch table:
 
 - **Core:** `bootstrap [--no-update] [--force]`, `version`, `check-updates`, `update [--no-reinstall]`
 - **Config:** `config-get`, `config-set <key> <value>`
-- **Skills:** `setup-skills`, `find-skills [pattern]`, `use-skill <name>`, `execute <name>`, `dir <name>`, `path <name>`, `get-helpers <skill> <search-term>`
+- **Skills:** `setup-skills`, `session-context [--format=claude|copilot|raw]`
 - **Install/manage skills:** `add <url-or-path|@alias> [path]`, `add-repository <git-url> [--as=@alias]`, `list-repositories`, `pull <url-or-path|@alias>`, `rm <url-or-path|@alias>`
 - **Integrations:** `install-cursor-hooks`, `install-aliases`
 
 ### Key Flows
 
 - **`bootstrap`** → detects installed AI platforms → symlinks skills into each platform's skills dir → writes platform config files
-- **`find-skills [pattern]`** → searches all three skill tiers → returns name/path/description
-- **`execute <skill-name>`** → locates skill → outputs SKILL.md content for the agent to follow
+- **Native skill tools** → discover and load skills from their configured directories
 - **`add <url-or-path|@alias>`** → clones a git repo or copies a local path → installs skills into `~/.agents/superpowers/skills/`
 - **`update`** → checks the npm registry for a newer version → reports if an update is available
 

@@ -4,7 +4,7 @@
 You have superpowers. Superpowers teach you new skills and capabilities.
 
 **Tool for running skills:**
-- `superpowers-agent execute <skill-name>`
+- Use your platform's native skill tool, or read the skill's `SKILL.md` directly.
 
 **Platform-specific tool mappings:**
 Tool mappings for your detected platforms are automatically included in your platform-specific configuration files:
@@ -26,8 +26,8 @@ Project skills override Claude skills, which override personal skills, which ove
 
 **Critical Rules:**
 - Before ANY task, review the skills list (shown at bootstrap)
-- If a relevant skill exists, you MUST use `superpowers-agent execute` to load it and follow instructions.
-  - YOU MUST USE YOUR `Read` TOOL TO READ THE SKILL FILE FROM THE PATH SHOWN. YOU MUST NOT `cat` the file or `print` it to yourself.
+- If a relevant skill exists, you MUST load it with your platform's native skill tool and follow its instructions.
+  - YOU MUST USE YOUR `Read` TOOL TO READ THE SKILL FILE. YOU MUST NOT `cat` or print it to yourself.
 - Announce: "I've read the [Skill Name] skill and I'm using it to [purpose]"
 - Skills with checklists require `manage_todo_list` todos for each item (or manual tracking if unavailable)
 - NEVER skip mandatory workflows (brainstorming before coding, TDD, systematic debugging)

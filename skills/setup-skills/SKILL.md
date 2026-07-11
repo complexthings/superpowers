@@ -36,10 +36,7 @@ superpowers-agent setup-skills
 
 Project-specific skills belong in `.agents/skills/`. All AI agents working in the project discover them automatically via the symlinks the command created.
 
-To verify:
-```bash
-superpowers-agent find-skills
-```
+To verify, use your platform's native skill tool and confirm the project skills are available.
 
 ## Related Skills
 

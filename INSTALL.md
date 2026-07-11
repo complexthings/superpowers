@@ -55,10 +55,9 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 
 ```bash
 superpowers-agent version       # prints the installed version, e.g. 9.2.1
-superpowers-agent find-skills   # lists all available skills
 ```
 
-Both succeeding means the install is complete.
+That succeeding means the install is complete.
 
 ## 4. Set up a project (run inside each project directory)
 
@@ -71,15 +70,7 @@ This initializes the project for skills: creates `.agents/`, `.agents/skills/`, 
 
 ## Using skills (any agent)
 
-The skills system is **agent-agnostic** — every assistant uses the same skill library. Even assistants without an auto-installed session hook (e.g. Gemini, Codex, Cursor) can use it through the CLI:
-
-```bash
-superpowers-agent find-skills [PATTERN]   # discover skills (optionally filter by keyword)
-superpowers-agent execute <skill-name>    # print a skill's path/instructions to load and follow
-superpowers-agent path <skill-name>       # print the SKILL.md file path
-```
-
-To load a skill, open the `SKILL.md` it points to with your file-read tool and follow it. When a skill names a tool you don't have (e.g. a specific todo, subagent, or edit tool), substitute your environment's closest equivalent.
+The skills system is **agent-agnostic**. Use your assistant's native skill tool to discover and load skills. If your assistant has no native skill tool, inspect the configured skill directories and open the relevant `SKILL.md` with your file-read tool. When a skill names a tool you don't have (e.g. a specific todo, subagent, or edit tool), substitute your environment's closest equivalent.
 
 ## Updating
 

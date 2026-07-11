@@ -5,12 +5,7 @@
  */
 
 // Import command modules
-import { 
-    runFindSkills, 
-    runExecute, 
-    runPath, 
-    runDir, 
-    runGetHelpers,
+import {
     runConfigGet,
     runConfigSet,
     runListRepositories
@@ -34,9 +29,6 @@ import {
     runPull,
     runRm
 } from './skills/installer.js';
-
-// Import use-skill command
-import { runUseSkill } from './skills/executor.js';
 
 // Import session-context command (used by platform session-start hooks)
 import { runSessionContext } from './integrations/session-context.js';
@@ -65,18 +57,12 @@ const commands = {
     
     // Skill commands
     'setup-skills': runSetupSkills,
-    'use-skill': () => runUseSkill(process.argv[3]),
     'session-context': runSessionContext,
-    'execute': runExecute,
-    'find-skills': runFindSkills,
     'add': runAdd,
     'add-repository': runAddRepository,
     'list-repositories': runListRepositories,
     'pull': runPull,
     'rm': runRm,
-    'dir': runDir,
-    'path': runPath,
-    'get-helpers': runGetHelpers,
     
     // Integration install commands
     'install-aliases': installAliases,
@@ -92,18 +78,12 @@ Usage:
   superpowers-agent config-get                                      # Show configuration
   superpowers-agent config-set <key> <value>                        # Update configuration
   superpowers-agent setup-skills                                    # Initialize project skills
-  superpowers-agent use-skill <skill-name>                          # Load a skill
   superpowers-agent session-context [--format=claude|copilot|raw]   # Print session-start context (used by hooks)
-  superpowers-agent find-skills                                     # List available skills
   superpowers-agent add <url-or-path|@alias> [path] [options]      # Install skills
   superpowers-agent add-repository <git-url> [--as=@alias] [opts]  # Add repository alias
   superpowers-agent list-repositories                              # List configured repository aliases
   superpowers-agent pull <url-or-path|@alias> [path] [options]     # Update skills
-  superpowers-agent rm <url-or-path|@alias> [options]             # Remove skills
-  superpowers-agent dir <skill-name>                                # Get skill directory
-  superpowers-agent path <skill-name>                               # Get skill file path
-  superpowers-agent execute <skill-name>                            # Execute a skill
-  superpowers-agent get-helpers <skill> <search-term>               # Get helper file path
+  superpowers-agent rm <url-or-path|@alias> [options]               # Remove skills
   superpowers-agent install-aliases                                 # Install universal aliases (superpowers, superpowers-agent)
 
 Documentation: https://github.com/complexthings/superpowers
