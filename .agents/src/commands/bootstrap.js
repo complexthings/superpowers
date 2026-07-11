@@ -667,8 +667,8 @@ const runBootstrap = async () => {
         } else {
             console.log('✓ Skill symlinks handled in sync step below');
             // Install/refresh the SessionStart hook in ~/.claude/settings.json so the
-            // using-superpowers + leveraging-cli-tools context is injected every session,
-            // even when Superpowers is installed via npm rather than as a Claude plugin.
+            // CLI-tools nudge is injected every session, even when Superpowers is
+            // installed via npm rather than as a Claude plugin.
             const hookResult = installClaudeSessionHook();
             if (hookResult.created) {
                 console.log(`✓ Installed SessionStart hook -> ${paths.claudeSettings.replace(paths.home, '~')}`);
