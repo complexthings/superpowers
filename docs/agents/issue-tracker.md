@@ -2,6 +2,10 @@
 
 Issues and PRDs for this repo live as GitHub issues on `complexthings/superpowers`. Use the `gh` CLI for all operations.
 
+## Pull requests as a triage surface
+
+**PRs as a request surface: no.** External pull requests are not included in the `/triage` request queue.
+
 ## Conventions
 
 - **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
@@ -11,7 +15,7 @@ Issues and PRDs for this repo live as GitHub issues on `complexthings/superpower
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
 
-Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone. This repo has a single remote, `origin` (`complexthings/superpowers`), so no `--repo` flag is needed.
+Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone. The primary remote is `origin` (`complexthings/superpowers`), so no `--repo` flag is needed.
 
 ## When a skill says "publish to the issue tracker"
 
