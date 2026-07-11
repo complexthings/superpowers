@@ -61,8 +61,6 @@ Two edits to the freshly installed `grilling/SKILL.md`:
 
 2. Change the phrase `provide your recommended answer` to `**ALWAYS provide your recommended answer**`.
 
-A patched reference copy lives at `.agents/skills/grilling/SKILL.md` — match it.
-
 ## 5. Start the grilling session
 
 Tell the user you're now starting a `grilling` session. Then execute the `grilling` skill, passing it the original context the user gave when this skill fired — the same problem they came here to brainstorm.
