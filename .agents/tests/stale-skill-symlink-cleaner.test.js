@@ -19,6 +19,8 @@ import {
 } from "fs";
 import { join, relative } from "path";
 import { tmpdir } from "os";
+import { paths } from "../src/core/paths.js";
+import { syncRepoSkillSymlinks } from "../src/utils/symlinks.js";
 import { reconcileRetiredSkillSymlinks } from "../src/utils/stale-skill-symlink-cleaner.js";
 
 let tmpRoots = [];
@@ -46,6 +48,34 @@ afterEach(() => {
 });
 
 describe("reconcileRetiredSkillSymlinks", () => {
+  test("keeps a currently bundled retired skill linked after sync then reconciliation", () => {
+    const skillDir = makeTmp();
+    const bundledSkillsDir = join(makeTmp(), "skills");
+    const target = join(bundledSkillsDir, "testing", "test-driven-development");
+    const linkPath = join(skillDir, "test-driven-development");
+    mkdirSync(target, { recursive: true });
+    writeFileSync(join(target, "SKILL.md"), "---\nname: test-driven-development\n---");
+
+    const personalSkills = Object.getOwnPropertyDescriptor(paths, "homePersonalSkills");
+    const bundledSkills = Object.getOwnPropertyDescriptor(paths, "homeSuperpowersSkills");
+    Object.defineProperties(paths, {
+      homePersonalSkills: { configurable: true, get: () => skillDir },
+      homeSuperpowersSkills: { configurable: true, get: () => bundledSkillsDir },
+    });
+
+    try {
+      syncRepoSkillSymlinks();
+      reconcile(skillDir, bundledSkillsDir);
+    } finally {
+      Object.defineProperties(paths, {
+        homePersonalSkills: personalSkills,
+        homeSuperpowersSkills: bundledSkills,
+      });
+    }
+
+    expect(isSymlink(linkPath)).toBe(true);
+  });
+
   test("removes a package-owned retired symlink whose target no longer exists", () => {
     const skillDir = makeTmp();
     const bundledSkillsDir = join(makeTmp(), "skills");
@@ -59,11 +89,10 @@ describe("reconcileRetiredSkillSymlinks", () => {
     expect(result.removed).toEqual([linkPath]);
   });
 
-  test("normalizes a relative raw target against the link parent", () => {
+  test("removes a dangling relative raw target normalized from the link parent", () => {
     const skillDir = join(makeTmp(), "managed-links");
     const bundledSkillsDir = join(makeTmp(), "package", "skills");
     const target = join(bundledSkillsDir, "writing-plans");
-    mkdirSync(target, { recursive: true });
     mkdirSync(skillDir, { recursive: true });
     const linkPath = join(skillDir, "writing-plans");
     symlinkSync(relative(skillDir, target), linkPath, "dir");
