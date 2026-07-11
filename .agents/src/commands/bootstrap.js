@@ -744,17 +744,16 @@ const runBootstrap = async () => {
     }
     console.log('\n---\n');
 
-    // One-time migration: clean up stale per-platform skill symlinks across all
-    // global and project-local platform dirs (including deprecated cursor/codex/gemini).
-    console.log('## Cleaning Up Stale Platform Skill Symlinks\n');
-    const cleanerResults = runStaleSkillSymlinkCleaner({ projectRoot: process.cwd() });
+    // Reconcile only retired links that prove package ownership from their raw target.
+    console.log('## Reconciling Retired Repo-Managed Skill Symlinks\n');
+    const cleanerResults = runStaleSkillSymlinkCleaner();
     if (cleanerResults.removed.length > 0) {
-        console.log(`  ✓ Removed ${cleanerResults.removed.length} stale skill symlink(s):`);
+        console.log(`  ✓ Removed ${cleanerResults.removed.length} retired skill symlink(s):`);
         for (const p of cleanerResults.removed) {
             console.log(`    - ${p}`);
         }
     } else {
-        console.log('  ✓ No stale platform skill symlinks found');
+        console.log('  ✓ No retired repo-managed skill symlinks found');
     }
     console.log('\n---\n');
 
