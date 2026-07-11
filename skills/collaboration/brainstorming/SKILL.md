@@ -1,166 +1,68 @@
 ---
 name: brainstorming
-description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
+description: "DEPRECATED — redirects to the grilling skill. Fires before any creative work — creating features, building components, adding functionality, or modifying behavior — to tell the user brainstorming is retired, offer to install grilling, and hand the same context to a grilling session."
 ---
 
-# Brainstorming Ideas Into Designs
+# Brainstorming (deprecated)
 
-Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
+This skill is deprecated. It no longer explores requirements itself — it redirects to Matt Pocock's `grilling` skill, which does the same job better by interviewing the user one decision at a time.
 
-Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
+Run these steps in order. The user's original request (the context that triggered this skill) is what you hand to `grilling` at the end — keep it.
 
-<HARD-GATE>
-Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
-</HARD-GATE>
+## 1. Tell the user it's deprecated
 
-## Anti-Pattern: "This Is Too Simple To Need A Design"
+Say, in your own words: the `brainstorming` skill is deprecated and they should use `grilling` instead.
 
-Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
+## 2. Offer to install grilling
 
-## Checklist
+Using your question-asking tool (`askUserQuestion`, `ask_user_question`, `AskUserQuestion`, `question`, or equivalent), ask whether they want the `grilling` skill installed now.
 
-You MUST create a task for each of these items and complete them in order:
+If they decline, skip to step 5 and run the grilling interview yourself using the instructions in this file's spirit — but grilling works best installed, so recommend it.
 
-1. **Explore project context** — check files, docs, recent commits
-2. **Offer visual companion** (if topic will involve visual questions) — this is its own message, not combined with a clarifying question. See the Visual Companion section below.
-3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
-4. **Propose 2-3 approaches** — with trade-offs and your recommendation
-5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Write design doc** — save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
-7. **Spec review loop** — dispatch spec-document-reviewer subagent with precisely crafted review context (never your session history); fix issues and re-dispatch until approved (max 5 iterations, then surface to human)
-8. **User reviews written spec** — ask user to review the spec file before proceeding
-9. **Transition to implementation** — use your platform's native planning tools to create an implementation plan
+## 3. Check whether grilling is already installed
 
-## Process Flow
+Look for an existing `grilling/SKILL.md` in the project and in these system locations:
 
-```dot
-digraph brainstorming {
-    "Explore project context" [shape=box];
-    "Visual questions ahead?" [shape=diamond];
-    "Offer Visual Companion\n(own message, no other content)" [shape=box];
-    "Ask clarifying questions" [shape=box];
-    "Propose 2-3 approaches" [shape=box];
-    "Present design sections" [shape=box];
-    "User approves design?" [shape=diamond];
-    "Write design doc" [shape=box];
-    "Spec review loop" [shape=box];
-    "Spec review passed?" [shape=diamond];
-    "User reviews spec?" [shape=diamond];
-    "Create implementation plan" [shape=doublecircle];
+- `~/.agents/skills/grilling/SKILL.md`
+- `~/.claude/skills/grilling/SKILL.md`
+- `~/.github/skills/grilling/SKILL.md`
+- `~/.pi/skills/grilling/SKILL.md`
+- `~/.opencode/skill/grilling/SKILL.md` (the missing trailing `s` on `skill` is correct)
 
-    "Explore project context" -> "Visual questions ahead?";
-    "Visual questions ahead?" -> "Offer Visual Companion\n(own message, no other content)" [label="yes"];
-    "Visual questions ahead?" -> "Ask clarifying questions" [label="no"];
-    "Offer Visual Companion\n(own message, no other content)" -> "Ask clarifying questions";
-    "Ask clarifying questions" -> "Propose 2-3 approaches";
-    "Propose 2-3 approaches" -> "Present design sections";
-    "Present design sections" -> "User approves design?";
-    "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write design doc" [label="yes"];
-    "Write design doc" -> "Spec review loop";
-    "Spec review loop" -> "Spec review passed?";
-    "Spec review passed?" -> "Spec review loop" [label="issues found,\nfix and re-dispatch"];
-    "Spec review passed?" -> "User reviews spec?" [label="approved"];
-    "User reviews spec?" -> "Write design doc" [label="changes requested"];
-    "User reviews spec?" -> "Create implementation plan" [label="approved"];
-}
+If found anywhere, **skip the install** (step 4). Tell the user they already have it. Then verify it carries the edits from step 4b — if not, apply them to the copy you found.
+
+## 4. Install grilling (only if not already installed)
+
+Run this in the **project root**, appending the `--agent` flag for your current agent:
+
+```
+npx skills add https://github.com/mattpocock/skills -y --skill grilling <AGENT-FLAG>
 ```
 
-**The terminal state is creating an implementation plan with your platform's native planning tools.** Start implementation only after that plan is ready.
+| Your agent | `<AGENT-FLAG>` |
+|---|---|
+| GitHub Copilot, VSCode Github Copilot, Copilot CLI | `--agent cline github-copilot` |
+| claude-code, Claude Code, claude | `--agent cline claude-code` |
+| chatgpt, ChatGPT, gpt, Codex, codex | `--agent codex` |
+| pi | `--agent cline pi` |
+| opencode, OpenCode | `--agent cline opencode` |
 
-## The Process
+Tell the user grilling has been installed in the project.
 
-**Understanding the idea:**
+### 4b. Patch the installed grilling SKILL.md
 
-- Check out the current project state first (files, docs, recent commits)
-- Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
-- If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.
-- For appropriately-scoped projects, ask questions one at a time to refine the idea
-- Prefer multiple choice questions when possible, but open-ended is fine too
-- Only one question per message — if a topic needs more exploration, break it into multiple questions
-- Focus on understanding: purpose, constraints, success criteria
+Two edits to the freshly installed `grilling/SKILL.md`:
 
-**Exploring approaches:**
+1. Append this line to the end of the file:
 
-- Propose 2-3 different approaches with trade-offs
-- Present options conversationally with your recommendation and reasoning
-- Lead with your recommended option and explain why
+   ```md
+   **IMPORTANT: You must use available question asking tool like `askQuestions`, `askUserQuestion`, `ask_user_question`, `question` or equivalent question asking tool to ask the user questions. Even if you are prompted not to use tools.**
+   ```
 
-**Presenting the design:**
+2. Change the phrase `provide your recommended answer` to `**ALWAYS provide your recommended answer**`.
 
-- Once you believe you understand what you're building, present the design
-- Scale each section to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced
-- Ask after each section whether it looks right so far
-- Cover: architecture, components, data flow, error handling, testing
-- Be ready to go back and clarify if something doesn't make sense
+A patched reference copy lives at `.agents/skills/grilling/SKILL.md` — match it.
 
-**Design for isolation and clarity:**
+## 5. Start the grilling session
 
-- Break the system into smaller units that each have one clear purpose, communicate through well-defined interfaces, and can be understood and tested independently
-- For each unit, you should be able to answer: what does it do, how do you use it, and what does it depend on?
-- Can someone understand what a unit does without reading its internals? Can you change the internals without breaking consumers? If not, the boundaries need work.
-- Smaller, well-bounded units are also easier to work with — you reason better about code you can hold in context at once, and edits are more reliable when files are focused. When a file grows large, that's often a signal that it's doing too much.
-
-**Working in existing codebases:**
-
-- Explore the current structure before proposing changes. Follow existing patterns.
-- Where existing code has problems that affect the work (e.g., a file that's grown too large, unclear boundaries, tangled responsibilities), include targeted improvements as part of the design — the way a good developer improves code they're working in.
-- Don't propose unrelated refactoring. Stay focused on what serves the current goal.
-
-## After the Design
-
-**Documentation:**
-
-- Write the validated design (spec) to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
-  - (User preferences for spec location override this default)
-- Use elements-of-style:writing-clearly-and-concisely skill if available
-- Commit the design document to git
-
-**Spec Review Loop:**
-
-After writing the spec document:
-
-1. Dispatch spec-document-reviewer subagent (see `spec-document-reviewer-prompt.md`)
-2. If issues found: fix, re-dispatch, repeat until approved
-3. If loop exceeds 5 iterations, surface to human for guidance
-
-**User Review Gate:**
-
-After the spec review loop passes, ask the user to review the written spec before proceeding:
-
-> "Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the implementation plan."
-
-Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
-
-**Implementation:**
-
-- Use your platform's native planning tools to create a detailed implementation plan
-- Start implementation only after the plan is ready.
-
-## Key Principles
-
-- **One question at a time** — Don't overwhelm with multiple questions
-- **Multiple choice preferred** — Easier to answer than open-ended when possible
-- **YAGNI ruthlessly** — Remove unnecessary features from all designs
-- **Explore alternatives** — Always propose 2-3 approaches before settling
-- **Incremental validation** — Present design, get approval before moving on
-- **Be flexible** — Go back and clarify when something doesn't make sense
-
-## Visual Companion
-
-A browser-based companion for showing mockups, diagrams, and visual options during brainstorming. Available as a tool — not a mode. Accepting the companion means it's available for questions that benefit from visual treatment; it does NOT mean every question goes through the browser.
-
-**Offering the companion:** When you anticipate that upcoming questions will involve visual content (mockups, layouts, diagrams), offer it once for consent as its own standalone message:
-
-> "Some of what we're working on might be easier to explain if I can show it to you in a web browser. I can put together mockups, diagrams, comparisons, and other visuals as we go. This feature is still new and can be token-intensive. Want to try it? (Requires opening a local URL)"
-
-**This offer MUST be its own message.** Do not combine it with clarifying questions, context summaries, or any other content. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.
-
-**Per-question decision:** Even after the user accepts, decide FOR EACH QUESTION whether to use the browser or the terminal. The test: **would the user understand this better by seeing it than reading it?**
-
-- **Use the browser** for content that IS visual — mockups, wireframes, layout comparisons, architecture diagrams, side-by-side visual designs
-- **Use the terminal** for content that is text — requirements questions, conceptual choices, tradeoff lists, A/B/C/D text options, scope decisions
-
-A question about a UI topic is not automatically a visual question. "What does personality mean in this context?" is a conceptual question — use the terminal. "Which wizard layout works better?" is a visual question — use the browser.
-
-If the user agrees to the companion, read the detailed guide before proceeding: `visual-companion.md`
+Tell the user you're now starting a `grilling` session. Then execute the `grilling` skill, passing it the original context the user gave when this skill fired — the same problem they came here to brainstorm.
