@@ -763,7 +763,7 @@ const runBootstrap = async () => {
     console.log('✓ Skills system ready');
     console.log('✓ Skill symlinks synced\n');
     console.log('Next steps:');
-    console.log('  - Run `superpowers-agent find-skills` to see available skills');
+    console.log('  - Use your platform\'s native skill tool to see available skills');
     console.log('  - Run `superpowers-agent setup-skills` in your project directory');
 };
 

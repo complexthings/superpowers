@@ -61,11 +61,10 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 **Key Features:**
 
-- 🎯 **Smart Skill Matching** - Just type `superpowers execute brainstorming` instead of full paths
+- 🎯 **Native Skill Discovery** - Your AI platform discovers and loads skills directly
 - 🚀 **One-Line Installer** - `npm install -g @complexthings/superpowers-agent`
 - 📦 **Skill Installation** - `add` and `add-repository` commands for Git/local skill installation
-- 🔍 **Helper Discovery** - `get-helpers` finds scripts within skills using substring matching
-- 📝 **Setup Skills** - `setup-skills` skill initializes projects with agent instruction files and skill symlinks
+- 📝 **Setup Skills** - `setup-skills` initializes projects with agent instruction files and skill symlinks
 
 ## What You Get
 
@@ -74,7 +73,7 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 - **Collaboration Skills** - Brainstorming, planning, code review, parallel agents
 - **Development Skills** - Git worktrees, finishing branches, subagent workflows
 - **Meta Skills** - Creating, testing, and sharing skills
-- **Utility Commands** - `find-skills` to discover available skills, `execute` to load them
+- **Native Skill Tools** - Skills are discovered and loaded by your AI platform
 
 Plus:
 - **Universal Skills** - Work across GitHub Copilot, Claude Code, and OpenCode
@@ -102,12 +101,9 @@ npm install -g @complexthings/superpowers-agent
 superpowers-agent bootstrap
 ```
 
-**After installation, you can use Superpowers from anywhere:**
-```bash
-superpowers --help
-superpowers find-skills
-superpowers execute systematic-debugging
-```
+**After installation, your AI platform can discover Superpowers skills automatically.**
+
+If your platform has no native skill tool, open the relevant `SKILL.md` from its configured skill directories with your file-read tool.
 
 ## Manual Installation
 
@@ -117,31 +113,9 @@ If you prefer manual installation or need project-specific setup, see [.agents/I
 
 ## Quick Start
 
-### Discovering Skills
+### Discovering and Using Skills
 
-**List all available skills:**
-```bash
-superpowers find-skills
-```
-
-**Search for specific skills:**
-```bash
-superpowers find-skills | grep -i <topic>
-```
-
-### Using Skills
-
-**Smart skill matching** - Just type the skill name or any suffix:
-```bash
-superpowers execute brainstorming              # Finds superpowers:collaboration/brainstorming
-superpowers execute test-driven-development    # Finds superpowers:testing/test-driven-development
-superpowers execute collaboration/brainstorming # More specific suffix also works
-```
-
-**Full paths still work:**
-```bash
-superpowers execute superpowers:collaboration/brainstorming
-```
+Use your AI platform's native skill tool to view available skills and load the one relevant to your task. If no native skill tool is available, inspect the configured project or personal skill directories and open the relevant `SKILL.md` with your file-read tool.
 
 **Priority order:** Project skills → Home skills → Global Superpowers skills
 
@@ -391,16 +365,7 @@ export AGENT_CLI="opencode"  # or "claude", "copilot", etc.
 
 ### CLI Commands
 
-The `superpowers-agent` CLI provides powerful commands for managing skills:
-
-**Skill Discovery:**
-```bash
-superpowers-agent find-skills              # List all available skills
-superpowers-agent execute <name>           # Load a specific skill
-superpowers-agent path <skill-name>        # Get SKILL.md file path
-superpowers-agent dir <skill-name>         # Get skill directory path
-superpowers-agent get-helpers <skill> <term>  # Find helper files in skill
-```
+The `superpowers-agent` CLI provides commands for managing installed skills. Skill discovery and loading use your AI platform's native skill tool.
 
 **Skill Installation:**
 ```bash
@@ -439,49 +404,24 @@ The platform hooks installed by `bootstrap` call this command; it is the single 
 
 ### Skill Metadata with skill.json
 
-Skills can include a `skill.json` file to define metadata for the superpowers-agent CLI. This enables powerful features like repository aliases, helper file discovery, and multi-skill repositories.
-
-**All skills in this repository include skill.json files** with version tracking, helper file listings, and aliases for convenient access.
+Skills can include a `skill.json` file to define installation metadata for the superpowers-agent CLI and multi-skill repositories.
 
 #### Single Skill Configuration
 
-For a single skill, `skill.json` defines the skill's identity and helpers:
+For a single skill, `skill.json` defines its identity:
 
 ```json
 {
   "version": "1.0.0",
   "name": "aem/block-collection-and-party",
-  "title": "AEM Block Collection and Party",
-  "helpers": [
-    "scripts/get-block-structure.js",
-    "scripts/search-block-collection-github.js",
-    "scripts/search-block-collection.js",
-    "scripts/search-block-party.js"
-  ],
-  "aliases": [
-    "block-party",
-    "block-collection"
-  ]
+  "title": "AEM Block Collection and Party"
 }
 ```
 
 **Fields:**
 - `name`: Canonical skill name (used for installation path)
 - `title`: Human-readable display name
-- `helpers`: Array of helper script paths relative to skill directory
-- `aliases`: Short names that can be used with `execute` and `get-helpers`
 - `version`: Skill version for tracking updates
-
-**Usage with helpers:**
-```bash
-# Find helper files
-superpowers-agent get-helpers block-collection search-block
-# Returns: /path/to/skill/scripts/search-block-collection.js
-
-# Use skill aliases
-superpowers-agent execute block-party
-# Loads: aem/block-collection-and-party
-```
 
 #### Multi-Skill Repository Configuration
 
@@ -534,12 +474,10 @@ superpowers-agent add @baici
 
 #### Benefits of skill.json
 
-1. **Helper Discovery**: Find and execute helper scripts easily
-2. **Skill Aliases**: Use short, memorable names instead of full paths
-3. **Repository Management**: Organize and share multi-skill collections
-4. **Automatic Detection**: CLI reads metadata for smart defaults
-5. **Installation Paths**: Control where skills install with `name` field
-6. **Version Tracking**: Each skill tracks its version independently
+1. **Repository Management**: Organize and share multi-skill collections
+2. **Automatic Detection**: CLI reads metadata for installation defaults
+3. **Installation Paths**: Control where skills install with `name` field
+4. **Version Tracking**: Each skill tracks its version independently
 
 ## How It Works
 

@@ -18,45 +18,15 @@ Before starting any task, discover what skills are available so you don't reinve
 
 ## How to Find Skills
 
-### Native Skill Tool (Primary Method — All Platforms)
+### Native Skill Tool
 
-Most AI coding assistants expose a native skill or tool mechanism. Use it first:
+Most AI coding assistants expose a native skill mechanism. Use it first:
 
-- **If your platform has a native `skill` tool**: use it to list or load skills by name — this is the fastest path
-- **If skills appear in your system context** (e.g., an `<available_skills>` block or similar): scan that list before starting any task
-- **If your platform supports `@skill` mentions or tool invocations**: use those to activate a skill directly
+- If your platform has a native skill tool, use it to list or load skills by name.
+- If skills appear in your system context (for example, an `<available_skills>` block), scan that list before starting.
+- If your platform supports skill mentions or tool invocations, use those to activate a skill directly.
 
-When in doubt, check whatever mechanism your platform provides to discover available skills before doing anything else.
-
-### CLI: superpowers-agent find-skills
-
-```bash
-superpowers-agent find-skills
-```
-
-This shows all skills from superpowers-managed locations with their names and descriptions.
-
-**Filter by piping to grep:**
-```bash
-# Find testing-related skills
-superpowers-agent find-skills | grep -i test
-
-# Find debugging skills
-superpowers-agent find-skills | grep -i debug
-
-# Find skills about a topic
-superpowers-agent find-skills | grep -i brainstorm
-```
-
-**Get the path to a specific skill:**
-```bash
-superpowers-agent path <skill-name>
-```
-
-**Load and execute a skill directly:**
-```bash
-superpowers-agent execute <skill-name>
-```
+If no native list is available, inspect the project's `.agents/skills/` directory or the skill paths provided by your platform. Open the relevant `SKILL.md` with your file-read tool.
 
 ## Skill Locations and Priority
 
@@ -74,9 +44,7 @@ Project skills always win. When a project skill and a system skill share the sam
 
 ## After Finding a Skill
 
-Once you identify a relevant skill:
-
-1. Load it using your platform's native skill tool, or via `superpowers-agent execute <name>`
+1. Load it with your platform's native skill tool, or open its `SKILL.md` with your file-read tool.
 2. Announce: "Using Skill: [name] to [purpose]"
 3. Follow the skill's instructions exactly
 
@@ -85,14 +53,14 @@ If a skill exists for your task, using it is not optional — skills encode solu
 ## Common Mistakes
 
 **Don't:**
-- Skip checking for skills because "this is simple" — simple tasks are exactly when you're most likely to miss that a skill exists
-- Assume you remember what skills are available — the list changes, check fresh each time
-- Search only by exact name — grep descriptions too, skills may use different terminology
+- Skip checking for skills because "this is simple"
+- Assume you remember what skills are available
+- Search only by exact name
 
 **Do:**
 - Check at the start of every task, before writing code or asking clarifying questions
-- Search broadly (e.g., `grep -i plan` finds `writing-plans`, `executing-plans`, etc.)
-- If in doubt whether a skill applies, load it and check — it costs little to verify
+- Search broadly for related descriptions
+- If in doubt whether a skill applies, load it and check
 
 ## Related Skills
 

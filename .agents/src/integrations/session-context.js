@@ -9,7 +9,7 @@
  * channels so they never drift.
  */
 
-import { locateSkillByNameOrAlias } from '../skills/locator.js';
+import { locateSkill } from '../skills/locator.js';
 import { formatSkillForExecution } from '../skills/executor.js';
 
 const PREAMBLE = `You have superpowers.
@@ -26,7 +26,7 @@ const CLI_TOOLS_NUDGE = `---
  * @returns {string|null} The wrapped context, or null if using-superpowers can't be located.
  */
 export const buildSessionContext = () => {
-    const location = locateSkillByNameOrAlias('using-superpowers');
+    const location = locateSkill('using-superpowers');
     if (!location) return null;
 
     let skillBlock;

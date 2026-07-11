@@ -78,22 +78,14 @@ def categorize_functions() -> Dict[str, List[str]]:
             "printVersion",
         ],
         "skills/finder.js": [
-            "findSkillsInDir",
-            "findSkillFile",
             "findMatchingSkills",
-            "printSkill",
-        ],
-        "skills/locator.js": [
-            "locateSkill",
-            "locateSkillByNameOrAlias",
             "throwAmbiguousError",
         ],
-        "skills/executor.js": [],
+        "skills/locator.js": ["locateSkill"],
+        "skills/executor.js": ["formatSkillForExecution"],
         "skills/parser.js": [
             "parseSkillName",
-            "readSkillJson",
-            "readSkillJsonFromPath",
-            "findHelperInSkill",
+            "skillTypes",
         ],
         "skills/installer.js": [
             "parseGitUrl",
@@ -134,18 +126,9 @@ def categorize_functions() -> Dict[str, List[str]]:
             "updateReadmeWithAutoUpdateDocs",
         ],
         "commands/simple-commands.js": [
-            "runFindSkills",
-            "runExecute",
-            "runUseSkill",
-            "runPath",
-            "runDir",
-            "runGetHelpers",
-            "runAdd",
-            "runAddRepository",
-            "runGetConfig",
             "runConfigGet",
             "runConfigSet",
-            "getConfig",
+            "runListRepositories",
         ],
     }
 
