@@ -64,4 +64,29 @@ describe("bundled skills", () => {
 
     expect(skills).toEqual(retainedSkills.map((skill) => `skills/${skill}`));
   });
+
+  test("gives every manifest bundle valid install metadata", () => {
+    const { skills } = JSON.parse(readFileSync(join(rootDir, "skill.json"), "utf8"));
+
+    for (const skill of skills) {
+      const relativePath = skill.slice("skills/".length);
+      const metadataPath = join(rootDir, skill, "skill.json");
+      const metadata = JSON.parse(readFileSync(metadataPath, "utf8"));
+
+      expect(Object.keys(metadata).sort()).toEqual(
+        metadata.helpers
+          ? ["aliases", "helpers", "name", "title", "version"]
+          : ["aliases", "name", "title", "version"],
+      );
+      expect(metadata).toMatchObject({
+        version: expect.any(String),
+        name: `superpowers:${relativePath}`,
+        title: expect.any(String),
+        aliases: relativePath.includes("/")
+          ? [relativePath.split("/").at(-1), relativePath]
+          : [relativePath],
+      });
+      if (metadata.helpers) expect(metadata.helpers).toEqual(expect.any(Array));
+    }
+  });
 });

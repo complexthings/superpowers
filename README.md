@@ -68,11 +68,10 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What You Get
 
-- **Testing Skills** - TDD, async testing, anti-patterns
-- **Debugging Skills** - Systematic debugging, root cause tracing, verification
-- **Collaboration Skills** - Brainstorming, planning, code review, parallel agents
-- **Development Skills** - Git worktrees, finishing branches, subagent workflows
-- **Meta Skills** - Creating, testing, and sharing skills
+- **Guided Brainstorming** - Turn ideas into clear, reviewed designs
+- **Efficient CLI Workflows** - Search, inspect, and shape command output with less noise
+- **Skill Metadata** - Generate consistent `skill.json` files from existing skills
+- **Skill Setup** - Initialize project skill infrastructure
 - **Native Skill Tools** - Skills are discovered and loaded by your AI platform
 
 Plus:
