@@ -127,7 +127,7 @@ Aliases allow users to reference the skill with shorter names.
 ]
 ```
 
-**Optional:** Add a well-known abbreviation as a third alias if one exists (e.g., `"tdd"` for test-driven-development, `"sdd"` for subagent-driven-development). Only add an abbreviation if it's clearly recognized — don't invent aliases.
+**Optional:** Add a well-known abbreviation as a third alias only when it is clearly recognized — don't invent aliases.
 
 **Do NOT add random synonyms** — stick to the standard two aliases unless an obvious abbreviation exists.
 
@@ -244,7 +244,7 @@ metadata:
 - ❌ `keyConcepts` - Document in SKILL.md content
 - ❌ `overview` - Document in SKILL.md content
 
-### Discovery Fields (handled by find-skills)
+### Discovery Fields (handled by native skill discovery)
 - ❌ `tags` - Use SKILL.md frontmatter fields for search
 - ❌ `keywords` - Use SKILL.md content for search
 - ❌ `triggers` - Use SKILL.md `description` field
@@ -276,8 +276,8 @@ metadata:
 
 | Rationalization | Counter |
 |-----------------|---------|
-| "Adding `description` helps with discoverability" | NO. Description is in SKILL.md frontmatter. find-skills reads that. |
-| "`tags` make it easier to categorize and search" | NO. find-skills uses SKILL.md content and frontmatter. Path already indicates category. |
+| "Adding `description` helps with discoverability" | NO. Description is in SKILL.md frontmatter. Native skill discovery reads it. |
+| "`tags` make it easier to categorize and search" | NO. Native skill discovery uses SKILL.md content and frontmatter. Path already indicates category. |
 | "`capabilities` document what the skill does" | NO. That's what SKILL.md content is for. skill.json is for tooling, not documentation. |
 | "`triggers` help agents know when to use this" | NO. SKILL.md `description` field serves this purpose. Don't duplicate. |
 | "These fields might be useful for future features" | YAGNI violation. No imaginary consumers. Only add fields when tooling actually needs them. |

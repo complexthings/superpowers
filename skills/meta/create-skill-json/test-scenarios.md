@@ -23,7 +23,7 @@ Agent adds fields like: `description`, `tags`, `capabilities`, `triggers`, `keyC
 
 ## Common Rationalizations to Block
 - "Adding description helps with discoverability" → NO, description is in SKILL.md
-- "Tags make it easier to find" → NO, find-skills uses SKILL.md frontmatter
+- "Tags make it easier to find" → NO, native skill discovery uses SKILL.md frontmatter
 - "Capabilities document what it does" → NO, that's in SKILL.md content
 - "These fields might be useful later" → YAGNI violation
 - "Other tools might use them" → No other tools exist, don't design for imaginary consumers

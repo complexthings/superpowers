@@ -40,5 +40,5 @@ To verify, use your platform's native skill tool and confirm the project skills 
 
 ## Related Skills
 
-- **finding-skills** — Discover available skills after setup
-- **using-superpowers** — How the full skills system works
+- Use your platform's native skill tool to discover available skills after setup.
+- Follow your platform's skill guidance for loading and applying them.

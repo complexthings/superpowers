@@ -76,7 +76,7 @@ The CLI has **no runtime dependencies** (pure Node.js/Bun built-ins). The only d
 
 ## Testing
 
-There is **no automated test runner** and no `test` script. Verification is manual: run the CLI commands directly, or drive the saved prompt scenarios in `.agents/prompts/`. State this plainly rather than inventing a test command.
+Run the automated test suite from `.agents` with `bun test`. There is no root-level test script; run CLI commands directly for manual acceptance checks.
 
 ## Architecture
 

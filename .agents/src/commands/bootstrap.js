@@ -201,14 +201,12 @@ const installAliases = () => {
 /**
  * Update .github/copilot-instructions.md in a project with Superpowers content
  * 
- * Reads the template from .github/copilot-instructions.md in the superpowers repo,
- * replaces ${content} with the using-superpowers SKILL.md content, and installs to
- * the project's .github/copilot-instructions.md.
+ * Reads the template from .github/copilot-instructions.md in the superpowers repo
+ * and installs it to the project's .github/copilot-instructions.md.
  * Uses marker-based update-in-place for idempotent updates.
  */
 const updateCopilotInstructions = (projectRoot) => {
     const instructionsSource = join(paths.superpowersRepo, '.github', 'copilot-instructions.md');
-    const skillSource = join(paths.superpowersRepo, 'skills', 'meta', 'using-superpowers', 'SKILL.md');
     const instructionsDest = join(projectRoot, '.github', 'copilot-instructions.md');
     
     const START_MARKER = '<!-- SUPERPOWERS_-_INSTRUCTIONS_START -->';
@@ -218,22 +216,12 @@ const updateCopilotInstructions = (projectRoot) => {
         return { error: true, message: 'Source template not found' };
     }
     
-    if (!existsSync(skillSource)) {
-        return { error: true, message: 'using-superpowers SKILL.md not found' };
-    }
-    
-    // Read the template and skill content
-    let templateContent;
-    let skillContent;
+    let processedContent;
     try {
-        templateContent = readFileSync(instructionsSource, 'utf8');
-        skillContent = readFileSync(skillSource, 'utf8');
+        processedContent = readFileSync(instructionsSource, 'utf8');
     } catch (error) {
-        return { error: true, message: `Failed to read source files: ${error.message}` };
+        return { error: true, message: `Failed to read source template: ${error.message}` };
     }
-    
-    // Replace ${content} placeholder with actual skill content
-    const processedContent = templateContent.replace('${content}', skillContent);
     
     // Verify markers are present in the processed content
     if (!processedContent.includes(START_MARKER) || !processedContent.includes(END_MARKER)) {

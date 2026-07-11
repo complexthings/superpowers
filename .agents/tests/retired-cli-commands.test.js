@@ -4,13 +4,13 @@ import { join } from "path";
 
 const cli = join(import.meta.dir, "..", "superpowers-agent");
 const run = (...args) => spawnSync(cli, args, { encoding: "utf8" });
+const defaultHelp = run();
 
 describe("retired CLI commands", () => {
   // Test list: each retired command falls back to default help; version still dispatches.
   test.each(["find-skills", "get-helpers", "use-skill", "execute", "dir", "path"])(
     "%s is unavailable",
     (command) => {
-      const defaultHelp = run();
       const result = run(command);
 
       expect(result.status).toBe(0);
