@@ -71,14 +71,13 @@ describe("updateCopilotInstructions — create when absent", () => {
     expect(content).toContain(END_MARKER);
   });
 
-  test("created file contains using-superpowers SKILL.md content", () => {
+  test("created file gives native-skill guidance without retired content", () => {
     const projectRoot = makeTempDir();
     updateCopilotInstructions(projectRoot);
     const dest = join(projectRoot, ".github", "copilot-instructions.md");
     const content = readFileSync(dest, "utf8");
-    // The using-superpowers SKILL.md starts with a YAML frontmatter or a heading
-    // It contains the text "Using Superpowers"
-    expect(content).toContain("Using Superpowers");
+    expect(content).toContain("native skill tool");
+    expect(content).not.toContain("using-superpowers");
   });
 });
 

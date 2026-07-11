@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
-const skillsDir = join(import.meta.dir, "..", "..", "skills");
+const rootDir = join(import.meta.dir, "..", "..");
+const skillsDir = join(rootDir, "skills");
 
 const retiredSkills = [
   "architecture/preserving-productive-tensions",
@@ -56,5 +57,11 @@ describe("bundled skills", () => {
     const missing = retainedSkills.filter((skill) => !existsSync(join(skillsDir, skill)));
 
     expect(missing).toEqual([]);
+  });
+
+  test("publishes exactly the retained bundles in skill.json", () => {
+    const { skills } = JSON.parse(readFileSync(join(rootDir, "skill.json"), "utf8"));
+
+    expect(skills).toEqual(retainedSkills.map((skill) => `skills/${skill}`));
   });
 });
