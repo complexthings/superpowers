@@ -75,7 +75,7 @@ export const reconcileRetiredSkillSymlinks = ({
       if (!lstatSync(linkPath).isSymbolicLink()) continue;
 
       const target = resolve(skillDir, readlinkSync(linkPath));
-      if (existsSync(target) || !isDescendantOf(target, bundledRoot) || !retiredSkillNames.has(basename(target))) {
+      if (!isDescendantOf(target, bundledRoot) || !retiredSkillNames.has(basename(target))) {
         skipped++;
         continue;
       }
