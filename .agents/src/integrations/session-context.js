@@ -2,19 +2,7 @@
  * Session context builder — the single source of truth for the prompt that
  * every platform injects at session start (Claude Code hook, GitHub Copilot
  * hook, OpenCode plugin, and the bundled plugin session-start.sh).
- *
- * It returns the `using-superpowers` skill content wrapped in the standard
- * preamble, followed by an imperative directive to use the leveraging-cli-tools
- * skill. Centralizing it here keeps the injected prompt identical across all
- * channels so they never drift.
  */
-
-import { locateSkillByNameOrAlias } from '../skills/locator.js';
-import { formatSkillForExecution } from '../skills/executor.js';
-
-const PREAMBLE = `You have superpowers.
-
-**IMPORTANT: The using-superpowers skill content is included below. It is ALREADY LOADED - you are currently following it. Do NOT use the skill tool to load "using-superpowers" again - that would be redundant.**`;
 
 // Imperative, high-priority pointer (per design) — names the skill so the agent loads it.
 const CLI_TOOLS_NUDGE = `---
@@ -23,37 +11,16 @@ const CLI_TOOLS_NUDGE = `---
 
 /**
  * Build the raw injected-context text (no platform JSON wrapping).
- * @returns {string|null} The wrapped context, or null if using-superpowers can't be located.
+ * @returns {string} The wrapped CLI-tools nudge.
  */
-export const buildSessionContext = () => {
-    const location = locateSkillByNameOrAlias('using-superpowers');
-    if (!location) return null;
-
-    let skillBlock;
-    try {
-        skillBlock = formatSkillForExecution(
-            location.skillFile,
-            location.sourceType,
-            location.actualSkillPath
-        );
-    } catch {
-        return null;
-    }
-
-    return `<EXTREMELY_IMPORTANT>
-${PREAMBLE}
-
-${skillBlock}
-
+export const buildSessionContext = () => `<EXTREMELY_IMPORTANT>
 ${CLI_TOOLS_NUDGE}
 </EXTREMELY_IMPORTANT>`;
-};
 
 /**
  * Format the session context for a specific platform's hook output.
  * @param {'claude'|'copilot'|'raw'} format
- * @returns {string} JSON (claude/copilot) or raw text. Always safe to print;
- *   emits an empty-context payload if using-superpowers can't be found.
+ * @returns {string} JSON (claude/copilot) or raw text. Always safe to print.
  */
 export const formatSessionContext = (format = 'raw') => {
     const context = buildSessionContext();
@@ -63,17 +30,17 @@ export const formatSessionContext = (format = 'raw') => {
         return JSON.stringify({
             hookSpecificOutput: {
                 hookEventName: 'SessionStart',
-                additionalContext: context || '',
+                additionalContext: context,
             },
         });
     }
 
     if (format === 'copilot') {
         // GitHub Copilot CLI sessionStart hook schema
-        return JSON.stringify({ additionalContext: context || '' });
+        return JSON.stringify({ additionalContext: context });
     }
 
-    return context || '';
+    return context;
 };
 
 /**
