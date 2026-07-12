@@ -6,6 +6,13 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What's New
 
+**v10.0.2 (July 12, 2026):**
+
+- **Claude Code skill discovery fixed** — `bootstrap` now mirrors the repo's skills into `~/.claude/skills` (Claude ignores `~/.agents/skills`), gated on `~/.claude` existing, so Claude Code actually finds the bundled skills.
+- **`update` is now print-only and package-manager–aware** — it no longer runs a global install for you. It detects how the CLI was installed (npm/pnpm/yarn/bun/deno) and prints the exact command plus `bootstrap && setup-skills`.
+- **Retired-skill cleanup extended to `~/.claude/skills`** — the stale-skill cleaner prunes retired skills there too, proving ownership per-link so your own skills are untouched.
+- **Node.js versions refreshed** — Node 20 (EOL) dropped, Node 26 added. Supported engines are now `^22 || ^24 || ^26`.
+
 **v10.0.0 (July 12, 2026):**
 
 - ⚠️ **Leaner bundled surface** — most bundled skills were retired. The package now ships only four: `brainstorming`, `leveraging-cli-tools`, `create-skill-json`, and `setup-skills`. Install anything else with `superpowers-agent add`.
@@ -260,14 +267,15 @@ superpowers-agent pull @my-agents
 
 ### Skill Storage
 
-As of v9.0.0, Superpowers no longer creates per-platform skill symlinks. Skills live in just two canonical locations and the supported agents discover them there directly:
+Skills live in a small set of canonical locations and the supported agents discover them there directly:
 
 - **Global skills** — bundled Superpowers skills in `~/.agents/superpowers/skills/` and personal skills in `~/.agents/skills/`
 - **Project skills** — `.agents/skills/` inside a project (created/managed by `setup-skills`)
+- **Claude Code mirror** — because Claude Code ignores `~/.agents/skills`, `bootstrap` also mirrors the repo's skills into `~/.claude/skills` (only when `~/.claude` exists) so Claude can find them.
 
 **Stale symlink cleanup:**
 
-A one-time, `skill.json`-gated cleaner runs during `superpowers-agent bootstrap`. It scrubs deprecated per-platform skill symlink directories left behind by older versions — including legacy Cursor, Codex, and Gemini directories — without touching agent personas in `~/.claude/agents/` or the supported platforms.
+A one-time, `skill.json`-gated cleaner runs during `superpowers-agent bootstrap`. It scrubs deprecated per-platform skill symlink directories left behind by older versions — including legacy Cursor, Codex, and Gemini directories — and reconciles `~/.claude/skills` so retired skills are pruned there too. Ownership is proved per-link from the raw target, so agent personas in `~/.claude/agents/` and your own skills are never touched.
 
 ## Skill Priority
 
@@ -495,21 +503,22 @@ Supported flags: `--force-copilot`, `--force-claude`, `--force-opencode`
 
 ### Manual Updates
 
-Update anytime with the dedicated update command:
+Check for updates anytime with the dedicated update command:
 
 ```bash
 superpowers-agent update
 ```
 
-This command:
-- Pulls latest changes from GitHub
-- Detects which integration files changed
-- Reinstalls only affected integrations
-- Shows summary of what was updated
+This command is **print-only** — it never runs a global install for you (that can need sudo/permissions and should be your explicit call). It:
+- Checks the npm registry for a newer version
+- Detects how the CLI was installed (npm/pnpm/yarn/bun/deno) from its install path
+- Prints the exact install command for your package manager, followed by `superpowers-agent bootstrap && superpowers-agent setup-skills`
 
-**Update without reinstalling integrations:**
+For example, with an npm install it prints:
+
 ```bash
-superpowers update --no-reinstall
+npm install -g @complexthings/superpowers-agent
+superpowers-agent bootstrap && superpowers-agent setup-skills
 ```
 
 ### Configuration

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [10.0.2] - 2026-07-12
+
+Maintenance release. Fixes Claude Code skill discovery, makes `update` a safe print-only command, prunes retired skills, and refreshes the supported Node.js versions. Rolls up the changes previously shipped as 10.0.1.
+
+### Fixed
+- **Claude Code skill discovery** — `bootstrap` now mirrors the repo's skills into `~/.claude/skills` (Claude ignores `~/.agents/skills`), gated on `~/.claude` existing, so Claude Code actually finds the bundled skills.
+- **Retired-skill cleanup in `~/.claude/skills`** — the stale-skill cleaner now reconciles `~/.claude/skills` as well, pruning retired skills (e.g. `collision-zone-thinking`, `scale-game`). Ownership is proved per-link from the raw target, so your own skills are never touched.
+
+### Changed
+- **`update` is print-only and package-manager–aware** — it no longer runs `npm install -g` for you. It detects how the CLI was installed (npm/pnpm/yarn/bun/deno) from the install path and prints the exact install command plus `bootstrap && setup-skills`. Templates and docs drop the redundant `superpowers-agent update &&`.
+- **Node.js versions refreshed** — Node 20 (EOL) dropped, Node 26 added. Supported engines are now `^22 || ^24 || ^26`.
+- **Trimmed `.agents/superpowers-bootstrap.md`** — removed outdated content.
+
 ## [10.0.0] - 2026-07-12
 
 Major release. Reduces the bundled-skill and CLI surface to a lean, harness-agnostic core, adds Pi and OpenAI Codex as supported harnesses, and integrates RTK and ponytail into the CLI-tooling workflow.
