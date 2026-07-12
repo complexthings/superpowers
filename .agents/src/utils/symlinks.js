@@ -351,11 +351,12 @@ const collectSkillDirs = (dir, results = []) => {
  * - If the symlink exists but points elsewhere: update it.
  * - If no symlink exists: create it.
  *
+ * @param {string} [targetDir] - dir to populate (default ~/.agents/skills). Pass
+ *   ~/.claude/skills to also mirror skills where Claude reads them.
  * @returns {{ created: number, existed: number, updated: number, errors: string[] }}
  */
-export const syncRepoSkillSymlinks = () => {
+export const syncRepoSkillSymlinks = (targetDir = paths.homePersonalSkills) => {
     const repoSkillsDir = paths.homeSuperpowersSkills; // <repo>/skills
-    const targetDir = paths.homePersonalSkills;        // ~/.agents/skills
 
     if (!existsSync(repoSkillsDir)) {
         return { created: 0, existed: 0, updated: 0, errors: [`Skills directory not found: ${repoSkillsDir}`] };
