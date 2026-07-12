@@ -1,6 +1,6 @@
 {
   "name": "@complexthings/superpowers-agent",
-  "version": "10.0.0",
+  "version": "10.0.1",
   "description": "Superpowers agent CLI — skills system for AI coding agents",
   "type": "module",
   "bin": {
@@ -22,7 +22,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": "^20 || ^22 || ^24"
+    "node": "^22 || ^24 || ^26"
   },
   "scripts": {},
   "author": {
