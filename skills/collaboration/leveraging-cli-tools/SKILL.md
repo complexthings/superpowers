@@ -105,7 +105,6 @@ In Claude Code the `Grep` and `Glob` tools are themselves built on ripgrep — p
 
 ## When NOT to use
 
-- A tiny one-off (a handful of files, well under a megabyte) where the standard tool is already at hand.
 - The user declined the install — note the cost once, then use the fallback.
 - A teaching context where the standard tool is the point.
 - Output you already shaped with a selector — don't add a `slim` pass for its own sake.
