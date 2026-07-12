@@ -22,7 +22,7 @@ import { detectTool } from '../utils/file-ops.js';
 import { runUpdate } from './update.js';
 
 // Import symlink utilities
-import { syncRepoSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
+import { syncRepoSkillSymlinks, syncProjectSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
 import { runStaleSkillSymlinkCleaner } from '../utils/stale-skill-symlink-cleaner.js';
 
 /**
@@ -356,6 +356,10 @@ const runSetupSkills = () => {
     } else {
         console.log('✓ .agents/skills/ directory exists');
     }
+
+    // Symlink each harness's project skills dir back to .agents/skills/
+    const skillSymlinkResults = syncProjectSkillSymlinks(projectRoot);
+    console.log(`✓ Synced per-harness skills symlinks (${skillSymlinkResults.created} created, ${skillSymlinkResults.skipped} skipped)`);
 
     // Create docs directory and copy SUPERPOWERS.md
     const docsDir = join(agentsDir, 'docs');
