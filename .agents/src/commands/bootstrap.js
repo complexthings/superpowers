@@ -2,7 +2,7 @@
  * Bootstrap and setup commands for superpowers-agent
  */
 
-import { existsSync, readFileSync, writeFileSync, rmSync, lstatSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, rmSync, lstatSync, readdirSync } from 'fs';
 import { join, dirname, parse } from 'path';
 import { execSync } from 'child_process';
 import { platform } from 'os';
@@ -26,6 +26,27 @@ import { syncRepoSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
 import { runStaleSkillSymlinkCleaner } from '../utils/stale-skill-symlink-cleaner.js';
 
 /**
+ * Backup a file, removing any prior backup(s) first so exactly one
+ * `<file>.backup-<date>` survives per file across repeated runs.
+ * Returns the new backup path. Throws on failure (caller catches).
+ */
+const backupFileDeduped = (filePath) => {
+    const dir = dirname(filePath);
+    const base = parse(filePath).base;
+    if (existsSync(dir)) {
+        for (const entry of readdirSync(dir)) {
+            if (entry.startsWith(`${base}.backup`)) {
+                rmSync(join(dir, entry));
+            }
+        }
+    }
+    const timestamp = new Date().toISOString().split('T')[0];
+    const backupPath = `${filePath}.backup-${timestamp}`;
+    execSync(`cp "${filePath}" "${backupPath}"`, { stdio: 'pipe' });
+    return backupPath;
+};
+
+/**
  * Update a platform-specific file with skills content
  */
 const updatePlatformFile = (filePath, templateContent, platforms, createIfMissing = true) => {
@@ -46,11 +67,10 @@ const updatePlatformFile = (filePath, templateContent, platforms, createIfMissin
     const wrappedContent = `<!-- SUPERPOWERS_SKILLS_START -->\n${content}\n<!-- SUPERPOWERS_SKILLS_END -->`;
     
     if (fileExists) {
-        // Backup existing file
-        const timestamp = new Date().toISOString().split('T')[0];
-        const backupPath = `${filePath}.backup-${timestamp}`;
+        // Backup existing file (dedup: keep exactly one backup per file)
+        let backupPath;
         try {
-            execSync(`cp "${filePath}" "${backupPath}"`, { stdio: 'pipe' });
+            backupPath = backupFileDeduped(filePath);
         } catch (error) {
             return { updated: false, error: true, message: `Failed to backup: ${error.message}` };
         }
@@ -247,11 +267,10 @@ const updateCopilotInstructions = (projectRoot) => {
             return { error: true, message: `Failed to read existing file: ${error.message}` };
         }
         
-        // Backup the existing file
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupPath = `${instructionsDest}.backup-${timestamp}`;
+        // Backup the existing file (dedup: keep exactly one backup per file)
+        let backupPath;
         try {
-            execSync(`cp "${instructionsDest}" "${backupPath}"`, { stdio: 'pipe' });
+            backupPath = backupFileDeduped(instructionsDest);
         } catch (error) {
             return { error: true, message: `Failed to backup: ${error.message}` };
         }
@@ -358,10 +377,8 @@ const runSetupSkills = () => {
     const agentsMdExists = existsSync(agentsMdPath);
     
     if (agentsMdExists) {
-        const timestamp = new Date().toISOString().split('T')[0];
-        const backupPath = `${agentsMdPath}.backup-${timestamp}`;
         try {
-            execSync(`cp "${agentsMdPath}" "${backupPath}"`, { stdio: 'pipe' });
+            const backupPath = backupFileDeduped(agentsMdPath);
             console.log(`✓ Backed up existing AGENTS.md to ${parse(backupPath).base}`);
         } catch (error) {
             console.log(`✗ Failed to backup AGENTS.md: ${error.message}`);
@@ -748,5 +765,6 @@ export {
     runSetupSkills,
     installAliases,
     updatePlatformFile,
-    updateCopilotInstructions
+    updateCopilotInstructions,
+    backupFileDeduped
 };
