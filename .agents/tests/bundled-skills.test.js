@@ -80,7 +80,7 @@ describe("bundled skills", () => {
       );
       expect(metadata).toMatchObject({
         version: expect.any(String),
-        name: `superpowers:${relativePath}`,
+        name: relativePath.split("/").at(-1),
         title: expect.any(String),
         aliases: relativePath.includes("/")
           ? [relativePath.split("/").at(-1), relativePath]
