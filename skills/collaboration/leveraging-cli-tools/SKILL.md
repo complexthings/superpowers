@@ -50,6 +50,8 @@ Picking `rtk` is only half of it. The other half is using it with discipline —
 
 **Prefer `rtk rg` over `rtk grep`.** They cover the same ground, but `rtk rg` runs ripgrep underneath and is faster and more efficient — use it as the default for code/text search.
 
+**This includes interpreters and runners you'd otherwise call bare.** Run scripts through `rtk` too — `rtk python script.py`, `rtk python -c '...'` (and likewise `rtk node …`) — so their output stays inside the same token-optimized, usage-tracked invocation instead of dropping to raw `python3`/`node`.
+
 **2 — Ask for less: use the flag or selector that returns the answer's _shape_.** The biggest single win is never pulling raw output into context. Match the request to the question:
 
 | Question | Command | Returns |
@@ -83,6 +85,7 @@ In Claude Code the `Grep` and `Glob` tools are themselves built on ripgrep — p
 - Reading files before filtering them with `rtk rg`.
 - Reaching for `rtk grep` by habit when `rtk rg` covers the same ground faster.
 - Running a tool raw (`ast-grep`, `yq`, `sd`, …) when `rtk proxy <tool>` would give the same result inside the standard invocation pattern.
+- Running an interpreter raw (`python3`, `node`, …) when `rtk python` / `rtk node` would keep it inside rtk's optimized invocation.
 - Piping a command's full output into context to eyeball it, when `-l`/`-c`/`-o` or a `rtk jq` projection would return just the answer.
 - Concluding "no matches" from a default `rtk rg` run without re-checking `--no-ignore`/`--hidden` — the hit may be sitting in an ignored directory.
 - Hand-rolling `curl` against the GitHub API instead of `rtk gh`.
