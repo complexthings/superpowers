@@ -1,110 +1,110 @@
 ---
 name: leveraging-cli-tools
-description: Use when performing code searches, JSON/YAML parsing, file finding, structural refactors, or data wrangling, or when a command floods context with verbose output like logs, CI, or test runs - ensures agents reach for high-performance CLI tools (rg, jq, fd, yq, ast-grep, gh, sd) over slower standard tools like grep/find/sed and use them with discipline, choosing the right output-reducing flags, composing pipelines so raw output never enters context, and using a bundled reducer for output that flags cannot shape, cutting token cost and latency 5-50x. Check availability and offer to install a tool when a relevant task arises.
-compatibility: The bundled scripts/slim.py needs python3 (standard on macOS/Linux). The CLI tools install via the system package manager.
+description: Use when performing code searches, JSON/YAML parsing, file finding, structural refactors, or data wrangling, or when a command could flood context with verbose output like logs, CI runs, test output, or git/docker status dumps. Routes agents to `rtk` (Rust Token Killer), a token-optimized CLI proxy that wraps ripgrep, jq, git, gh, test runners, and more, and to `ponytail` for lazy-solution discipline — instead of reaching for raw grep/find/sed/awk or a per-tool checklist. Also sets up rtk and ponytail for the current harness if either isn't configured yet.
 ---
 
 # Leveraging CLI Tools
 
-## Purpose
+The leverage is filtering and transforming with the right tool **before reading**, so tokens and time go to the answer, not the search. `rtk` is the single entry point for that: it wraps the high-performance CLI tools (ripgrep, jq, git, gh, test runners, and more) and returns token-optimized output automatically, and `rtk proxy` reaches anything it doesn't wrap. `ponytail` supplies the "laziest solution that works" discipline alongside it.
 
-Reach for high-performance CLI tools over slower standard tools. The leverage is filtering and transforming with the right tool **before reading**, so tokens and time go to the answer, not the search. On a large tree `rg` is 10-50x faster than `grep` and returns far less noise; across a session that compounds into hours and tens of thousands of tokens saved.
+**This supersedes the old approach of memorizing a table of ~16 individual tools (`rg`, `jq`, `fd`, `yq`, `ast-grep`, `sd`, …) and reaching for each one raw.** If you find yourself reconstructing that table from memory, stop — reach for `rtk <tool>` instead, and `rtk proxy <tool>` for anything `rtk` doesn't wrap directly.
 
-Picking the faster tool is only half of it. The other half is using it with discipline — two levers that keep raw output out of your context: **ask for less** (the right flags and selectors), and **shrink what you can't shape** (a reducer for inherently verbose output). A fast tool fed a lazy command still floods your context.
+## Setup rtk
 
-## When a relevant task arises
+Before relying on `rtk`, verify it's configured for the current harness:
 
-1. Pick the right tool from the table below.
-2. Confirm it's installed before relying on it — e.g. `command -v rg`.
-3. If it's missing, name the tool and its payoff and **offer** to install it — don't install silently. Adapt the command to the user's package manager/OS (the table shows `brew`; substitute `apt install`, `dnf install`, `pacman -S`, `cargo install`, etc.). If they decline, fall back to the standard tool and move on.
+```bash
+bash scripts/setup-rtk.sh
+```
 
-Check only the tools the current task needs — no upfront session-wide scan.
+(relative to this skill directory — use the absolute path if you're working elsewhere). This script only **checks and reports**; it never changes anything by itself. It:
 
-## Tools
+1. Detects the current harness (Claude Code, OpenCode, pi, codex, GitHub Copilot).
+2. Checks whether `rtk` is installed and wired into that harness's config (e.g. `rtk init --show` for Claude Code; the harness-specific config file for others).
+3. If everything is already `[ok]`, does nothing further — you're set, move on.
+4. If something's missing, prints the exact command(s) it would run to fix it (e.g. `rtk init --auto-patch`, `rtk init -g --auto-patch`, `rtk init -g --opencode`, `rtk init --codex`).
 
-| Rating | Tool | Replaces | Why | Install |
-|:------:|------|----------|-----|---------|
-| 10 | `rg` (ripgrep) | `grep`, `grep -r`, `ack` | Code/text search. Respects `.gitignore`, 10-50x faster than `grep` — the highest-leverage tool; filter before reading. | `brew install ripgrep` |
-| 10 | `jq` | `grep`/`sed`/`awk` on JSON | JSON query/transform. Turns API responses and config into exactly the fields you need; the pipe target for JSON. | `brew install jq` |
-| 9 | `fd` | `find` | File finding. Faster, saner syntax, parallel traversal, `.gitignore`-aware. | `brew install fd` |
-| 8 | `yq` | `grep`/`sed`/`awk` on YAML | `jq` for YAML/TOML/XML. Reads CI files, `docker-compose`, k8s manifests, frontmatter. | `brew install yq` |
-| 8 | `ast-grep` (`sg`) | `sed`/`grep` for refactors | Structural search/rewrite by AST, not regex. Safe codebase-wide refactors that `sed` would mangle. | `brew install ast-grep` |
-| 8 | `gh` | `curl` + GitHub API + tokens | GitHub from the shell — PRs, issues, CI, API. No hand-rolled `curl` + token juggling. | `brew install gh` |
-| 7 | `sd` | `sed -i`, `perl -pe` | Find/replace. Literal-string-safe, no regex-escaping footguns. | `brew install sd` |
-| 6 | `dasel` | `jq`+`yq`+`xq` (mixed formats) | Query *and modify* JSON/YAML/TOML/XML/CSV through one selector. Use when format is mixed or unknown. | `brew install dasel` |
-| 6 | `htmlq` | `grep`/`sed` on HTML | `jq` for HTML — CSS-selector extraction from fetched pages. | `brew install htmlq` |
-| 6 | `miller` (`mlr`) | `awk`/`cut`/`join`/`sort` on CSV/TSV | `awk`/`cut`/`join`/`sort` for CSV/TSV/JSON with *named* fields — no brittle column counting. | `brew install miller` |
-| 5 | `qsv` | `awk`/`cut`/`sort -u` on CSV, `csvkit` | High-perf CSV toolkit (maintained `xsv` successor). Stats, slice, join, dedup on big CSVs. | `brew install qsv` |
-| 5 | `hyperfine` | `time`, `for`-loop timing | Statistical benchmarking with warmups. Real before/after numbers, not `time` guesses. | `brew install hyperfine` |
-| 5 | `tokei` | `wc -l`, `find … \| wc`, `cloc` | Instant LOC/language breakdown. Orient in an unfamiliar repo before exploring. | `brew install tokei` |
-| 5 | `fzf` (`-f`) | manual fuzzy filtering | Non-interactive `-f`/`--filter` mode: fuzzy-rank a candidate list piped from `fd`/`rg`. | `brew install fzf` |
-| 4 | `watchexec` | `while`+`sleep`, `entr` | Run a command on file change. Useful in build/test loops; non-interactive unlike most watchers. | `brew install watchexec` |
+Anything the script reports missing is a **global or repo-config change** — never run the fix command on your own initiative. Surface the report and the exact command(s) to the user and get their confirmation first (see "Ask before you act" below). If the fix touches Claude Code's own config, tell the user to restart Claude Code afterward so the new config is picked up.
 
-## Use them with discipline
+## Setup ponytail
 
-Five habits separate a fast, low-noise result from a slow, context-flooding one. The token savings below are measured, not hypothetical.
+Same check → report → confirm pattern, for the `ponytail` discipline skill:
 
-**1 — Pick the tool that fits the data, not the one in muscle memory.** JSON → `jq`, YAML/TOML → `yq`, structural refactor → `ast-grep`, GitHub → `gh`. The reflex to resist is `grep`/`sed`/`awk` on structured data — they treat structure as flat text, so you pay in escaping bugs and noise the format-aware tool never produces.
+```bash
+bash scripts/setup-ponytail.sh
+```
+
+It checks that `ponytail` is installed for the current harness (marketplace/plugin/package presence) and that `~/.config/ponytail/config.json` exists. If the config is missing, it offers to create it with `defaultMode: full` — it only ever creates an absent file, it never edits or overwrites one that already exists. Confirm the offered command with the user, same as rtk setup, before it runs.
+
+On GitHub Copilot, also check whether this repo's `.github/copilot-instructions.md` already carries the rtk + ponytail instructions. If not, `references/copilot-instructions.md` (bundled with this skill) is the source of truth to append — offer that too, and confirm before writing.
+
+### Ask before you act
+
+Any setup step that touches global or machine state — installing a package, writing outside this task's working files, editing a config in `$HOME` — gets surfaced and confirmed, never run silently. Ask with whichever question tool your harness exposes: `askUserQuestion`, `ask_user_question`, `askQuestions`, or `question`. Same rule elsewhere in this skill: when you're unsure whether a change is welcome, ask instead of guessing.
+
+## Use rtk with discipline
+
+Picking `rtk` is only half of it. The other half is using it with discipline — the same habits that used to be spread across a dozen raw tools, now aimed at `rtk`'s subcommands.
+
+**1 — Reach for `rtk <tool>` for the data's shape, not a raw tool from muscle memory.** Code/text search → `rtk rg`, JSON → `rtk jq`, git/gh → `rtk git` / `rtk gh`, verbose command output (tests, CI, builds) → the matching `rtk` wrapper (`rtk cargo test`, `rtk playwright test`, `rtk jest`, …). The reflex to resist is reaching for `grep`/`sed`/`awk` on structured data, or a raw tool `rtk` already wraps — both throw away the reduction `rtk` gives you for free.
+
+**Prefer `rtk rg` over `rtk grep`.** They cover the same ground, but `rtk rg` runs ripgrep underneath and is faster and more efficient — use it as the default for code/text search.
+
+**This includes interpreters and runners you'd otherwise call bare.** Run scripts through `rtk` too — `rtk python script.py`, `rtk python -c '...'` (and likewise `rtk node …`) — so their output stays inside the same token-optimized, usage-tracked invocation instead of dropping to raw `python3`/`node`.
 
 **2 — Ask for less: use the flag or selector that returns the answer's _shape_.** The biggest single win is never pulling raw output into context. Match the request to the question:
 
-| Question | Flag / selector | Returns |
-|----------|-----------------|---------|
-| Which files match? | `rg -l` | paths only, no lines |
-| How many files? | `rg -l \| wc -l` | a file count, not a line count |
-| How many hits? | `rg -c` (lines/file) / `rg --count-matches` (matches/file) | counts only |
-| Just the matched bit? | `rg -o` | the substring, not the whole line |
-| Enough to judge a hit? | `rg -A/-B/-C N`, `rg -m N` (cap per file) | bounded context |
-| Only certain fields? | `jq -r '.a, .b'`, `yq`, `mlr --opprint cut -f` | projected values, not the whole doc |
-| First N of a list? | pipe to `head`, or `fd --max-results N` | the slice you need |
+| Question | Command | Returns |
+|----------|---------|---------|
+| Which files match? | `rtk rg -l` | paths only, no lines |
+| How many files? | `rtk rg -l \| wc -l` | a file count, not a line count |
+| How many hits? | `rtk rg -c` (lines/file) / `rtk rg --count-matches` (matches/file) | counts only |
+| Just the matched bit? | `rtk rg -o` | the substring, not the whole line |
+| Enough to judge a hit? | `rtk rg -A/-B/-C N`, `rtk rg -m N` (cap per file) | bounded context |
+| Only certain fields? | `rtk jq -r '.a, .b'` | projected values, not the whole doc |
+| Which files, by dir? | `rtk find <pattern>` | paths grouped by directory |
+| Only the errors? | `rtk err <cmd>` | filtered stderr/error lines |
 
-For the **projection tools** (`jq`, `yq`, `dasel`, `miller`, `htmlq`) the selector *is* the filter — `jq` turning a 2,000-record array into one summed number is a ~100% reduction on its own. Shape their output at the selector; never post-filter it (that's what habit 4 is *not* for).
+Shape output at the selector; never pull the whole thing into context and filter it by eye.
 
 **3 — Compose so only the answer comes back.** Do the counting, dedup, and projection *in the pipeline*, not by reading raw output and reasoning over it. One pass keeps every intermediate result out of context:
 ```bash
-rg -l '"error"' logs/ --type json | xargs jq -r 'select(.level=="error") | .code' | sort -u
+rtk rg -l '"error"' logs/ --type json | xargs rtk jq -r 'select(.level=="error") | .code' | sort -u
 ```
-This is the lesson of programmatic tool calling (Amazon's PTC benchmarks: ~87-92% fewer tokens): when a task needs several tool calls plus processing, write **one** pipeline or script that does it all and returns only the result — the intermediate data never touches your context. So: filter before reading, and refactor by AST, not regex:
-```bash
-rg -l "password.*hash" src/auth/ --type ts | xargs rg "TODO"
-sg --pattern 'console.log($$$A)' --rewrite 'logger.debug($$$A)' --lang ts
-```
+When a task needs several tool calls plus processing, write **one** pipeline that does it all and returns only the result — the intermediate data never touches your context.
 
-**4 — Shrink what you can't shape: the bundled reducer for verbose emitters.** Some output has no projection flag — logs, CI output (`gh run view --log`), test runs, stack traces, status dumps. Flags get you part way, but the residual stays repetitive, wide, and noisy. Pipe it through `scripts/slim.py` (relative to this skill; use its absolute path if you're working elsewhere) and ask only for the cuts the task needs:
-```bash
-gh run view --log | python3 scripts/slim.py --errors --uniq --max-line 200
-cargo test 2>&1   | python3 scripts/slim.py --errors --dedup
-rg -n TODO --no-ignore | python3 scripts/slim.py --group-dir
-```
-It does dedup (`--dedup`/`--uniq`, repeats collapse to `(xN)`), grouping (`--group-dir` → per-directory counts), truncation (`--head/--tail/--middle/--max-line`), and noise-stripping (`--comments/--errors/--grep`). On a real 1,236-line CI log, `rg` error-filtering alone cut 91% but left ~6,700 tokens; adding `slim` reached 97% — a third the residual. Run `python3 scripts/slim.py -h` for all modes. The cuts are **lossy and opt-in**: ask for what you need, know what you're discarding, and don't reach for it when a projection tool's own selector would do the job.
+**4 — When `rtk` has no wrapper for a tool, use `rtk proxy <cmd>` instead of the raw command.** `rtk proxy` runs anything raw while keeping it inside the same invocation pattern — e.g. `rtk proxy ast-grep --pattern '...' --lang ts`, `rtk proxy yq '.services' docker-compose.yml`, `rtk proxy sd 'old' 'new' file.ts`. Reach for `rtk <tool>` first; fall back to `rtk proxy <tool>` only when `rtk` doesn't wrap it.
 
-**5 — Read the output critically — it's a claim, not a fact.** A zero or suspiciously low result is the one to distrust: `rg` skips `.gitignore`d and hidden files by default, so a real match in `node_modules/`, `dist/`, or a dotfile is silently absent. Before concluding "none," re-run with `--no-ignore`, `-uu`, or `--hidden` — then decide whether those ignored hits (vendored deps, build output, generated mirrors) actually belong in the answer; surfacing them is the check, keeping them is a judgment call. Mind case (`-i`) and word boundaries (`-w`) so you neither miss `Subagent` nor over-match `tasks` — and when an identifier doubles as a common word (a `Task` tool vs. the word "task"), even `-w` isn't enough: glance at the context to confirm the hit is the symbol, not prose. When a count or list drives a decision, confirm a match means what you think before acting on it.
+**5 — Read the output critically — it's a claim, not a fact.** A zero or suspiciously low result is the one to distrust: `rtk rg` respects `.gitignore`/`.ignore` by default, so a real match in `node_modules/`, `dist/`, or a dotfile is silently absent. Before concluding "no matches," re-run with `--no-ignore` (or `-u`/`-uu`/`--hidden`) — then decide whether those ignored hits (vendored deps, build output, generated mirrors) actually belong in the answer; surfacing them is the check, keeping them is a judgment call. Mind case (`-i`) and word boundaries (`-w`) so you neither miss a hit nor over-match a common word.
 
-In Claude Code the `Grep` and `Glob` tools are themselves built on ripgrep — prefer them for in-context searches, and reach for the CLI tools when you need piping, transforms, rewrites, or output reduction.
+In Claude Code the `Grep` and `Glob` tools are themselves built on ripgrep — prefer them for in-context searches, and reach for `rtk` on the command line when you need piping, transforms, rewrites, or output reduction.
 
 ## Red flags
 
-- Parsing JSON/YAML with `awk`/`sed`/`grep` instead of `jq`/`yq`.
-- Reading files before filtering them with `rg`.
-- Piping a tool's full output into context to eyeball it, when `-l`/`-c`/`-o` or a `jq` projection would return just the answer.
-- Letting a verbose command (test run, CI log, `git`/`docker` status dump) land raw in context when `slim` would cut it 90%+.
-- Reaching for `slim` on a projection tool's output — shape it at the `jq`/`yq`/`mlr` selector instead.
-- Concluding "no matches" from a default `rg` run without re-checking `--no-ignore`/`--hidden` — the hit may be sitting in an ignored directory.
-- Hand-rolling `curl` against the GitHub API instead of `gh`.
-- Regex codemods with `sed` where `ast-grep` is structurally safe.
+- Parsing JSON/YAML with `awk`/`sed`/`grep` instead of `rtk jq` / `rtk proxy yq`.
+- Reading files before filtering them with `rtk rg`.
+- Reaching for `rtk grep` by habit when `rtk rg` covers the same ground faster.
+- Running a tool raw (`ast-grep`, `yq`, `sd`, …) when `rtk proxy <tool>` would give the same result inside the standard invocation pattern.
+- Running an interpreter raw (`python3`, `node`, …) when `rtk python` / `rtk node` would keep it inside rtk's optimized invocation.
+- Piping a command's full output into context to eyeball it, when `-l`/`-c`/`-o` or a `rtk jq` projection would return just the answer.
+- Concluding "no matches" from a default `rtk rg` run without re-checking `--no-ignore`/`--hidden` — the hit may be sitting in an ignored directory.
+- Hand-rolling `curl` against the GitHub API instead of `rtk gh`.
+- Reconstructing the old 16-tool table from memory instead of reaching for `rtk`.
+- Running a setup fix (`rtk init --auto-patch`, creating `~/.config/ponytail/config.json`, etc.) without confirming with the user first.
 
 ## Common rationalizations
 
 | Excuse | Reality |
 |--------|---------|
-| "grep works fine" | On a big tree it's 10-50x slower and floods context with noise `rg` would have filtered out. |
-| "I don't know if they have jq" | One `command -v jq` answers it; install is seconds and pays back across the whole session. |
-| "Not worth the setup" | One install = a speedup on every future task, not just this one. |
-| "The test/CI output is just long, I'll scroll it" | A 1,200-line log is ~75k tokens of mostly noise; `slim --errors --uniq` makes it ~2k without losing the failures. |
+| "grep works fine" | On a big tree it's 10-50x slower and floods context with noise `rtk rg` would have filtered out. |
+| "I don't know if rtk is set up" | `bash scripts/setup-rtk.sh` answers it in one check; fixing it pays back across the whole session. |
+| "Not worth the setup" | One confirmed fix = a speedup on every future task, not just this one. |
+| "The test/CI output is just long, I'll scroll it" | `rtk`'s wrappers (`rtk cargo test`, `rtk playwright test`, …) cut that noise automatically — scrolling raw output throws that away. |
+| "This tool isn't in rtk's table, I'll just run it raw" | `rtk proxy <tool>` runs it inside the same pattern — no need to drop back to the bare command. |
 | "User didn't ask for optimization" | Faster, lower-noise completion *is* better completion. |
 
 ## When NOT to use
 
-- The user declined the install — note the cost once, then use the fallback.
+- The user declined an rtk/ponytail setup fix — note it once, then fall back to the raw tool and move on.
 - A teaching context where the standard tool is the point.
-- Output you already shaped with a selector — don't add a `slim` pass for its own sake.
+- Output you already shaped with a selector — don't add another reduction pass for its own sake.
