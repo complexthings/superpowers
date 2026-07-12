@@ -247,7 +247,12 @@ const updateCopilotInstructions = (projectRoot) => {
     if (!processedContent.includes(START_MARKER) || !processedContent.includes(END_MARKER)) {
         return { error: true, message: 'Template is missing required markers' };
     }
-    
+
+    // Extract only the marker-delimited region from the source, so content the
+    // source keeps outside its own markers (e.g. the rtk-instructions block)
+    // never leaks into the destination's marker block.
+    const sourceMarkerBlock = processedContent.match(new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}`))[0];
+
     // Create .github directory if needed
     const destDir = dirname(instructionsDest);
     try {
@@ -279,7 +284,7 @@ const updateCopilotInstructions = (projectRoot) => {
         if (existingContent.includes(START_MARKER) && existingContent.includes(END_MARKER)) {
             // Replace content between markers (inclusive of markers)
             const regex = new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}`, 'g');
-            const newContent = existingContent.replace(regex, processedContent.trim());
+            const newContent = existingContent.replace(regex, sourceMarkerBlock);
             try {
                 writeFileSync(instructionsDest, newContent, 'utf8');
                 return { updated: true, backup: backupPath };

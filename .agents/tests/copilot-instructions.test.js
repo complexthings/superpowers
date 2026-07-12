@@ -202,4 +202,20 @@ describe("updateCopilotInstructions — idempotency", () => {
     expect(startCount).toBe(1);
     expect(endCount).toBe(1);
   });
+
+  // The real source template (.github/copilot-instructions.md) keeps an
+  // rtk-instructions block OUTSIDE its SUPERPOWERS markers. Regression check
+  // for the bug where that out-of-marker content leaked into the dest's
+  // marker block and accumulated on repeated runs.
+  test("out-of-marker source content does not leak into the destination marker block", () => {
+    const projectRoot = makeTempDir();
+    const dest = join(projectRoot, ".github", "copilot-instructions.md");
+
+    updateCopilotInstructions(projectRoot);
+    updateCopilotInstructions(projectRoot);
+    const content = readFileSync(dest, "utf8");
+
+    const markerBlock = content.match(new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}`))[0];
+    expect(markerBlock).not.toContain("rtk-instructions");
+  });
 });
