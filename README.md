@@ -2,9 +2,18 @@
 
 A comprehensive skills library of proven techniques, patterns, and workflows for AI coding assistants.
 
-**This is a fork and extension of Jesse Vincent's incredible [Superpowers for Claude Code](https://github.com/obra/superpowers).** Jesse's groundbreaking work and [his amazing blog post](https://blog.fsck.com/2025/10/09/superpowers/) introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, and OpenCode.
+**This is a fork and extension of Jesse Vincent's incredible [Superpowers for Claude Code](https://github.com/obra/superpowers).** Jesse's groundbreaking work and [his amazing blog post](https://blog.fsck.com/2025/10/09/superpowers/) introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, OpenCode, Pi, and OpenAI Codex.
 
 ## What's New
+
+**v10.0.0 (July 12, 2026):**
+
+- ⚠️ **Leaner bundled surface** — most bundled skills were retired. The package now ships only four: `brainstorming`, `leveraging-cli-tools`, `create-skill-json`, and `setup-skills`. Install anything else with `superpowers-agent add`.
+- ⚠️ **Retired CLI commands removed** — the skill discovery/execution commands `dir`, `execute`, `find-skills`, `get-helpers`, `path`, and `use-skill` are gone. Skills are discovered and loaded through each harness's native skill tool, not the CLI.
+- ⚠️ **`brainstorming` deprecated** — it now announces its deprecation and redirects to the `grilling` skill, handing over the same context.
+- **Pi & OpenAI Codex supported** — `superpowers-agent` now detects and targets **Pi** (`.pi`) and **OpenAI Codex** (`.codex`) alongside GitHub Copilot, Claude Code, and OpenCode — five supported harnesses. Detection works whether a harness is installed as a binary or a project folder.
+- **RTK + ponytail integration** — `setup-rtk.sh` (harness-aware RTK config) and `setup-ponytail.sh` wire token-optimized CLI output and minimal-solution guidance into each harness. `leveraging-cli-tools` was rewritten around `rtk` and `ponytail`, with RTK Python guidance.
+- **`SUPERPOWERS.md` linked** from generated `AGENTS.md`, `CLAUDE.md`, and `copilot-instructions.md`; `setup-skills` dedupes the backups it creates and replaces the `copilot-instructions.md` marker idempotently.
 
 **v9.2.1 (June 1, 2026):**
 
@@ -68,14 +77,14 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 ## What You Get
 
-- **Guided Brainstorming** - Turn ideas into clear, reviewed designs
+- **Requirement Grilling** - Interrogate a plan into a clear, reviewed design (the `grilling` skill; `brainstorming` now redirects here)
 - **Efficient CLI Workflows** - Search, inspect, and shape command output with less noise
 - **Skill Metadata** - Generate consistent `skill.json` files from existing skills
 - **Skill Setup** - Initialize project skill infrastructure
 - **Native Skill Tools** - Skills are discovered and loaded by your AI platform
 
 Plus:
-- **Universal Skills** - Work across GitHub Copilot, Claude Code, and OpenCode
+- **Universal Skills** - Work across GitHub Copilot, Claude Code, OpenCode, Pi, and OpenAI Codex
 - **Automatic Integration** - Skills activate automatically when relevant
 - **Consistent Workflows** - Systematic approaches to common engineering tasks
 
@@ -92,7 +101,7 @@ superpowers-agent bootstrap
 
 > **Note:** `superpowers-agent bootstrap` is a **required** one-time step after every fresh install. It is no longer run automatically by npm's `postinstall` hook — you must run it manually. Subsequent `superpowers-agent update` calls will run bootstrap for you automatically.
 
-## Migration to Superpower Agent `^8.0.0`
+## Migration to Superpower Agent `^10.0.0`
 
 ```bash
 rm -rf ~/.local/bin/superpowers-agent ~/.local/bin/superpowers ~/.agents/superpowers
@@ -121,7 +130,7 @@ Use your AI platform's native skill tool to view available skills and load the o
 ### Bundled Skills
 
 This release bundles four skills:
-- `brainstorming`
+- `brainstorming` — **deprecated**; redirects to the `grilling` skill
 - `leveraging-cli-tools`
 - `create-skill-json`
 - `setup-skills`
@@ -161,8 +170,7 @@ Superpowers supports project-level and global configuration via `.agents/config.
 
 **Read config from CLI:**
 ```bash
-superpowers-agent get-config prompts_dir
-superpowers-agent get-config plans_dir
+superpowers-agent config-get   # prints the resolved configuration, including prompts_dir and plans_dir
 ```
 
 ### Repository Aliases
@@ -319,7 +327,6 @@ superpowers-agent add-repository <git-url> # Add repository alias
 ```bash
 superpowers-agent config-get               # Show current configuration
 superpowers-agent config-set <key> <value> # Update configuration
-superpowers-agent get-config <key>         # Get specific config value
 ```
 
 **Project Setup:**
@@ -420,7 +427,7 @@ superpowers-agent add @baici
 1. **Bootstrap Process** - Installs agent integrations and syncs skill symlinks globally
 2. **Skill Discovery** - Finds skills across system, personal, and project locations
 3. **Priority Resolution** - Project skills override personal skills override system skills
-4. **Universal Integration** - Works with GitHub Copilot, Claude Code, and OpenCode
+4. **Universal Integration** - Works with GitHub Copilot, Claude Code, OpenCode, Pi, and OpenAI Codex
 
 **For OpenCode:**
 1. **Plugin System** - The `.opencode/plugins/superpowers-agent.js` plugin injects bootstrap context dynamically at session start
@@ -535,7 +542,7 @@ This project builds on [Jesse Vincent's Superpowers for Claude Code](https://git
 - OpenCode plugin architecture pattern
 - Test infrastructure for skill validation
 
-This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, and OpenCode.
+This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, OpenCode, Pi, and OpenAI Codex.
 
 ## License
 

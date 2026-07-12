@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [10.0.0] - 2026-07-12
+
+Major release. Reduces the bundled-skill and CLI surface to a lean, harness-agnostic core, adds Pi and OpenAI Codex as supported harnesses, and integrates RTK and ponytail into the CLI-tooling workflow.
+
+### Breaking Changes
+- **Bundled-skill surface reduced** — most previously bundled skills were retired. The package now ships only four skills: `brainstorming`, `leveraging-cli-tools`, `create-skill-json`, and `setup-skills`. Install anything else with `superpowers-agent add`.
+- **Retired CLI commands removed** — the skill discovery/execution commands `dir`, `execute`, `find-skills`, `get-helpers`, `path`, and `use-skill` were removed. Skills are now discovered and loaded through each harness's native skill tool, not the CLI.
+- **`brainstorming` skill deprecated** — it no longer explores requirements itself; it announces its deprecation and redirects to the `grilling` skill, handing over the same context.
+
+### Added
+- **Pi and OpenAI Codex supported as harnesses** — `superpowers-agent` now detects and targets Pi (Pi Coding Agent, `.pi`) and OpenAI Codex (`.codex`) alongside GitHub Copilot, Claude Code, and OpenCode, for five supported harnesses.
+- **Per-harness skills symlinks** — `setup-skills` creates per-harness skill symlinks into `.agents/skills`, with folder-or-binary harness detection so a harness is recognized whether it's installed as a binary or a project folder.
+- **`SUPERPOWERS.md` linked from generated files** — the generated `AGENTS.md`, `CLAUDE.md`, and `copilot-instructions.md` now link to `SUPERPOWERS.md`.
+- **RTK (Rust Token Killer) integration** — `setup-rtk.sh` is a harness-aware script that checks and fixes RTK configuration so token-optimized CLI output is wired into each harness.
+- **ponytail integration** — `setup-ponytail.sh` plus a bundled `copilot-instructions.md` set up the ponytail workflow.
+- **`leveraging-cli-tools` rewritten around RTK + ponytail** — the skill now routes agents through `rtk` for token-reduced output and `ponytail` for minimal solutions, and includes RTK Python guidance.
+
+### Changed
+- **`setup-skills` SKILL.md rewritten** to describe the command's actual behavior.
+- **Backup dedupe** — `setup-skills` deduplicates backups it creates for `AGENTS.md`, `CLAUDE.md`, and `copilot-instructions.md` files.
+
+### Fixed
+- **Idempotent `copilot-instructions.md` marker replacement** — re-running `setup-skills` no longer duplicates the marker block.
+- **Bundled-skill manifests use bare skill names**, and the `brainstorming` skill.json name was corrected.
+- **Retired-skill symlink reconciliation** — reconciling retired repo-managed skills now preserves live/in-use bundled skill links and nudge-only session context instead of scrubbing them.
+
 ## [9.2.1] - 2026-06-01
 
 ### Changed
