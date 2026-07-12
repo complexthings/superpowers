@@ -10,7 +10,7 @@ import { paths } from '../core/paths.js';
 import { readConfig } from '../core/config.js';
 import { checkForUpdates, isOnMainBranch } from '../core/git.js';
 import { printVersion, getLocalVersion } from '../utils/output.js';
-import { toolDetection, detectPlatforms } from '../core/platform-detection.js';
+import { toolDetection, detectPlatforms, detectProjectPlatforms, AGENTS_MD_TARGET_PLATFORMS } from '../core/platform-detection.js';
 
 // Import integration installers
 import { installOpencodePluginSymlink } from '../integrations/opencode.js';
@@ -398,27 +398,16 @@ const runSetupSkills = () => {
         console.log('⚠️  SUPERPOWERS.md.template not found');
     }
 
-    // Detect platforms
-    const projectPlatforms = [];
-
-    const rootCopilotPath = join(projectRoot, '.github', 'copilot-instructions.md');
-    const globalCopilotPath = join(paths.home, '.github', 'copilot-instructions.md');
-    if (existsSync(rootCopilotPath) || existsSync(globalCopilotPath) || toolDetection.copilot.check()) {
-        projectPlatforms.push('github-copilot');
-    }
+    // Detect platforms (dot-folder in projectRoot OR CLI binary on PATH)
+    const projectPlatforms = detectProjectPlatforms(projectRoot);
 
     const rootClaudeMdPath = join(projectRoot, 'CLAUDE.md');
     const dotAgentsClaudeMdPath = join(agentsDir, 'CLAUDE.md');
-    if (existsSync(rootClaudeMdPath) || existsSync(dotAgentsClaudeMdPath) || toolDetection.claude.check()) {
-        projectPlatforms.push('claude-code');
-    }
-
-    if (toolDetection.opencode.check()) projectPlatforms.push('opencode');
 
     console.log(`\nDetected platforms for project: ${projectPlatforms.join(', ') || 'none'}\n`);
 
-    // Update AGENTS.md (targets GitHub Copilot and OpenCode only)
-    const agentsPlatforms = projectPlatforms.filter(p => ['github-copilot', 'opencode'].includes(p));
+    // Update AGENTS.md (targets GitHub Copilot, OpenCode, Pi, and Codex)
+    const agentsPlatforms = projectPlatforms.filter(p => AGENTS_MD_TARGET_PLATFORMS.includes(p));
     const agentsResult = updatePlatformFile(agentsMdPath, template, agentsPlatforms, !agentsMdExists);
     
     if (agentsResult.created) {
