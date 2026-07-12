@@ -1,6 +1,8 @@
 ## 🎯 SKILLS
 
-- Skills encode proven techniques that prevent mistakes. 
+[superpowers-agent Docs](.agents/docs/SUPERPOWERS.md)
+
+- Skills encode proven techniques that prevent mistakes.
    - Not using them means repeating solved problems and missing edge cases.
    - If a skill exists for your task, you MUST use it.
 - **Before starting any task**, check for relevant skills, use your native skill tool to do so.

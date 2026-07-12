@@ -244,6 +244,66 @@ export const cleanupStaleSymlinks = () => {
 };
 
 /**
+ * Per-project harness skill directories, keyed as link path (relative to
+ * projectRoot) -> parent dot-folder that must already exist. Pi and Codex
+ * read .agents/skills/ directly and get no symlink. This list is a project-
+ * level concern (mirrors .agents/references/scripts/setup-skill-symlinks.sh)
+ * and is intentionally separate from SKILL_PLATFORMS (the ~/.agents ->
+ * home-dir registry above) — do not merge them.
+ */
+const PROJECT_SKILL_LINKS = ['.claude/skills', '.github/skills', '.opencode/skill'];
+
+/**
+ * Symlink each harness's project skills dir back to the canonical
+ * .agents/skills/, so agents discover project skills with no manual step.
+ *
+ * Mirrors .agents/references/scripts/setup-skill-symlinks.sh:
+ * - Only links when the target's parent dot-folder (.claude/, .github/,
+ *   .opencode/) already exists.
+ * - Never clobbers a pre-existing real (non-symlink) file/dir at the target.
+ * - Creates a relative symlink (`../.agents/skills`) for portability.
+ *
+ * @param {string} projectRoot
+ * @returns {{ created: number, skipped: number }}
+ */
+export const syncProjectSkillSymlinks = (projectRoot) => {
+    const results = { created: 0, skipped: 0 };
+
+    for (const relLink of PROJECT_SKILL_LINKS) {
+        const linkPath = join(projectRoot, relLink);
+        const parentDir = dirname(linkPath);
+
+        if (!existsSync(parentDir)) {
+            results.skipped++;
+            continue;
+        }
+
+        if (existsSync(linkPath) && !isSymlink(linkPath)) {
+            results.skipped++;
+            continue;
+        }
+
+        if (isSymlink(linkPath)) {
+            try {
+                unlinkSync(linkPath);
+            } catch {
+                results.skipped++;
+                continue;
+            }
+        }
+
+        try {
+            symlinkSync('../.agents/skills', linkPath, 'dir');
+            results.created++;
+        } catch {
+            results.skipped++;
+        }
+    }
+
+    return results;
+};
+
+/**
  * Recursively collect all directories that contain a SKILL.md file.
  *
  * @param {string} dir - Directory to scan

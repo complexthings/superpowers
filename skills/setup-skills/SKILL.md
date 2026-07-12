@@ -1,13 +1,11 @@
 ---
 name: setup-skills
-description: Run superpowers-agent setup-skills to initialize the skills infrastructure for a project. Use whenever starting a new project with AI agents, when skills symlinks are missing, when AGENTS.md lacks skills configuration, when a user asks to "set up skills", "install skills", "bootstrap skills", or "initialize superpowers". Also use when skills aren't being discovered or when you're about to create project-specific skills and the infrastructure doesn't exist yet. If there's any chance the project hasn't been set up for skills yet, run this skill.
+description: Run superpowers-agent setup-skills to detect which AI harnesses (Claude Code, GitHub Copilot, OpenCode, Pi, Codex) are present in a project and wire up its skills infrastructure — .agents/skills/, per-harness symlinks, and each harness's instruction file. Use whenever starting a new project with AI agents, when skills symlinks are missing, when AGENTS.md or CLAUDE.md lacks skills configuration, when a user asks to "set up skills", "install skills", "bootstrap skills", or "initialize superpowers". Also use when skills aren't being discovered, or before creating project-specific skills if the infrastructure doesn't exist yet.
 ---
 
 # Setup Skills
 
 This skill does one thing: run `superpowers-agent setup-skills` and follow the output it gives you exactly.
-
-The command sets up the full skills infrastructure for a project — creating `.agents/`, symlinks for each AI platform, and updating `AGENTS.md` — and its output tells you everything that happened and what to do next.
 
 ## Run the Command
 
@@ -17,18 +15,30 @@ From the project root:
 superpowers-agent setup-skills
 ```
 
+## What the Command Does
+
+- Creates `.agents/`, `.agents/skills/`, and `.agents/docs/SUPERPOWERS.md` (the reference doc every generated instruction file links to).
+- Detects harnesses by dot-folder existence or CLI binary on PATH: Claude Code (`.claude`/`claude`), GitHub Copilot (`.github`/`copilot`), OpenCode (`.opencode`/`opencode`), Pi (`.pi`/`pi`), Codex (`.codex`/`codex`).
+- Writes/updates `AGENTS.md` unconditionally (creating it if missing) with tool mappings for Copilot, OpenCode, Pi, and Codex.
+- Updates `CLAUDE.md` in place only if one already exists at the project root or in `.agents/` — it never creates a fresh `CLAUDE.md`.
+- Creates or updates `.github/copilot-instructions.md` only when GitHub Copilot is detected.
+- Keeps exactly one backup per instruction file it touches (dedupes old `*.backup*` files).
+- Symlinks each detected harness's skills dir back to `.agents/skills/`: `.claude/skills`, `.github/skills`, `.opencode/skill` (singular). Pi and Codex read `.agents/skills/` directly — no symlink.
+
 ## Follow the Output Exactly
 
-The command output is authoritative. Read it, act on it, and do not skip any steps it prescribes. It adapts to the platforms detected in your project and tells you precisely what was created, updated, or skipped.
+The command output is authoritative. Read it, act on it, and do not skip any steps it prescribes. It adapts to the harnesses detected in your project and tells you precisely what was created, updated, or skipped.
 
 If the command prints follow-up instructions, complete them before continuing with your task.
+
+If it fails for any reason other than not-found (e.g. permission denied, partial failure), surface the exact error and stop — do not continue or leave the project half-configured.
 
 ## If superpowers-agent Is Not Found
 
 Install it first, then rerun:
 
 ```bash
-@npm install -g @complexthings/superpowers-agent
+npm install -g @complexthings/superpowers-agent
 superpowers-agent setup-skills
 ```
 

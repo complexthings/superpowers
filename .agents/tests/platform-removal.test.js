@@ -1,15 +1,19 @@
 /**
- * Guard tests: cursor, codex, and gemini must NOT appear in any supported-platform
- * registry after issue #6.
+ * Guard tests: cursor and gemini must NOT appear in any supported-platform
+ * registry after issue #6. `toolDetection` also covers plain tool/binary
+ * detection (no skill symlinks) for Pi and Codex, added in #29 for
+ * AGENTS.md instruction routing only — that's a narrower, separate concern
+ * from the skill-symlink registries below, which still exclude them.
  *
  * Checks:
- *   - toolDetection keys exclude cursor/codex/gemini
- *   - SKILL_PLATFORMS names exclude cursor/codex/gemini
- *   - PROJECT_SKILL_PLATFORMS names exclude cursor/codex/gemini (via symlinks.js)
- *   - paths object has no cursor/codex/gemini skill path getters
+ *   - toolDetection keys exclude cursor/gemini (codex/pi are tool-detection
+ *     only, not skill-symlink platforms — see below)
+ *   - SKILL_PLATFORMS names exclude cursor/codex/gemini/pi
+ *   - PROJECT_SKILL_PLATFORMS names exclude cursor/codex/gemini/pi (via symlinks.js)
+ *   - paths object has no cursor/codex/gemini/pi skill path getters
  *
  * Kept platforms (must still be present):
- *   - toolDetection: opencode, claude, copilot
+ *   - toolDetection: opencode, claude, copilot, pi, codex
  *   - SKILL_PLATFORMS: claude, copilot, opencode
  *   - paths: projectClaudeSkills, homeClaudeSkills, projectCopilotSkills,
  *             homeCopilotSkills, projectOpencodeSkills, homeOpencodeSkills
@@ -25,10 +29,6 @@ import { paths } from "../src/core/paths.js";
 describe("toolDetection — removed platforms absent", () => {
   test("does not contain cursor", () => {
     expect(Object.keys(toolDetection)).not.toContain("cursor");
-  });
-
-  test("does not contain codex", () => {
-    expect(Object.keys(toolDetection)).not.toContain("codex");
   });
 
   test("does not contain gemini", () => {
@@ -47,6 +47,14 @@ describe("toolDetection — kept platforms present", () => {
 
   test("contains copilot", () => {
     expect(Object.keys(toolDetection)).toContain("copilot");
+  });
+
+  test("contains pi", () => {
+    expect(Object.keys(toolDetection)).toContain("pi");
+  });
+
+  test("contains codex", () => {
+    expect(Object.keys(toolDetection)).toContain("codex");
   });
 });
 
