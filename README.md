@@ -2,9 +2,18 @@
 
 A comprehensive skills library of proven techniques, patterns, and workflows for AI coding assistants.
 
-**This is a fork and extension of Jesse Vincent's incredible [Superpowers for Claude Code](https://github.com/obra/superpowers).** Jesse's groundbreaking work and [his amazing blog post](https://blog.fsck.com/2025/10/09/superpowers/) introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, and OpenCode.
+**This is a fork and extension of Jesse Vincent's incredible [Superpowers for Claude Code](https://github.com/obra/superpowers).** Jesse's groundbreaking work and [his amazing blog post](https://blog.fsck.com/2025/10/09/superpowers/) introduced the concept of systematic, reusable skills for AI agents. This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, OpenCode, Pi, and OpenAI Codex.
 
 ## What's New
+
+**v10.0.0 (July 12, 2026):**
+
+- ⚠️ **Leaner bundled surface** — most bundled skills were retired. The package now ships only four: `brainstorming`, `leveraging-cli-tools`, `create-skill-json`, and `setup-skills`. Install anything else with `superpowers-agent add`.
+- ⚠️ **Retired CLI commands removed** — the skill discovery/execution commands `dir`, `execute`, `find-skills`, `get-helpers`, `path`, and `use-skill` are gone. Skills are discovered and loaded through each harness's native skill tool, not the CLI.
+- ⚠️ **`brainstorming` deprecated** — it now announces its deprecation and redirects to the `grilling` skill, handing over the same context.
+- **Pi & OpenAI Codex supported** — `superpowers-agent` now detects and targets **Pi** (`.pi`) and **OpenAI Codex** (`.codex`) alongside GitHub Copilot, Claude Code, and OpenCode — five supported harnesses. Detection works whether a harness is installed as a binary or a project folder.
+- **RTK + ponytail integration** — `setup-rtk.sh` (harness-aware RTK config) and `setup-ponytail.sh` wire token-optimized CLI output and minimal-solution guidance into each harness. `leveraging-cli-tools` was rewritten around `rtk` and `ponytail`, with RTK Python guidance.
+- **`SUPERPOWERS.md` linked** from generated `AGENTS.md`, `CLAUDE.md`, and `copilot-instructions.md`; `setup-skills` dedupes the backups it creates and replaces the `copilot-instructions.md` marker idempotently.
 
 **v9.2.1 (June 1, 2026):**
 
@@ -61,23 +70,21 @@ A comprehensive skills library of proven techniques, patterns, and workflows for
 
 **Key Features:**
 
-- 🎯 **Smart Skill Matching** - Just type `superpowers execute brainstorming` instead of full paths
+- 🎯 **Native Skill Discovery** - Your AI platform discovers and loads skills directly
 - 🚀 **One-Line Installer** - `npm install -g @complexthings/superpowers-agent`
 - 📦 **Skill Installation** - `add` and `add-repository` commands for Git/local skill installation
-- 🔍 **Helper Discovery** - `get-helpers` finds scripts within skills using substring matching
-- 📝 **Setup Skills** - `setup-skills` skill initializes projects with agent instruction files and skill symlinks
+- 📝 **Setup Skills** - `setup-skills` initializes projects with agent instruction files and skill symlinks
 
 ## What You Get
 
-- **Testing Skills** - TDD, async testing, anti-patterns
-- **Debugging Skills** - Systematic debugging, root cause tracing, verification
-- **Collaboration Skills** - Brainstorming, planning, code review, parallel agents
-- **Development Skills** - Git worktrees, finishing branches, subagent workflows
-- **Meta Skills** - Creating, testing, and sharing skills
-- **Utility Commands** - `find-skills` to discover available skills, `execute` to load them
+- **Requirement Grilling** - Interrogate a plan into a clear, reviewed design (the `grilling` skill; `brainstorming` now redirects here)
+- **Efficient CLI Workflows** - Search, inspect, and shape command output with less noise
+- **Skill Metadata** - Generate consistent `skill.json` files from existing skills
+- **Skill Setup** - Initialize project skill infrastructure
+- **Native Skill Tools** - Skills are discovered and loaded by your AI platform
 
 Plus:
-- **Universal Skills** - Work across GitHub Copilot, Claude Code, and OpenCode
+- **Universal Skills** - Work across GitHub Copilot, Claude Code, OpenCode, Pi, and OpenAI Codex
 - **Automatic Integration** - Skills activate automatically when relevant
 - **Consistent Workflows** - Systematic approaches to common engineering tasks
 
@@ -94,7 +101,7 @@ superpowers-agent bootstrap
 
 > **Note:** `superpowers-agent bootstrap` is a **required** one-time step after every fresh install. It is no longer run automatically by npm's `postinstall` hook — you must run it manually. Subsequent `superpowers-agent update` calls will run bootstrap for you automatically.
 
-## Migration to Superpower Agent `^8.0.0`
+## Migration to Superpower Agent `^10.0.0`
 
 ```bash
 rm -rf ~/.local/bin/superpowers-agent ~/.local/bin/superpowers ~/.agents/superpowers
@@ -102,12 +109,9 @@ npm install -g @complexthings/superpowers-agent
 superpowers-agent bootstrap
 ```
 
-**After installation, you can use Superpowers from anywhere:**
-```bash
-superpowers --help
-superpowers find-skills
-superpowers execute systematic-debugging
-```
+**After installation, your AI platform can discover Superpowers skills automatically.**
+
+If your platform has no native skill tool, open the relevant `SKILL.md` from its configured skill directories with your file-read tool.
 
 ## Manual Installation
 
@@ -117,40 +121,19 @@ If you prefer manual installation or need project-specific setup, see [.agents/I
 
 ## Quick Start
 
-### Discovering Skills
+### Discovering and Using Skills
 
-**List all available skills:**
-```bash
-superpowers find-skills
-```
-
-**Search for specific skills:**
-```bash
-superpowers find-skills | grep -i <topic>
-```
-
-### Using Skills
-
-**Smart skill matching** - Just type the skill name or any suffix:
-```bash
-superpowers execute brainstorming              # Finds superpowers:collaboration/brainstorming
-superpowers execute test-driven-development    # Finds superpowers:testing/test-driven-development
-superpowers execute collaboration/brainstorming # More specific suffix also works
-```
-
-**Full paths still work:**
-```bash
-superpowers execute superpowers:collaboration/brainstorming
-```
+Use your AI platform's native skill tool to view available skills and load the one relevant to your task. If no native skill tool is available, inspect the configured project or personal skill directories and open the relevant `SKILL.md` with your file-read tool.
 
 **Priority order:** Project skills → Home skills → Global Superpowers skills
 
-### Automatic Skill Activation
+### Bundled Skills
 
-Skills activate automatically when relevant. For example:
-- `test-driven-development` activates when implementing features
-- `systematic-debugging` activates when debugging issues
-- `verification-before-completion` activates before claiming work is done
+This release bundles four skills:
+- `brainstorming` — **deprecated**; redirects to the `grilling` skill
+- `leveraging-cli-tools`
+- `create-skill-json`
+- `setup-skills`
 
 ## Configuration
 
@@ -187,8 +170,7 @@ Superpowers supports project-level and global configuration via `.agents/config.
 
 **Read config from CLI:**
 ```bash
-superpowers-agent get-config prompts_dir
-superpowers-agent get-config plans_dir
+superpowers-agent config-get   # prints the resolved configuration, including prompts_dir and plans_dir
 ```
 
 ### Repository Aliases
@@ -311,96 +293,22 @@ Skills are available via the native skill tool. `bootstrap` installs a `sessionS
 
 Skills are available via the native skill tool. Claude agent personas defined in `.claude/agents/<name>.md` are installed into `~/.claude/agents/` via `add`/`pull`. `bootstrap` also installs a `SessionStart` hook into `~/.claude/settings.json` that injects the Superpowers context every session (idempotent; preserves your other hooks and settings).
 
-## What's Inside
+## Bundled Skills
 
-### Skills Library
+The package contains only the four skills listed in [Quick Start](#quick-start). Install additional skills with `superpowers-agent add`.
 
-**Testing** (`skills/testing/`)
-- **test-driven-development** - RED-GREEN-REFACTOR cycle
-- **condition-based-waiting** - Async test patterns
-- **testing-anti-patterns** - Common pitfalls to avoid
-- **verification-before-completion** - Evidence-based completion claims (ported from obra/superpowers)
+### Running Tests
 
-**Debugging** (`skills/debugging/`)
-- **systematic-debugging** - 4-phase root cause process
-- **root-cause-tracing** - Find the real problem
-- **defense-in-depth** - Multiple validation layers
+Run the automated suite from `.agents`:
 
-**Collaboration** (`skills/collaboration/`)
-- **brainstorming** - Socratic design refinement
-- **writing-plans** - Detailed implementation plans
-- **executing-plans** - Batch execution with checkpoints
-- **dispatching-parallel-agents** - Concurrent subagent workflows
-- **requesting-code-review** - Pre-review checklist
-- **receiving-code-review** - Responding to feedback
-- **using-git-worktrees** - Parallel development branches
-- **finishing-a-development-branch** - Merge/PR decision workflow
-- **subagent-driven-development** - Fast iteration with two-stage code review (spec + quality)
-- **leveraging-cli-tools** - High-performance CLI tools (rg, jq, fd, bat, ast-grep)
-
-**Meta** (`skills/meta/`)
-- **using-superpowers** - Behavioral enforcement skill loaded at session start (ported from obra/superpowers)
-- **writing-prompts** - Create custom slash commands for GitHub Copilot, Cursor, or Claude
-- **creating-prompts** - Create structured prompts for Do/Plan/Research/Refine workflows (adapted from TÂCHES)
-- **create-skill-json** - Generate skill.json metadata files from SKILL.md and directory structure
-
-**Utilities** (`skills/finding-skills/`, `skills/using-a-skill/`, `skills/setup-skills/`)
-- **finding-skills** - Discover and search available skills
-- **using-a-skill** - Load and apply specific skills
-- **setup-skills** - Initialize project with agent instruction files and skill symlinks
-
-**Problem-Solving** (`skills/problem-solving/`)
-- **collision-zone-thinking** - Force unrelated concepts together for emergent insights
-- **inversion-exercise** - Flip assumptions to reveal hidden constraints
-- **meta-pattern-recognition** - Spot universal principles across domains
-- **scale-game** - Test at extremes to expose fundamental truths
-- **simplification-cascades** - Find insights that eliminate multiple components
-- **when-stuck** - Dispatch to right problem-solving technique
-
-**Research** (`skills/research/`)
-- **tracing-knowledge-lineages** - Understand how ideas evolved over time
-
-**Architecture** (`skills/architecture/`)
-- **preserving-productive-tensions** - Keep multiple valid approaches instead of forcing premature resolution
-
-### Test Infrastructure
-
-The `tests/` directory contains agent-agnostic test scripts for validating skill behavior:
-
-**Test Categories:**
-- `tests/skill-triggering/` - Tests for implicit skill activation scenarios
-- `tests/explicit-skill-requests/` - Tests for explicit skill loading requests
-
-**Running Tests:**
 ```bash
-# Run a single test
-./tests/skill-triggering/run-test.sh prompts/test-name.txt
-
-# Run all tests in a category
-./tests/skill-triggering/run-all.sh
-
-# Configure for your agent
-export AGENT_CLI="opencode"  # or "claude", "copilot", etc.
-./tests/skill-triggering/run-test.sh prompts/test-name.txt
+cd .agents
+bun test
 ```
-
-**Creating New Tests:**
-1. Add prompt files to `prompts/` subdirectory
-2. Each test is a `.txt` file with the prompt to send
-3. Scripts output agent responses for manual verification
 
 ### CLI Commands
 
-The `superpowers-agent` CLI provides powerful commands for managing skills:
-
-**Skill Discovery:**
-```bash
-superpowers-agent find-skills              # List all available skills
-superpowers-agent execute <name>           # Load a specific skill
-superpowers-agent path <skill-name>        # Get SKILL.md file path
-superpowers-agent dir <skill-name>         # Get skill directory path
-superpowers-agent get-helpers <skill> <term>  # Find helper files in skill
-```
+The `superpowers-agent` CLI provides commands for managing installed skills. Skill discovery and loading use your AI platform's native skill tool.
 
 **Skill Installation:**
 ```bash
@@ -419,7 +327,6 @@ superpowers-agent add-repository <git-url> # Add repository alias
 ```bash
 superpowers-agent config-get               # Show current configuration
 superpowers-agent config-set <key> <value> # Update configuration
-superpowers-agent get-config <key>         # Get specific config value
 ```
 
 **Project Setup:**
@@ -435,53 +342,28 @@ superpowers-agent session-context                    # Print session-start conte
 superpowers-agent session-context --format=claude    # Emit Claude Code SessionStart hook JSON
 superpowers-agent session-context --format=copilot   # Emit GitHub Copilot sessionStart hook JSON
 ```
-The platform hooks installed by `bootstrap` call this command; it is the single source of truth for the injected prompt (the `using-superpowers` content plus the `leveraging-cli-tools` directive).
+The platform hooks installed by `bootstrap` call this command; it is the single source of truth for the injected CLI-tool nudge.
 
 ### Skill Metadata with skill.json
 
-Skills can include a `skill.json` file to define metadata for the superpowers-agent CLI. This enables powerful features like repository aliases, helper file discovery, and multi-skill repositories.
-
-**All skills in this repository include skill.json files** with version tracking, helper file listings, and aliases for convenient access.
+Skills can include a `skill.json` file to define installation metadata for the superpowers-agent CLI and multi-skill repositories.
 
 #### Single Skill Configuration
 
-For a single skill, `skill.json` defines the skill's identity and helpers:
+For a single skill, `skill.json` defines its identity:
 
 ```json
 {
   "version": "1.0.0",
   "name": "aem/block-collection-and-party",
-  "title": "AEM Block Collection and Party",
-  "helpers": [
-    "scripts/get-block-structure.js",
-    "scripts/search-block-collection-github.js",
-    "scripts/search-block-collection.js",
-    "scripts/search-block-party.js"
-  ],
-  "aliases": [
-    "block-party",
-    "block-collection"
-  ]
+  "title": "AEM Block Collection and Party"
 }
 ```
 
 **Fields:**
 - `name`: Canonical skill name (used for installation path)
 - `title`: Human-readable display name
-- `helpers`: Array of helper script paths relative to skill directory
-- `aliases`: Short names that can be used with `execute` and `get-helpers`
 - `version`: Skill version for tracking updates
-
-**Usage with helpers:**
-```bash
-# Find helper files
-superpowers-agent get-helpers block-collection search-block
-# Returns: /path/to/skill/scripts/search-block-collection.js
-
-# Use skill aliases
-superpowers-agent execute block-party
-# Loads: aem/block-collection-and-party
-```
 
 #### Multi-Skill Repository Configuration
 
@@ -534,12 +416,10 @@ superpowers-agent add @baici
 
 #### Benefits of skill.json
 
-1. **Helper Discovery**: Find and execute helper scripts easily
-2. **Skill Aliases**: Use short, memorable names instead of full paths
-3. **Repository Management**: Organize and share multi-skill collections
-4. **Automatic Detection**: CLI reads metadata for smart defaults
-5. **Installation Paths**: Control where skills install with `name` field
-6. **Version Tracking**: Each skill tracks its version independently
+1. **Repository Management**: Organize and share multi-skill collections
+2. **Automatic Detection**: CLI reads metadata for installation defaults
+3. **Installation Paths**: Control where skills install with `name` field
+4. **Version Tracking**: Each skill tracks its version independently
 
 ## How It Works
 
@@ -547,7 +427,7 @@ superpowers-agent add @baici
 1. **Bootstrap Process** - Installs agent integrations and syncs skill symlinks globally
 2. **Skill Discovery** - Finds skills across system, personal, and project locations
 3. **Priority Resolution** - Project skills override personal skills override system skills
-4. **Universal Integration** - Works with GitHub Copilot, Claude Code, and OpenCode
+4. **Universal Integration** - Works with GitHub Copilot, Claude Code, OpenCode, Pi, and OpenAI Codex
 
 **For OpenCode:**
 1. **Plugin System** - The `.opencode/plugins/superpowers-agent.js` plugin injects bootstrap context dynamically at session start
@@ -657,13 +537,12 @@ Configuration is stored in `~/.agents/superpowers/.config.json` and persists acr
 
 This project builds on [Jesse Vincent's Superpowers for Claude Code](https://github.com/obra/superpowers). Jesse's pioneering work introduced the concept of systematic, reusable skills for AI agents. Read his excellent blog post: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
 
-**Ported from obra/superpowers (v7.0.0):**
-- `using-superpowers` behavioral enforcement skill
-- Two-stage code review process (spec + quality reviewers)
+**Inspired by obra/superpowers (v7.0.0):**
+- Reusable skill workflows
 - OpenCode plugin architecture pattern
 - Test infrastructure for skill validation
 
-This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, and OpenCode.
+This fork extends that vision to support agent-agnostic workflows across GitHub Copilot, Claude Code, OpenCode, Pi, and OpenAI Codex.
 
 ## License
 

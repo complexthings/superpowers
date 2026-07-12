@@ -14,16 +14,16 @@ If `superpowers-agent` is not available, install it: `npm install -g @complexthi
 
 ## Version Check
 
-Periodically, e.g. once per day check the version of superpowers-agent:
-1. **CURRENT_VERSION** — run a `superpowers-agent version` command and extract `X.Y.Z` from the `X.Y.Z` string in its output.
+Once per day, check for updates:
+1. **CURRENT_VERSION** — run `superpowers-agent version`, extract `X.Y.Z` from the output.
 2. **NPM_LATEST_VERSION** — run `npm view @complexthings/superpowers-agent version`.
-3. Compare by **semver precedence, not string comparison** (e.g. `9.10.0` > `9.9.0`). If NPM_LATEST_VERSION is newer, tell the user — do not run these yourself:
+3. Compare by semver, not string order (`9.10.0` > `9.9.0`). If newer, tell the user — don't run these yourself:
    > Your superpowers-agent has updates (`CURRENT_VERSION` → `NPM_LATEST_VERSION`). Run:
    > ```sh
    > npm install -g @complexthings/superpowers-agent
    > superpowers-agent update && superpowers-agent bootstrap && superpowers-agent setup-skills
    > ```
-   If versions match, or either lookup fails (e.g. no network), continue silently.
+   Match, or a lookup fails → stay silent.
 
 ---
 

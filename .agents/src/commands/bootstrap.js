@@ -2,7 +2,7 @@
  * Bootstrap and setup commands for superpowers-agent
  */
 
-import { existsSync, readFileSync, writeFileSync, rmSync, lstatSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, rmSync, lstatSync, readdirSync } from 'fs';
 import { join, dirname, parse } from 'path';
 import { execSync } from 'child_process';
 import { platform } from 'os';
@@ -10,7 +10,7 @@ import { paths } from '../core/paths.js';
 import { readConfig } from '../core/config.js';
 import { checkForUpdates, isOnMainBranch } from '../core/git.js';
 import { printVersion, getLocalVersion } from '../utils/output.js';
-import { toolDetection, detectPlatforms } from '../core/platform-detection.js';
+import { toolDetection, detectPlatforms, detectProjectPlatforms, AGENTS_MD_TARGET_PLATFORMS } from '../core/platform-detection.js';
 
 // Import integration installers
 import { installOpencodePluginSymlink } from '../integrations/opencode.js';
@@ -22,8 +22,29 @@ import { detectTool } from '../utils/file-ops.js';
 import { runUpdate } from './update.js';
 
 // Import symlink utilities
-import { syncRepoSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
+import { syncRepoSkillSymlinks, syncProjectSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
 import { runStaleSkillSymlinkCleaner } from '../utils/stale-skill-symlink-cleaner.js';
+
+/**
+ * Backup a file, removing any prior backup(s) first so exactly one
+ * `<file>.backup-<date>` survives per file across repeated runs.
+ * Returns the new backup path. Throws on failure (caller catches).
+ */
+const backupFileDeduped = (filePath) => {
+    const dir = dirname(filePath);
+    const base = parse(filePath).base;
+    if (existsSync(dir)) {
+        for (const entry of readdirSync(dir)) {
+            if (entry.startsWith(`${base}.backup`)) {
+                rmSync(join(dir, entry));
+            }
+        }
+    }
+    const timestamp = new Date().toISOString().split('T')[0];
+    const backupPath = `${filePath}.backup-${timestamp}`;
+    execSync(`cp "${filePath}" "${backupPath}"`, { stdio: 'pipe' });
+    return backupPath;
+};
 
 /**
  * Update a platform-specific file with skills content
@@ -46,11 +67,10 @@ const updatePlatformFile = (filePath, templateContent, platforms, createIfMissin
     const wrappedContent = `<!-- SUPERPOWERS_SKILLS_START -->\n${content}\n<!-- SUPERPOWERS_SKILLS_END -->`;
     
     if (fileExists) {
-        // Backup existing file
-        const timestamp = new Date().toISOString().split('T')[0];
-        const backupPath = `${filePath}.backup-${timestamp}`;
+        // Backup existing file (dedup: keep exactly one backup per file)
+        let backupPath;
         try {
-            execSync(`cp "${filePath}" "${backupPath}"`, { stdio: 'pipe' });
+            backupPath = backupFileDeduped(filePath);
         } catch (error) {
             return { updated: false, error: true, message: `Failed to backup: ${error.message}` };
         }
@@ -201,14 +221,12 @@ const installAliases = () => {
 /**
  * Update .github/copilot-instructions.md in a project with Superpowers content
  * 
- * Reads the template from .github/copilot-instructions.md in the superpowers repo,
- * replaces ${content} with the using-superpowers SKILL.md content, and installs to
- * the project's .github/copilot-instructions.md.
+ * Reads the template from .github/copilot-instructions.md in the superpowers repo
+ * and installs it to the project's .github/copilot-instructions.md.
  * Uses marker-based update-in-place for idempotent updates.
  */
 const updateCopilotInstructions = (projectRoot) => {
     const instructionsSource = join(paths.superpowersRepo, '.github', 'copilot-instructions.md');
-    const skillSource = join(paths.superpowersRepo, 'skills', 'meta', 'using-superpowers', 'SKILL.md');
     const instructionsDest = join(projectRoot, '.github', 'copilot-instructions.md');
     
     const START_MARKER = '<!-- SUPERPOWERS_-_INSTRUCTIONS_START -->';
@@ -218,28 +236,23 @@ const updateCopilotInstructions = (projectRoot) => {
         return { error: true, message: 'Source template not found' };
     }
     
-    if (!existsSync(skillSource)) {
-        return { error: true, message: 'using-superpowers SKILL.md not found' };
-    }
-    
-    // Read the template and skill content
-    let templateContent;
-    let skillContent;
+    let processedContent;
     try {
-        templateContent = readFileSync(instructionsSource, 'utf8');
-        skillContent = readFileSync(skillSource, 'utf8');
+        processedContent = readFileSync(instructionsSource, 'utf8');
     } catch (error) {
-        return { error: true, message: `Failed to read source files: ${error.message}` };
+        return { error: true, message: `Failed to read source template: ${error.message}` };
     }
-    
-    // Replace ${content} placeholder with actual skill content
-    const processedContent = templateContent.replace('${content}', skillContent);
     
     // Verify markers are present in the processed content
     if (!processedContent.includes(START_MARKER) || !processedContent.includes(END_MARKER)) {
         return { error: true, message: 'Template is missing required markers' };
     }
-    
+
+    // Extract only the marker-delimited region from the source, so content the
+    // source keeps outside its own markers (e.g. the rtk-instructions block)
+    // never leaks into the destination's marker block.
+    const sourceMarkerBlock = processedContent.match(new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}`))[0];
+
     // Create .github directory if needed
     const destDir = dirname(instructionsDest);
     try {
@@ -259,11 +272,10 @@ const updateCopilotInstructions = (projectRoot) => {
             return { error: true, message: `Failed to read existing file: ${error.message}` };
         }
         
-        // Backup the existing file
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupPath = `${instructionsDest}.backup-${timestamp}`;
+        // Backup the existing file (dedup: keep exactly one backup per file)
+        let backupPath;
         try {
-            execSync(`cp "${instructionsDest}" "${backupPath}"`, { stdio: 'pipe' });
+            backupPath = backupFileDeduped(instructionsDest);
         } catch (error) {
             return { error: true, message: `Failed to backup: ${error.message}` };
         }
@@ -272,7 +284,7 @@ const updateCopilotInstructions = (projectRoot) => {
         if (existingContent.includes(START_MARKER) && existingContent.includes(END_MARKER)) {
             // Replace content between markers (inclusive of markers)
             const regex = new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}`, 'g');
-            const newContent = existingContent.replace(regex, processedContent.trim());
+            const newContent = existingContent.replace(regex, sourceMarkerBlock);
             try {
                 writeFileSync(instructionsDest, newContent, 'utf8');
                 return { updated: true, backup: backupPath };
@@ -350,6 +362,10 @@ const runSetupSkills = () => {
         console.log('✓ .agents/skills/ directory exists');
     }
 
+    // Symlink each harness's project skills dir back to .agents/skills/
+    const skillSymlinkResults = syncProjectSkillSymlinks(projectRoot);
+    console.log(`✓ Synced per-harness skills symlinks (${skillSymlinkResults.created} created, ${skillSymlinkResults.skipped} skipped)`);
+
     // Create docs directory and copy SUPERPOWERS.md
     const docsDir = join(agentsDir, 'docs');
     const superpowersMdPath = join(docsDir, 'SUPERPOWERS.md');
@@ -370,10 +386,8 @@ const runSetupSkills = () => {
     const agentsMdExists = existsSync(agentsMdPath);
     
     if (agentsMdExists) {
-        const timestamp = new Date().toISOString().split('T')[0];
-        const backupPath = `${agentsMdPath}.backup-${timestamp}`;
         try {
-            execSync(`cp "${agentsMdPath}" "${backupPath}"`, { stdio: 'pipe' });
+            const backupPath = backupFileDeduped(agentsMdPath);
             console.log(`✓ Backed up existing AGENTS.md to ${parse(backupPath).base}`);
         } catch (error) {
             console.log(`✗ Failed to backup AGENTS.md: ${error.message}`);
@@ -410,27 +424,16 @@ const runSetupSkills = () => {
         console.log('⚠️  SUPERPOWERS.md.template not found');
     }
 
-    // Detect platforms
-    const projectPlatforms = [];
-
-    const rootCopilotPath = join(projectRoot, '.github', 'copilot-instructions.md');
-    const globalCopilotPath = join(paths.home, '.github', 'copilot-instructions.md');
-    if (existsSync(rootCopilotPath) || existsSync(globalCopilotPath) || toolDetection.copilot.check()) {
-        projectPlatforms.push('github-copilot');
-    }
+    // Detect platforms (dot-folder in projectRoot OR CLI binary on PATH)
+    const projectPlatforms = detectProjectPlatforms(projectRoot);
 
     const rootClaudeMdPath = join(projectRoot, 'CLAUDE.md');
     const dotAgentsClaudeMdPath = join(agentsDir, 'CLAUDE.md');
-    if (existsSync(rootClaudeMdPath) || existsSync(dotAgentsClaudeMdPath) || toolDetection.claude.check()) {
-        projectPlatforms.push('claude-code');
-    }
-
-    if (toolDetection.opencode.check()) projectPlatforms.push('opencode');
 
     console.log(`\nDetected platforms for project: ${projectPlatforms.join(', ') || 'none'}\n`);
 
-    // Update AGENTS.md (targets GitHub Copilot and OpenCode only)
-    const agentsPlatforms = projectPlatforms.filter(p => ['github-copilot', 'opencode'].includes(p));
+    // Update AGENTS.md (targets GitHub Copilot, OpenCode, Pi, and Codex)
+    const agentsPlatforms = projectPlatforms.filter(p => AGENTS_MD_TARGET_PLATFORMS.includes(p));
     const agentsResult = updatePlatformFile(agentsMdPath, template, agentsPlatforms, !agentsMdExists);
     
     if (agentsResult.created) {
@@ -667,8 +670,8 @@ const runBootstrap = async () => {
         } else {
             console.log('✓ Skill symlinks handled in sync step below');
             // Install/refresh the SessionStart hook in ~/.claude/settings.json so the
-            // using-superpowers + leveraging-cli-tools context is injected every session,
-            // even when Superpowers is installed via npm rather than as a Claude plugin.
+            // CLI-tools nudge is injected every session, even when Superpowers is
+            // installed via npm rather than as a Claude plugin.
             const hookResult = installClaudeSessionHook();
             if (hookResult.created) {
                 console.log(`✓ Installed SessionStart hook -> ${paths.claudeSettings.replace(paths.home, '~')}`);
@@ -744,17 +747,16 @@ const runBootstrap = async () => {
     }
     console.log('\n---\n');
 
-    // One-time migration: clean up stale per-platform skill symlinks across all
-    // global and project-local platform dirs (including deprecated cursor/codex/gemini).
-    console.log('## Cleaning Up Stale Platform Skill Symlinks\n');
-    const cleanerResults = runStaleSkillSymlinkCleaner({ projectRoot: process.cwd() });
+    // Reconcile only retired links that prove package ownership from their raw target.
+    console.log('## Reconciling Retired Repo-Managed Skill Symlinks\n');
+    const cleanerResults = runStaleSkillSymlinkCleaner();
     if (cleanerResults.removed.length > 0) {
-        console.log(`  ✓ Removed ${cleanerResults.removed.length} stale skill symlink(s):`);
+        console.log(`  ✓ Removed ${cleanerResults.removed.length} retired skill symlink(s):`);
         for (const p of cleanerResults.removed) {
             console.log(`    - ${p}`);
         }
     } else {
-        console.log('  ✓ No stale platform skill symlinks found');
+        console.log('  ✓ No retired repo-managed skill symlinks found');
     }
     console.log('\n---\n');
 
@@ -763,7 +765,7 @@ const runBootstrap = async () => {
     console.log('✓ Skills system ready');
     console.log('✓ Skill symlinks synced\n');
     console.log('Next steps:');
-    console.log('  - Run `superpowers-agent find-skills` to see available skills');
+    console.log('  - Use your platform\'s native skill tool to see available skills');
     console.log('  - Run `superpowers-agent setup-skills` in your project directory');
 };
 
@@ -772,5 +774,6 @@ export {
     runSetupSkills,
     installAliases,
     updatePlatformFile,
-    updateCopilotInstructions
+    updateCopilotInstructions,
+    backupFileDeduped
 };

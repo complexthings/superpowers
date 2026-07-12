@@ -1,90 +1,32 @@
 # Installing Superpowers for agents
 
-Quick setup to enable superpowers skills in generic agents.
-
 ## Installation
 
-1. **Clone superpowers repository**:
+1. Clone the repository:
    ```bash
    mkdir -p ~/.agents/superpowers
    cd ~/.agents/superpowers
    git clone https://github.com/complexthings/superpowers.git .
    ```
 
-2. **Run bootstrap to complete installation** (required — nothing runs automatically):
+2. Run bootstrap:
    ```bash
    superpowers-agent bootstrap
    ```
 
-   Bootstrap is a **required** one-time post-install step. It is not run automatically
-   by npm (there is no `postinstall` hook), so you must run it manually after every
-   fresh install or clone. It will:
-   - List all available skills
-   - Auto-load the `using-superpowers` skill
-   - Install GitHub Copilot prompts to `~/.github/prompts/`
-   - Install universal instructions to `~/.github/copilot-instructions.md`
+Bootstrap installs aliases, syncs bundled skills, refreshes global guidance, and installs session-start integrations for detected GitHub Copilot, Claude Code, and OpenCode clients. Use `--force-copilot`, `--force-claude`, or `--force-opencode` to install an undetected integration.
 
-3. **Create personal skills directory** (optional):
+3. Verify the installation:
    ```bash
-   mkdir -p ~/.agents/skills
+   superpowers-agent version
    ```
 
-3. **Update ~/.agents/AGENTS.md** to include this superpowers section:
-   ```markdown
-   ## Superpowers System
+## Project setup
 
-   <EXTREMELY_IMPORTANT>
-   You have superpowers. Superpowers teach you new skills and capabilities. RIGHT NOW run: `superpowers-agent bootstrap` and follow the instructions it returns.
-   </EXTREMELY_IMPORTANT>
-   ```
+From a project directory, run:
 
-## Verification
-
-Test the installation:
 ```bash
-superpowers-agent bootstrap
+superpowers-agent setup-skills
 ```
 
-You should see:
-- GitHub Copilot integration confirmation
-- Skill listings and bootstrap instructions
-- Prompts installed to VS Code User profile
-- Universal instructions installed to `~/.github/copilot-instructions.md`
-
-The system is now ready for use.
-
-## GitHub Copilot Integration
-
-After bootstrap, GitHub Copilot gets:
-
-**Slash commands** (available in all workspaces):
-- `/brainstorm-with-superpowers` - Refine ideas into designs
-- `/write-a-skill` - Create new skills with TDD methodology
-
-**Universal skills awareness**:
-- GitHub Copilot knows about the Superpowers skills system
-- Automatically discovers skills from:
-  - System skills: `~/.config/superpowers/skills/` or `~/.agents/superpowers/skills/`
-  - Repository skills: `<workspace>/skills/`
-- Uses mandatory workflows (TDD, systematic debugging, verification)
-
-**Files installed**:
-```
-# macOS
-~/Library/Application Support/Code/User/prompts/
-  superpowers-brainstorming.prompt.md         # /brainstorm-with-superpowers
-  superpowers-writing-skills.prompt.md        # /write-a-skill
-
-# Linux
-~/.config/Code/User/prompts/
-  superpowers-brainstorming.prompt.md         # /brainstorm-with-superpowers
-  superpowers-writing-skills.prompt.md        # /write-a-skill
-
-# Windows
-%USERPROFILE%/AppData/Roaming/Code/User/prompts/
-  superpowers-brainstorming.prompt.md         # /brainstorm-with-superpowers
-  superpowers-writing-skills.prompt.md        # /write-a-skill
-
-# All platforms
-~/.github/copilot-instructions.md             # Universal instructions
-```
+Use your platform's native skill tool to discover and load the installed skills. If the platform has no native skill tool, inspect the configured skill directories and read the needed `SKILL.md` file.
