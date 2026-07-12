@@ -44,7 +44,7 @@ Periodically, e.g. once per day check the version of superpowers-agent:
    > Your superpowers-agent has updates (`CURRENT_VERSION` → `NPM_LATEST_VERSION`). Run:
    > ```sh
    > npm install -g @complexthings/superpowers-agent
-   > superpowers-agent update && superpowers-agent bootstrap && superpowers-agent setup-skills
+   > superpowers-agent bootstrap && superpowers-agent setup-skills
    > ```
    If versions match, or either lookup fails (e.g. no network), continue silently.
 

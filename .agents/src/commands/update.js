@@ -4,13 +4,47 @@
 
 import { checkForUpdates } from '../core/git.js';
 import { getLocalVersion, getRemoteVersion, isNewerVersion, printVersion } from '../utils/output.js';
-import { execSync } from 'child_process';
+import { paths } from '../core/paths.js';
+
+/**
+ * Install command per package manager. superpowers-agent is a global CLI, so
+ * every command installs/updates it globally.
+ */
+export const PM_INSTALL = {
+    npm: 'npm install -g @complexthings/superpowers-agent',
+    pnpm: 'pnpm add -g @complexthings/superpowers-agent',
+    yarn: 'yarn global add @complexthings/superpowers-agent',
+    bun: 'bun add -g @complexthings/superpowers-agent',
+    deno: 'deno install -g -A -n superpowers-agent npm:@complexthings/superpowers-agent',
+};
+
+/**
+ * Guess which package manager installed the global CLI from its install path.
+ * Each manager stages global packages under a recognizable directory. Falls
+ * back to npm, the documented default install method.
+ *
+ * ponytail: path-substring heuristic, good enough for the common global layouts;
+ * revisit only if a manager changes where it stages globals.
+ *
+ * @param {string} installPath - where this package is installed (defaults to the resolved repo/package root)
+ * @returns {'npm'|'pnpm'|'yarn'|'bun'|'deno'}
+ */
+export const detectPackageManager = (installPath = paths.superpowersRepo) => {
+    const p = String(installPath).toLowerCase().replace(/\\/g, '/');
+    if (p.includes('/.bun/') || p.includes('/bun/install')) return 'bun';
+    if (p.includes('/pnpm')) return 'pnpm';
+    if (p.includes('/yarn')) return 'yarn';
+    if (p.includes('/.deno/') || p.includes('/deno/')) return 'deno';
+    return 'npm';
+};
 
 /**
  * Command: update
- * Check for updates and install if available
+ * Report whether an update is available and how to install it. Never runs a
+ * global install itself — that can need sudo/permissions and should be the
+ * user's explicit call. We just print the exact commands to run.
  */
-const runUpdate = async ({ skipReinstall = false } = {}) => {
+const runUpdate = async () => {
     console.log('# Checking for Superpowers updates...\n');
 
     const updateInfo = await checkForUpdates();
@@ -27,35 +61,10 @@ const runUpdate = async ({ skipReinstall = false } = {}) => {
 
     console.log(`📦 Update available: v${updateInfo.localVersion} → v${updateInfo.remoteVersion}\n`);
 
-    if (skipReinstall) {
-        console.log('   Skipping install (--no-reinstall flag set)');
-        console.log('   Run manually: npm install -g @complexthings/superpowers-agent\n');
-        return;
-    }
-
-    console.log('   Installing update...\n');
-    try {
-        execSync('npm install -g @complexthings/superpowers-agent', { stdio: 'inherit' });
-        console.log('\n✓ Update complete!');
-    } catch (error) {
-        console.log(`\n✗ Update failed: ${error.message}`);
-        console.log('   Try running manually: npm install -g @complexthings/superpowers-agent');
-        process.exit(1);
-    }
-
-    // Run bootstrap via the freshly-installed global binary.
-    // (The current process is still the OLD code after npm install -g, so we
-    // must shell out to the new binary rather than calling runBootstrap().)
-    // Pass --no-update so bootstrap doesn't recurse into another update check.
-    console.log('\n   Running bootstrap to complete setup...\n');
-    try {
-        execSync('superpowers-agent bootstrap --no-update', { stdio: 'inherit' });
-        console.log('\n✓ Bootstrap complete!');
-    } catch (bootstrapError) {
-        console.log(`\n⚠️  Bootstrap step failed: ${bootstrapError.message}`);
-        console.log('   The update installed successfully. Run manually to finish setup:');
-        console.log('   superpowers-agent bootstrap');
-    }
+    const pm = detectPackageManager();
+    console.log('   To update, run:\n');
+    console.log(`   ${PM_INSTALL[pm]}`);
+    console.log('   superpowers-agent bootstrap && superpowers-agent setup-skills\n');
 };
 
 /**
@@ -66,11 +75,11 @@ const runCheckUpdates = async () => {
     printVersion();
     const localVersion = getLocalVersion();
     console.log(`Current version: ${localVersion}`);
-    
+
     try {
         const remoteVersion = await getRemoteVersion();
         console.log(`Latest version: ${remoteVersion}`);
-        
+
         if (isNewerVersion(remoteVersion, localVersion)) {
             console.log('Update available: Yes');
             process.exit(1);

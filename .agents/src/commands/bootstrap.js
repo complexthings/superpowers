@@ -18,8 +18,8 @@ import { installClaudeSessionHook } from '../integrations/claude.js';
 import { installCopilotSessionHook } from '../integrations/copilot.js';
 import { detectTool } from '../utils/file-ops.js';
 
-// Import update function
-import { runUpdate } from './update.js';
+// Import update helpers
+import { runUpdate, detectPackageManager, PM_INSTALL } from './update.js';
 
 // Import symlink utilities
 import { syncRepoSkillSymlinks, syncProjectSkillSymlinks, SKILL_PLATFORMS } from '../utils/symlinks.js';
@@ -618,7 +618,7 @@ const runBootstrap = async () => {
             console.log('## Update Check\n\n⚠️  Could not check for updates (network issue)\n\n---\n');
         } else if (updateInfo.hasUpdates) {
             console.log('## Update Available\n');
-            console.log(`⚠️  Update available: v${updateInfo.localVersion} → v${updateInfo.remoteVersion}\n    To update, run: \`npm install -g @complexthings/superpowers-agent\``);
+            console.log(`⚠️  Update available: v${updateInfo.localVersion} → v${updateInfo.remoteVersion}\n    To update, run: \`${PM_INSTALL[detectPackageManager()]}\``);
             console.log('\n---\n');
         }
     }
@@ -746,6 +746,21 @@ const runBootstrap = async () => {
         console.log(`  ✓ ${repoSkillResults.existed} skill symlinks already up to date`);
     }
     console.log('\n---\n');
+
+    // Claude ignores ~/.agents/skills and reads ~/.claude/skills, so mirror the
+    // repo skills there too when the user has a ~/.claude folder.
+    if (existsSync(join(paths.home, '.claude'))) {
+        console.log('## Syncing Repo Skills -> ~/.claude/skills/\n');
+        const claudeSkillResults = syncRepoSkillSymlinks(paths.homeClaudeSkills);
+        if (claudeSkillResults.created > 0 || claudeSkillResults.updated > 0) {
+            console.log(`  ✓ ${claudeSkillResults.created} created, ${claudeSkillResults.updated} updated, ${claudeSkillResults.existed} already current`);
+        } else if (claudeSkillResults.errors.length > 0) {
+            for (const err of claudeSkillResults.errors) console.log(`  ⚠️  ${err}`);
+        } else {
+            console.log(`  ✓ ${claudeSkillResults.existed} skill symlinks already up to date`);
+        }
+        console.log('\n---\n');
+    }
 
     // Reconcile only retired links that prove package ownership from their raw target.
     console.log('## Reconciling Retired Repo-Managed Skill Symlinks\n');

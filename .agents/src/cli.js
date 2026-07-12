@@ -47,8 +47,10 @@ const commands = {
         });
     },
     'update': () => {
-        const skipReinstall = process.argv.includes('--no-reinstall');
-        runUpdate({ skipReinstall });
+        runUpdate().catch(err => {
+            console.error(err.message);
+            process.exit(1);
+        });
     },
     
     // Config commands
@@ -74,7 +76,7 @@ Usage:
   superpowers-agent bootstrap [--no-update] [--force]               # Run complete bootstrap
   superpowers-agent version                                         # Show current version
   superpowers-agent check-updates                                   # Check for updates
-  superpowers-agent update [--no-reinstall]                         # Update to latest version
+  superpowers-agent update                                          # Show how to update to the latest version
   superpowers-agent config-get                                      # Show configuration
   superpowers-agent config-set <key> <value>                        # Update configuration
   superpowers-agent setup-skills                                    # Initialize project skills

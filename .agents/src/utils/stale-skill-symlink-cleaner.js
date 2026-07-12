@@ -90,9 +90,23 @@ export const reconcileRetiredSkillSymlinks = ({
   return { removed, skipped };
 };
 
-/** Run reconciliation for the repo-managed links bootstrap creates. */
-export const runStaleSkillSymlinkCleaner = () =>
-  reconcileRetiredSkillSymlinks({
-    skillDir: paths.homePersonalSkills,
-    bundledSkillsDir: paths.homeSuperpowersSkills,
-  });
+/**
+ * Run reconciliation for every dir bootstrap populates with repo-managed links
+ * (~/.agents/skills and ~/.claude/skills). Ownership is proved per-link from the
+ * raw target, so only this package's retired links are removed — a user's own
+ * skills in those dirs are never touched.
+ */
+export const runStaleSkillSymlinkCleaner = () => {
+  const dirs = [paths.homePersonalSkills, paths.homeClaudeSkills];
+  const removed = [];
+  let skipped = 0;
+  for (const skillDir of dirs) {
+    const result = reconcileRetiredSkillSymlinks({
+      skillDir,
+      bundledSkillsDir: paths.homeSuperpowersSkills,
+    });
+    removed.push(...result.removed);
+    skipped += result.skipped;
+  }
+  return { removed, skipped };
+};
