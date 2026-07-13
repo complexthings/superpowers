@@ -2,7 +2,7 @@
  * Bootstrap and setup commands for superpowers-agent
  */
 
-import { existsSync, readFileSync, writeFileSync, rmSync, lstatSync, readdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, rmSync, lstatSync, readdirSync, readlinkSync } from 'fs';
 import { join, dirname, parse } from 'path';
 import { execSync } from 'child_process';
 import { platform } from 'os';
@@ -136,6 +136,25 @@ const updatePlatformFile = (filePath, templateContent, platforms, createIfMissin
 };
 
 /**
+ * Remove ~/.local/bin symlinks that point into an npm node_modules dir.
+ * These shadow npm's own version-tracking shims and, once stale, re-point
+ * themselves to the old version each run. Returns the paths actually removed.
+ */
+const pruneNodeModulesShadowLinks = (linkPaths) => {
+    const removed = [];
+    for (const linkPath of linkPaths) {
+        try {
+            if (lstatSync(linkPath).isSymbolicLink() &&
+                readlinkSync(linkPath).includes('/node_modules/')) {
+                rmSync(linkPath);
+                removed.push(linkPath);
+            }
+        } catch { /* not present, leave it */ }
+    }
+    return removed;
+};
+
+/**
  * Install platform aliases (Unix/Linux/Mac)
  */
 const installUnixAliases = () => {
@@ -151,6 +170,19 @@ const installUnixAliases = () => {
         return;
     }
     
+    // npm global installs already create version-tracking shims in each node's
+    // own bin dir (nvm too). A ~/.local/bin symlink pinned to one node's
+    // node_modules shadows those shims and, once stale, re-points itself to the
+    // old version every run. So for npm installs: don't create it, and remove
+    // any stale shadow we left before, letting npm's shim win.
+    const isNpmInstall = sourceAgentPath.includes('/node_modules/');
+    if (isNpmInstall) {
+        for (const linkPath of pruneNodeModulesShadowLinks([agentLinkPath, superpowersLinkPath])) {
+            console.log(`✓ Removed shadowing symlink ${linkPath} (npm shim handles PATH)`);
+        }
+        return;
+    }
+
     // Create ~/.local/bin directory if it doesn't exist
     if (!existsSync(binDir)) {
         try {
@@ -790,5 +822,6 @@ export {
     installAliases,
     updatePlatformFile,
     updateCopilotInstructions,
-    backupFileDeduped
+    backupFileDeduped,
+    pruneNodeModulesShadowLinks
 };
