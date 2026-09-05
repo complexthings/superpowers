@@ -2,7 +2,7 @@
 
 ## Project
 
-Superpowers Agent is an npm-published CLI for installing reusable agent skills and integrations. Its CLI source is in `.agents/src/`; bundled skills are in `skills/`.
+Superpowers Agent is an npm-published CLI for installing reusable agent skills and integrations. Its CLI source is in `.agents/src/`. The bundled skills have been removed; the CLI now only cleans up prior installs.
 
 ## Development
 

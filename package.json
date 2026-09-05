@@ -9,13 +9,7 @@
   },
   "files": [
     ".agents/superpowers-agent",
-    ".agents/templates",
-    ".agents/docs",
-    ".agents/skills",
-    ".agents/prompts",
-    ".agents/plans",
     ".agents/superpowers-bootstrap.md",
-    "skills",
     ".github",
     "AGENTS.md",
     "README.md",
