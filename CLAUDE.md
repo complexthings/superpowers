@@ -26,5 +26,5 @@ retirement banner on stderr, so stdout stays a clean contract.
 
 `build.js` bundles `src/cli.js` with Bun into the single committed file `.agents/superpowers-agent`, prefixed with a sh/bun/node polyglot shebang. That artifact is committed and shipped via npm `files`, so a source change is not live until it is rebuilt; the pre-commit hook rebuilds it.
 
-Bundled skills in `skills/` were installed as symlinks under `~/.agents/skills`; the CLI no longer
+Bundled skills were once installed as symlinks under `~/.agents/skills`; the CLI no longer
 installs them, it only removes them — `tests/stale-skill-symlink-cleaner.test.js` covers that path.
