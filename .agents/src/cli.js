@@ -4,40 +4,14 @@
  * The shebang will be added by the build process
  */
 
-// Import command modules
-import {
-    runConfigGet,
-    runConfigSet,
-    runListRepositories
-} from './commands/simple-commands.js';
-
-import { 
-    runUpdate, 
-    runCheckUpdates, 
-    runVersion 
-} from './commands/update.js';
-
-import { 
-    runBootstrap, 
-    runSetupSkills,
-    installAliases
-} from './commands/bootstrap.js';
-
-import {
-    runAdd,
-    runAddRepository,
-    runPull,
-    runRm
-} from './skills/installer.js';
-
-// Import session-context command (used by platform session-start hooks)
-import { runSessionContext } from './integrations/session-context.js';
+import { runUpdate, runCheckUpdates, runVersion } from './commands/update.js';
+import { runBootstrap } from './commands/bootstrap.js';
+import { printRetirementBanner } from './commands/retirement-cleanup.js';
 
 /**
  * Command dispatcher
  */
 const commands = {
-    // Core commands
     'bootstrap': runBootstrap,
     'version': runVersion,
     'check-updates': () => {
@@ -52,46 +26,23 @@ const commands = {
             process.exit(1);
         });
     },
-    
-    // Config commands
-    'config-get': runConfigGet,
-    'config-set': runConfigSet,
-    
-    // Skill commands
-    'setup-skills': runSetupSkills,
-    'session-context': runSessionContext,
-    'add': runAdd,
-    'add-repository': runAddRepository,
-    'list-repositories': runListRepositories,
-    'pull': runPull,
-    'rm': runRm,
-    
-    // Integration install commands
-    'install-aliases': installAliases,
-    
+
     // Default help
     'default': () => {
         console.log(`Superpowers for Agents
 Usage:
-  superpowers-agent bootstrap [--no-update] [--force]               # Run complete bootstrap
-  superpowers-agent version                                         # Show current version
-  superpowers-agent check-updates                                   # Check for updates
-  superpowers-agent update                                          # Show how to update to the latest version
-  superpowers-agent config-get                                      # Show configuration
-  superpowers-agent config-set <key> <value>                        # Update configuration
-  superpowers-agent setup-skills                                    # Initialize project skills
-  superpowers-agent session-context [--format=claude|copilot|raw]   # Print session-start context (used by hooks)
-  superpowers-agent add <url-or-path|@alias> [path] [options]      # Install skills
-  superpowers-agent add-repository <git-url> [--as=@alias] [opts]  # Add repository alias
-  superpowers-agent list-repositories                              # List configured repository aliases
-  superpowers-agent pull <url-or-path|@alias> [path] [options]     # Update skills
-  superpowers-agent rm <url-or-path|@alias> [options]               # Remove skills
-  superpowers-agent install-aliases                                 # Install universal aliases (superpowers, superpowers-agent)
+  superpowers-agent bootstrap                                        # Remove everything this package installed
+  superpowers-agent version                                          # Show current version
+  superpowers-agent check-updates                                    # Check for updates
+  superpowers-agent update                                           # Clean up, then show how to update
 
 Documentation: https://github.com/complexthings/superpowers
 `);
     }
 };
+
+// The banner goes to stderr so stdout stays a clean, parseable contract.
+printRetirementBanner();
 
 // Parse command and execute
 const command = process.argv[2] || 'default';
