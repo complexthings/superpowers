@@ -14,26 +14,26 @@ Target branch: `main`.
 
 | Prompt | Issue | Status |
 | --- | --- | --- |
-| `01-cleanup-routine.prompt.md` | — | Not started |
+| `01-cleanup-routine.prompt.md` | — | Merged |
 
 ### Phase 2
 
 | Prompt | Issue | Status |
 | --- | --- | --- |
-| `02-cli-surface.prompt.md` | — | Not started |
+| `02-cli-surface.prompt.md` | — | Merged |
 
 ### Phase 3
 
 | Prompt | Issue | Status |
 | --- | --- | --- |
-| `03-remove-bundled-assets.prompt.md` | — | Not started |
-| `04-readme-retirement.prompt.md` | — | Not started |
+| `03-remove-bundled-assets.prompt.md` | — | Merged |
+| `04-readme-retirement.prompt.md` | — | Merged |
 
 ### Phase 4
 
 | Prompt | Issue | Status |
 | --- | --- | --- |
-| `05-adr-context-deps-version.prompt.md` | — | Not started |
+| `05-adr-context-deps-version.prompt.md` | — | Merged |
 
 ## Status vocabulary
 
