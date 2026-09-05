@@ -114,6 +114,18 @@ bun remove -g @complexthings/superpowers-agent
 deno uninstall -g superpowers-agent
 ```
 
+## Release notes — v11.0.0 (final)
+
+Final release. The CLI installs nothing; `bootstrap` and `update` both run Retirement Cleanup.
+The bundled skills, the session-context hooks and the repo-managed skill symlinks are removed.
+Requires Node `^22 || ^24 || ^26`.
+
+Maintainer step after publishing v11.0.0 to npm:
+
+```bash
+npm deprecate @complexthings/superpowers-agent "Retired — use npx skills instead: https://skills.sh"
+```
+
 ## Credits
 
 Superpowers began as [Jesse Vincent's Superpowers for Claude Code](https://github.com/obra/superpowers),

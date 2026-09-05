@@ -2,7 +2,11 @@
 
 ## Project
 
-Superpowers Agent is an npm-published CLI for installing reusable agent skills and integrations. Its CLI source is in `.agents/src/`. The bundled skills have been removed; the CLI now only cleans up prior installs.
+Superpowers Agent is retired at v11.0.0; use [`npx skills`](https://skills.sh) instead. It was an
+npm-published CLI for installing reusable agent skills and integrations. Its CLI source is in
+`.agents/src/`. The bundled skills, harness hooks and skill symlinks are gone; `bootstrap` and
+`update` now run Retirement Cleanup and nothing else. See
+[ADR 0008](docs/adr/0008-retire-superpowers-agent.md).
 
 ## Development
 
@@ -19,7 +23,7 @@ bun run dev
 ## Change boundaries
 
 - Keep `package.json` and `.agents/package.json` versions aligned. The pre-commit hook reconciles a mismatch, refreshes lockfiles, rebuilds the CLI, and stages the affected files.
-- Use terms from `CONTEXT.md`: **session-context hook**, **CLI-tool nudge**, and **repo-managed skill symlink**.
+- Use terms from `CONTEXT.md`: **Retirement Cleanup** and **Retirement Backup Directory**. **Session-context hook**, **CLI-tool nudge** and **repo-managed skill symlink** are retired terms — use them only when describing what cleanup removes.
 
 ## Conditional guidance
 
