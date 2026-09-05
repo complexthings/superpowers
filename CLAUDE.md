@@ -11,17 +11,20 @@ Run from `.agents/`:
 ```bash
 bun test                              # all tests
 bun test tests/smoke.test.js          # one file
-bun test -t "session context"         # one test by name
-bun run dev -- session-context        # run the CLI from source
+bun test -t "retired CLI commands"     # one test by name
+bun run dev -- version                # run the CLI from source
 bun run build                         # bundle to .agents/superpowers-agent
 ```
 
 ## Architecture
 
-`src/cli.js` is a flat command-name → handler map; adding a command means adding an entry there plus its handler and a help line. Handlers live in `src/commands/` (`bootstrap.js`, `update.js`, `simple-commands.js` — the last holds config get/set and repo listing), `src/skills/installer.js` (add/pull/rm), and `src/integrations/`.
-
-`src/integrations/` holds one module per supported agent platform (claude, copilot, opencode) plus `session-context.js`. `session-context` is invoked by each platform's session-start hook with a `--format` flag, so its output is a public contract — changing it changes what every agent session sees.
+`src/cli.js` is a flat command-name → handler map. Superpowers is retired, so the surface is only
+`bootstrap`, `update`, `check-updates`, `version` and the default help. `bootstrap` and `update` both
+run `src/commands/retirement-cleanup.js`, which removes every artifact the package ever installed and
+backs real files up under `~/.agents/retirement-backup-<date>/`. Every invocation prints a one-line
+retirement banner on stderr, so stdout stays a clean contract.
 
 `build.js` bundles `src/cli.js` with Bun into the single committed file `.agents/superpowers-agent`, prefixed with a sh/bun/node polyglot shebang. That artifact is committed and shipped via npm `files`, so a source change is not live until it is rebuilt; the pre-commit hook rebuilds it.
 
-Bundled skills in `skills/` are installed as symlinks under `~/.agents/skills` and become stale when a skill is removed — `tests/stale-skill-symlink-cleaner.test.js` and `tests/repo-skill-symlinks-target.test.js` cover that path.
+Bundled skills in `skills/` were installed as symlinks under `~/.agents/skills`; the CLI no longer
+installs them, it only removes them — `tests/stale-skill-symlink-cleaner.test.js` covers that path.

@@ -3,6 +3,7 @@
  */
 
 import { checkForUpdates } from '../core/git.js';
+import { runRetirementCleanup, printCleanupSummary } from './retirement-cleanup.js';
 import { getLocalVersion, getRemoteVersion, isNewerVersion, printVersion } from '../utils/output.js';
 import { paths } from '../core/paths.js';
 
@@ -45,7 +46,9 @@ export const detectPackageManager = (installPath = paths.superpowersRepo) => {
  * user's explicit call. We just print the exact commands to run.
  */
 const runUpdate = async () => {
-    console.log('# Checking for Superpowers updates...\n');
+    printCleanupSummary(runRetirementCleanup());
+
+    console.log('\n# Checking for Superpowers updates...\n');
 
     const updateInfo = await checkForUpdates();
 
@@ -63,8 +66,7 @@ const runUpdate = async () => {
 
     const pm = detectPackageManager();
     console.log('   To update, run:\n');
-    console.log(`   ${PM_INSTALL[pm]}`);
-    console.log('   superpowers-agent bootstrap && superpowers-agent setup-skills\n');
+    console.log(`   ${PM_INSTALL[pm]}\n`);
 };
 
 /**

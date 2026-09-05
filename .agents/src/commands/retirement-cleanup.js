@@ -5,8 +5,6 @@
  * ~/.agents/retirement-backup-<date>/ before they leave their install site;
  * symlinks are removed outright. Any single artifact failing is recorded and
  * skipped — cleanup never aborts halfway.
- *
- * Nothing calls this yet; `bootstrap` and `update` wire it in separately.
  */
 
 import {
@@ -181,4 +179,30 @@ export const runRetirementCleanup = ({
   }
 
   return { backupDir, handled, failed };
+};
+
+/** One-line retirement notice. stderr, so stdout stays a clean contract. */
+export const printRetirementBanner = () => {
+  console.error('Superpowers is retired — see https://skills.sh for what replaced it.');
+};
+
+/** Print what the cleanup did, where the backup went, and how to restore it. */
+export const printCleanupSummary = ({ backupDir, handled, failed }) => {
+  const changed = handled.filter((entry) => entry.action !== 'absent');
+  console.log(`Retirement cleanup: ${changed.length} artifact(s) removed, ${failed.length} failed.`);
+  for (const entry of changed) {
+    console.log(`  ${entry.action}: ${entry.artifact}${entry.path ? ` (${entry.path})` : ''}`);
+  }
+  for (const entry of failed) {
+    console.log(`  failed: ${entry.artifact} — ${entry.message}`);
+  }
+
+  console.log(`\nBackup: ${backupDir}`);
+  const restorable = changed.filter((entry) => entry.backup);
+  if (restorable.length) {
+    console.log('Restore with:');
+    for (const entry of restorable) console.log(`  cp "${entry.backup}" "${entry.path}"`);
+  }
+
+  console.log('\nSkills now live at https://skills.sh — try: npx skills');
 };
