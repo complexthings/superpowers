@@ -13,6 +13,12 @@
       "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
       "computedHash": "35e62aa423aaeab6a414bcac273f56dfb17802ef2334b41b6a3b00f28196c8cf"
     },
+    "grilling": {
+      "source": "blueacorninc/skills",
+      "sourceType": "github",
+      "skillPath": "utility/grilling/SKILL.md",
+      "computedHash": "ceafd9ae9de6b8c59dc53188b9bba40a895214330f1e218f129e73e0203c4977"
+    },
     "implement": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -25,11 +31,11 @@
       "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
       "computedHash": "2449db6ab1ded9581f69fcc56c1f64818112d05e271fd4c5da23c6523f9d3d9d"
     },
-    "setup-matt-pocock-skills": {
-      "source": "mattpocock/skills",
+    "rule-rewriter": {
+      "source": "blueacorninc/skills",
       "sourceType": "github",
-      "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
-      "computedHash": "552b0f48b9fe054aa93c5d432fefbd7bd9645e3f2d20b4e22432453a81800b21"
+      "skillPath": "utility/rule-rewriter/SKILL.md",
+      "computedHash": "10a82a5eece67a03811f4d6402e7cfde623636abdcea39ea910cacf29f8ea4fc"
     },
     "to-spec": {
       "source": "mattpocock/skills",
