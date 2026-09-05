@@ -1,4 +1,7 @@
 {
+  "skillOverrides": {
+    "computer-use": "off"
+  },
   "worktree": {
     "bgIsolation": "none"
   }

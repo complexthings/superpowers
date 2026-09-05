@@ -1,0 +1,29 @@
+{
+  "harnesses": [
+    {
+      "name": "claude",
+      "cli": "claude",
+      "tier": "standard",
+      "models": {
+        "mainOrchestrator": {
+          "model": "claude-opus-5",
+          "effort": "medium"
+        },
+        "orchestrationWorker": {
+          "model": "claude-opus-5",
+          "effort": "medium"
+        },
+        "subagent": {
+          "model": "claude-opus-5",
+          "effort": "low"
+        },
+        "subagentSimple": "claude-haiku-4-5"
+      }
+    }
+  ],
+  "mainOrchestratorHarness": "claude",
+  "targetBranch": "main",
+  "maxConcurrency": 4,
+  "reasoningLevel": "default",
+  "priorityFile": "recommended-priority.json"
+}

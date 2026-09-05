@@ -1,0 +1,51 @@
+{
+  "workstream": "retirement-cleanup",
+  "targetBranch": "main",
+  "harnesses": [
+    {
+      "name": "claude",
+      "cli": "claude",
+      "tier": "standard",
+      "models": {
+        "mainOrchestrator": {
+          "model": "claude-opus-5",
+          "effort": "medium"
+        },
+        "orchestrationWorker": {
+          "model": "claude-opus-5",
+          "effort": "medium"
+        },
+        "subagent": {
+          "model": "claude-opus-5",
+          "effort": "low"
+        },
+        "subagentSimple": "claude-haiku-4-5"
+      }
+    }
+  ],
+  "mainOrchestratorHarness": "claude",
+  "reasoningLevel": "default",
+  "maxConcurrency": 4,
+  "workItems": [
+    {
+      "id": "01-cleanup-routine",
+      "size": "standard"
+    },
+    {
+      "id": "02-cli-surface",
+      "size": "standard"
+    },
+    {
+      "id": "03-remove-bundled-assets",
+      "size": "standard"
+    },
+    {
+      "id": "04-readme-retirement",
+      "size": "standard"
+    },
+    {
+      "id": "05-adr-context-deps-version",
+      "size": "standard"
+    }
+  ]
+}
