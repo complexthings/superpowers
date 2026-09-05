@@ -28,3 +28,6 @@ retirement banner on stderr, so stdout stays a clean contract.
 
 Bundled skills were once installed as symlinks under `~/.agents/skills`; the CLI no longer
 installs them, it only removes them — `tests/stale-skill-symlink-cleaner.test.js` covers that path.
+The session-context hooks (Claude `SessionStart`, the Copilot hook, the OpenCode plugin) are gone
+too; Retirement Cleanup deletes them. Real files move to the Retirement Backup Directory first.
+[ADR 0008](docs/adr/0008-retire-superpowers-agent.md) records the retirement.

@@ -1,5 +1,8 @@
 # Preserve session-context hooks with the CLI-tool nudge
 
+**Superseded by [ADR 0008](0008-retire-superpowers-agent.md).** The session-context hooks are removed;
+Retirement Cleanup deletes them.
+
 ## Context
 
 Session-context hooks currently depend on the deleted `using-superpowers` skill while also delivering the `leveraging-cli-tools` nudge.
